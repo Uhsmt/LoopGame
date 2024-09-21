@@ -1,0 +1,31 @@
+{"frames": {
+
+"sun_1.png":
+{
+	"frame": {"x":0,"y":0,"w":350,"h":350},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":350,"h":350},
+	"sourceSize": {"w":350,"h":350}
+},
+"sun_2.png":
+{
+	"frame": {"x":350,"y":0,"w":350,"h":350},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":350,"h":350},
+	"sourceSize": {"w":350,"h":350}
+}},
+"animations": {
+	"sun": ["sun_1.png","sun_2.png"]
+},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "sunset.png",
+	"format": "RGBA8888",
+	"size": {"w":700,"h":350},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:fece8603c17d23df7bbd867cf881b318:f83b0745cd768093a304340c4bec4391:28935f983beb84a6a974a6c5b3b83903$"
+}
+}
