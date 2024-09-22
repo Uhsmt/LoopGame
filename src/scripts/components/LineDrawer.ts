@@ -133,7 +133,7 @@ export class LineDrawer extends EventEmitter{
         fadeOut();
     }
 
-    private clearAllSegments(): void {
+    clearAllSegments(): void {
         for (const segment of this.segments) {
             this.app.stage.removeChild(segment.graphics);
             segment.graphics.destroy();

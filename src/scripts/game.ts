@@ -23,8 +23,7 @@ async function setUp() {
         document.getElementById('mainCanvas')!.appendChild(appView);
         document.getElementById('loading')!.style.display = 'none';
         
-        let manager: GameStateManager;
-        manager = new GameStateManager(app);
+        const manager = new GameStateManager(app);
         const startState = new StartState(manager);
         manager.setState(startState);
 

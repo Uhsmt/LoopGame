@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import * as Utility from '../utils/utility'; // Adjust the path as necessary
+import * as Utility from '../utils/utility';
 
 export class Butterfly extends PIXI.Container {
     private sprite: PIXI.Sprite;
@@ -10,7 +10,8 @@ export class Butterfly extends PIXI.Container {
     private yFrame:number;
     private flappingProgress:number = 0;
     private flappingSpeed = 0.01;
-    private color: number;
+    private isFlying = true;
+    color: number;
     private readonly xTernFrame = Utility.random(120, 150);    
     private readonly yTernFrame = Utility.random(120, 150);
 
@@ -58,12 +59,10 @@ export class Butterfly extends PIXI.Container {
         this.yFrame = Utility.random(1, 120);
     }
 
-    update(delta: number, screenWidth: number, screenHeight: number): void {
-        this.fly(screenWidth, screenHeight);
-        this.flap();
-    }
+    fly(screenWidth: number, screenHeight: number){
 
-    private fly(screenWidth: number, screenHeight: number){
+        if (!this.isFlying) return;
+
         const butterflyWidth = this.sprite.width;
         const butterflyHeight = this.sprite.height;
     
@@ -99,7 +98,7 @@ export class Butterfly extends PIXI.Container {
         this.y += this.yDiretion;
     }
 
-    private flap(): void {
+    flap(): void {
         if (this.flappingProgress === 100){
             this.flappingProgress = 0;
             return;
@@ -118,6 +117,7 @@ export class Butterfly extends PIXI.Container {
 
     switchColor(): void {
         console.log("switchColor");
+        if (!this.elipse) return;
         const mainColor:number = this.sprite.tint;
         const subColor:number = this.elipse.tint;
         
@@ -125,5 +125,23 @@ export class Butterfly extends PIXI.Container {
         this.sprite.tint = subColor;
         this.elipse.tint = mainColor;
         this.color = subColor;
+    }
+
+    delete(): void {
+        // アニメーションで透明度を徐々に減少させる
+        const fadeOut = () => {
+            if (this.alpha > 0) {
+                this.alpha -= 0.01;
+                requestAnimationFrame(fadeOut);
+            } else {
+                console.log("destroy");
+                this.destroy();
+                this.removeFromParent();
+            }
+        };
+        fadeOut()
+    }
+    stop(): void {
+        this.isFlying = false;
     }
 }

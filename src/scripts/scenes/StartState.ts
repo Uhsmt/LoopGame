@@ -48,7 +48,7 @@ export class StartState {
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
 
-        this.debug();
+        // this.debug();
     }
 
     // TODO デバッグ終わったら消す
@@ -74,11 +74,6 @@ export class StartState {
 
     update(delta: number): void {
         // Start Stateでは特にアップデートするロジックは不要
-        // TODO debug終わったら消す
-        this.butterflies.forEach(butterfly => {
-            butterfly.update(delta, this.manager.app.screen.width, this.manager.app.screen.height);
-        });
-
     }
 
     render(): void {
@@ -106,11 +101,6 @@ export class StartState {
 
     // LineDrawerのループエリアが完成したときのハンドラ
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
-        // TODO あとでけす
-        this.butterflies.forEach(butterfly => {
-            butterfly.switchColor();
-        });
-
         if(this.isRuleButtonInLoopArea(loopArea)){
             this.onRuleSelected();
         }else if (this.isStartButtonInLoopArea(loopArea)) {
