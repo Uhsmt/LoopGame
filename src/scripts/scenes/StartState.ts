@@ -1,11 +1,13 @@
-import { GameStateManager } from "./GameStateManager";
 import * as PIXI from 'pixi.js';
-import { LineDrawer } from '../components/LineDrawer'; // Adjust the path as necessary
+import { GameStateManager } from "./GameStateManager";
+import { LineDrawer } from '../components/LineDrawer';
 
 export class StartState {
     private manager: GameStateManager;
     private container: PIXI.Container;
     private lineDrawer: LineDrawer;
+    private startButton: PIXI.BitmapText
+    private ruleButton: PIXI.BitmapText
 
     constructor(manager: GameStateManager) {
         this.manager = manager;
@@ -24,6 +26,7 @@ export class StartState {
 
         //LineDrawerを初期化
         this.lineDrawer = new LineDrawer(this.manager.app);
+        this.lineDrawer.on('loopAreaCompleted', this.handleLoopAreaCompleted.bind(this));
 
         // background
         const backgroundSprite = new PIXI.Sprite(PIXI.Texture.from('menu_background'));
@@ -33,19 +36,12 @@ export class StartState {
         backgroundSprite.scale = app.screen.width / backgroundSprite.width;
         backgroundSprite.y = app.screen.height;
 
-        // スタートボタン
-        const startButton: PIXI.Text = this.button('Start', app.screen.width / 4 - 50, app.screen.height / 2);
-        startButton.on('pointerdown', () => this.onStartGameSelected());
-
-        // ルール説明ボタン
-        const rulesButton = this.button('Rules', app.screen.width * 3 / 4 - 50, app.screen.height / 2);
-        rulesButton.on('pointerdown', () => this.onRuleSelected());
-        
+        // ボタン
+        this.startButton = this.button('Start', app.screen.width / 4 - 50, app.screen.height / 2);
+        this.ruleButton= this.button('Rules', app.screen.width * 3 / 4 - 50, app.screen.height / 2);
         this.container.addChild(backgroundSprite);
-        this.container.addChild(startButton);
-        this.container.addChild(rulesButton);
-
-        // this.container.addChild(this.lineDrawer.graphics);
+        this.container.addChild(this.startButton);
+        this.container.addChild(this.ruleButton);
     }
 
     update(delta: number): void {
@@ -56,23 +52,68 @@ export class StartState {
         // 描画はPixiJSがハンドルするのでここでは何もしない
     }
 
-    private button(name: string, _x:number , _y:number ): PIXI.Text{
-        const button = new PIXI.Text(name, { fill: 0xffffff, fontSize: 24 });
+    private button(name: string, _x:number , _y:number ): PIXI.BitmapText{
+        const button = new PIXI.BitmapText({
+            text: name,
+            style: {
+                fill: '#ffffff',
+                fontSize: 24,
+                fontFamily: "Arial",
+            },
+        });
+
+
+        // const button = new PIXI.Text(name, style);
         button.interactive = true;
         button.x = _x;
         button.y = _y;
+
         return button;
     }
 
+    // LineDrawerのループエリアが完成したときのハンドラ
+    private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
+        if(this.isRuleButtonInLoopArea(loopArea)){
+            this.onRuleSelected();
+        }else if (this.isStartButtonInLoopArea(loopArea)) {
+            this.onStartGameSelected();
+        }
+    }
+
+    private isStartButtonInLoopArea(loopArea: PIXI.Graphics): boolean {
+        const startButtonBounds = this.startButton.getBounds();
+        const loopAreaBounds = loopArea.getBounds();
+
+        const startButtonRect = new PIXI.Rectangle(startButtonBounds.x, startButtonBounds.y, startButtonBounds.width, startButtonBounds.height);
+        const loopAreaRect = new PIXI.Rectangle(loopAreaBounds.x, loopAreaBounds.y, loopAreaBounds.width, loopAreaBounds.height);
+
+        return this.checkOverlap(startButtonRect, loopAreaRect);
+    }
+
+    private isRuleButtonInLoopArea(loopArea: PIXI.Graphics): boolean {
+        const ruleButtonBounds = this.ruleButton.getBounds();
+        const loopAreaBounds = loopArea.getBounds();
+
+        const startButtonRect = new PIXI.Rectangle(ruleButtonBounds.x, ruleButtonBounds.y, ruleButtonBounds.width, ruleButtonBounds.height);
+        const loopAreaRect = new PIXI.Rectangle(loopAreaBounds.x, loopAreaBounds.y, loopAreaBounds.width, loopAreaBounds.height);
+
+        return this.checkOverlap(startButtonRect, loopAreaRect);
+    }
+
+    private checkOverlap(rect1: PIXI.Rectangle, rect2: PIXI.Rectangle): boolean {
+        return rect1.x < rect2.x + rect2.width &&
+               rect1.x + rect1.width > rect2.x &&
+               rect1.y < rect2.y + rect2.height &&
+               rect1.y + rect1.height > rect2.y;
+    }
+
     private onStartGameSelected(): void {
-        console.log("Start Game clicked");
+        console.log("Start Game");
         // this.manager.setState(new GameplayState(this.manager));
     }
 
-    private onRuleSelected(): void {
-        console.log("Rules clicked");
-        console.log(this.manager.app.stage);
-        this.manager.app.stage.updateTick;
+    private onRuleSelected(): void {        
+        console.log("Rule");
         // this.manager.setState(new RulesState(this.manager));
     }
 
