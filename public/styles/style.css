@@ -8,11 +8,21 @@ a {
   color: #00B7FF;
 }
 #app {
-  background-color: #ffffff;
+  /* background-color: #ffffff;
   width: 700px;
-  height: 500px;
-  cursor: url(/public/assets/pencil.png) 0 18,auto;
+  height: 500px; */
+  cursor: url(/assets/pencil.png) 0 18,auto;
 }
 .icon-font{
   font-size:20px;
+}
+
+#loading {
+  width: 700px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
 }

@@ -10,6 +10,8 @@
   "keywords": [],
   "author": "",
   "dependencies": {
+    "@pixi/interaction": "^6.5.10",
+    "pixi-webfont-loader": "^1.0.3",
     "pixi.js": "^8.4.1"
   },
   "devDependencies": {
