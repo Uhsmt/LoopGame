@@ -7,24 +7,35 @@ export class LineDrawer extends EventEmitter{
     private startPoint: PIXI.Point | null = null;
     private segments: { start: PIXI.Point, end: PIXI.Point, graphics: PIXI.Graphics }[] = [];
     private lineDrawTime: number = 1000;
+    private lineColor: number = 0xffffff;
+    pointerMoveHandler: any;
 
-    constructor(app: PIXI.Application) {
+    constructor(app: PIXI.Application, color: number = 0xffffff) {
         super();
         this.app = app;
+        this.lineColor = color;
         this.graphics = new PIXI.Graphics();
         this.app.stage.addChild(this.graphics);
         this.setupInteraction();
     }
 
     cleanup() {
-        this.app.stage.removeChild(this.graphics);
-        this.graphics.destroy();
-    }
+        // イベントリスナーを削除
+        if (this.pointerMoveHandler) {
+            this.app.stage.removeEventListener('pointermove', this.pointerMoveHandler);
+        }
+        if (this.graphics) {
+            this.graphics.destroy();
+            this.app.stage.removeChild(this.graphics);
+        }
+        this.startPoint = null;
+    }    
 
     private setupInteraction(): void {
-        this.app.stage.addEventListener('pointermove', (e) => {
-            this.onPointerMove(e.global.x, e.global.y);
-        });
+        this.pointerMoveHandler = (e: { data: { global: { x: number; y: number; }; }; }) => {
+            this.onPointerMove(e.data.global.x, e.data.global.y);
+        };
+        this.app.stage.addEventListener('pointermove', this.pointerMoveHandler);    
     }
 
     private onPointerMove(x: number, y: number): void {
@@ -37,7 +48,7 @@ export class LineDrawer extends EventEmitter{
             const endPoint = new PIXI.Point(x, y);
             const segment = new PIXI.Graphics();
             segment.moveTo(this.startPoint.x, this.startPoint.y);
-            segment.lineTo(endPoint.x, endPoint.y).stroke({ width: 1, color: 0xffffff });
+            segment.lineTo(endPoint.x, endPoint.y).stroke({ width: 2, color: this.lineColor });
             this.app.stage.addChild(segment);
             this.segments.push({ start: this.startPoint, end: endPoint, graphics: segment });
 
@@ -128,7 +139,9 @@ export class LineDrawer extends EventEmitter{
             segment.graphics.destroy();
         }
         this.segments = [];
-        this.graphics.clear();
+        if (this.graphics){
+            this.graphics.clear();
+        }
         this.startPoint = null;
     }
 }

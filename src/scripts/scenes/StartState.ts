@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { GameStateManager } from "./GameStateManager";
 import { LineDrawer } from '../components/LineDrawer';
+import { GameplayState } from './GameplayState';
 
 export class StartState {
     private manager: GameStateManager;
@@ -15,7 +16,7 @@ export class StartState {
         this.manager.app.stage.addChild(this.container);
     }
 
-    onEnter(): void {
+    onEnter(): void {        
         console.log("Entered Start State");
         
         if (!this.manager || !this.manager.app) {
@@ -57,7 +58,7 @@ export class StartState {
             text: name,
             style: {
                 fill: '#ffffff',
-                fontSize: 24,
+                fontSize: 40,
                 fontFamily: "Arial",
             },
         });
@@ -109,7 +110,7 @@ export class StartState {
 
     private onStartGameSelected(): void {
         console.log("Start Game");
-        // this.manager.setState(new GameplayState(this.manager));
+        this.manager.setState(new GameplayState(this.manager));
     }
 
     private onRuleSelected(): void {        
@@ -119,9 +120,15 @@ export class StartState {
 
     onExit(): void {
         // Exit logic if any
-        console.log("Exiting Start State");
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
-        this.lineDrawer.cleanup();
+
+        if (this.lineDrawer) {
+            // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
+            this.manager.app.ticker.addOnce(() => {
+                this.lineDrawer.cleanup();
+                this.lineDrawer = null; // 破棄
+            });
+        }
     }
 }
