@@ -2,13 +2,17 @@ import * as PIXI from 'pixi.js';
 import { GameStateManager } from "./GameStateManager";
 import { LineDrawer } from '../components/LineDrawer';
 import { GameplayState } from './GameplayState';
+import { Butterfly } from '../components/Butterfly';
+import { myConsts } from '../utils/const';
 
 export class StartState {
     private manager: GameStateManager;
     private container: PIXI.Container;
     private lineDrawer: LineDrawer;
-    private startButton: PIXI.BitmapText
-    private ruleButton: PIXI.BitmapText
+    private startButton: PIXI.BitmapText;
+    private ruleButton: PIXI.BitmapText;
+    butterflies: Butterfly[] = [];
+
 
     constructor(manager: GameStateManager) {
         this.manager = manager;
@@ -43,10 +47,38 @@ export class StartState {
         this.container.addChild(backgroundSprite);
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
+
+        this.debug();
+    }
+
+    // TODO デバッグ終わったら消す
+    debug(): void {
+
+        const butterfly1 = new Butterfly('small', myConsts.COLOR_LIST[0], myConsts.COLOR_LIST[1]);
+        const butterfly2 = new Butterfly('medium', myConsts.COLOR_LIST[2], myConsts.COLOR_LIST[3]);
+        const butterfly3 = new Butterfly('large', myConsts.COLOR_LIST[4], myConsts.COLOR_LIST[3]);
+        
+        butterfly1.x = 100;
+        butterfly1.y = 100;
+        butterfly2.x = 200;
+        butterfly2.y = 200;
+        butterfly3.x = 300;
+        butterfly3.y = 300;
+        
+        this.butterflies.push(butterfly1);
+        this.butterflies.push(butterfly2);
+        this.butterflies.push(butterfly3);
+
+        this.container.addChild(...this.butterflies);
     }
 
     update(delta: number): void {
         // Start Stateでは特にアップデートするロジックは不要
+        // TODO debug終わったら消す
+        this.butterflies.forEach(butterfly => {
+            butterfly.update(delta, this.manager.app.screen.width, this.manager.app.screen.height);
+        });
+
     }
 
     render(): void {
@@ -74,6 +106,11 @@ export class StartState {
 
     // LineDrawerのループエリアが完成したときのハンドラ
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
+        // TODO あとでけす
+        this.butterflies.forEach(butterfly => {
+            butterfly.switchColor();
+        });
+
         if(this.isRuleButtonInLoopArea(loopArea)){
             this.onRuleSelected();
         }else if (this.isStartButtonInLoopArea(loopArea)) {

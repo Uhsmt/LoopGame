@@ -11,7 +11,7 @@ export class GameplayState {
     private message: PIXI.BitmapText;
     private lineDrawer: LineDrawer;
     private sun: Sun;
-    private gameTimer: number = 15;
+    private gameTimer: number = 60;
     private elapsedTime: number = 0;
 
     constructor(manager: GameStateManager) {
@@ -20,11 +20,7 @@ export class GameplayState {
         this.manager.app.stage.addChild(this.container);
         this.lineDrawer = new LineDrawer(this.manager.app, 0x000000);
         this.lineDrawer.on('loopAreaCompleted', this.handleLoopAreaCompleted.bind(this));        
-        this.sun = new Sun();
-        this.container.addChild(this.sun);
-    }
 
-    onEnter(): void {
         const app = this.manager.app;
 
         // background
@@ -36,6 +32,12 @@ export class GameplayState {
         backgroundSprite.y = app.screen.height;
         this.container.addChild(backgroundSprite);
 
+        // SUN
+        this.sun = new Sun();
+        this.container.addChild(this.sun);
+    }
+
+    onEnter(): void {
         this.displayStartMessage();
         setTimeout(() => {
             this.container.removeChild(this.message);
@@ -45,12 +47,16 @@ export class GameplayState {
 
     update(delta: number): void {
         this.elapsedTime += delta;
-        // this.moveSun(delta);
+        this.moveSun(delta);
+
+        // 残り10秒を切ったらblinkさせる
+        if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
+            this.sun.blink();
+        }
 
         if (this.elapsedTime >= this.gameTimer * 1000) {
             this.endGame();
         }
-        // console.log(parseInt(this.elapsedTime.toString()));
     }
 
     private moveSun(delta: number): void {
@@ -58,7 +64,7 @@ export class GameplayState {
         const startX = 0;
         const endX = this.manager.app.renderer.width;
         const startY = this.manager.app.renderer.height;
-        const peakY = 100; // 画面上端からどれだけ下か
+        const peakY = this.manager.app.renderer.height * 0.8;
         const t = this.elapsedTime / totalTime;
         const x = startX + t * (endX - startX);
         const y = startY - (4 * peakY * t * (1 - t));
@@ -84,8 +90,8 @@ export class GameplayState {
 
     onExit(): void {
         console.log('Gameplay State Exit');
-        this.manager.app.stage.removeChild(this.container);
-        this.container.destroy();
+        // this.manager.app.stage.removeChild(this.container);
+        // this.container.destroy();
     }
 
     render(): void {
