@@ -1,27 +1,25 @@
 {
   "name": "loop",
   "version": "1.0.0",
-  "description": "",
+  "description": "browser game 'loop'",
+  "main": "webpack.config.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack serve --config webpack.config.js",
-    "build": "webpack --config webpack.config.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Uhsmt/LoopGame.git"
   },
   "keywords": [],
   "author": "",
-  "dependencies": {
-    "@pixi/interaction": "^6.5.10",
-    "pixi-webfont-loader": "^1.0.3",
-    "pixi.js": "^8.4.1"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Uhsmt/LoopGame/issues"
   },
-  "devDependencies": {
+  "homepage": "https://github.com/Uhsmt/LoopGame#readme",
+  "dependencies": {
+    "@types/node": "^22.5.5",
     "@types/pixi.js": "^5.0.0",
-    "file-loader": "^6.2.0",
-    "html-webpack-plugin": "^5.6.0",
-    "ts-loader": "^9.5.1",
-    "typescript": "^5.6.2",
-    "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.11.1"
+    "typescript": "^5.6.2"
   }
 }
