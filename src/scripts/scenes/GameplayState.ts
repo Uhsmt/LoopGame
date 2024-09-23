@@ -60,10 +60,10 @@ export class GameplayState {
         this.pointerDownHandler = () => {
             this.isRunning = !this.isRunning;
             this.lineDrawer.clearAllSegments();
-            if (this.isRunning) {
-
-            } else {
-                this.showActionMessage('Pause');
+            if (!this.isRunning) {
+                this.showActionMessage('Pause', false);
+            }else{
+                this.hideActionmessage();
             }
         };
 
@@ -105,6 +105,7 @@ export class GameplayState {
         }
 
         if (this.elapsedTime >= this.gameTimer * 1000) {
+            this.showActionMessage('Time up!', false);
             this.endGame();
         }
     }
@@ -115,8 +116,8 @@ export class GameplayState {
             this.manager.app.stage.removeEventListener('pointerdown', this.pointerDownHandler);
         }
         console.log('Gameplay State Exit. Score: '+ this.stageScore);
-        // this.manager.app.stage.removeChild(this.container);
-        // this.container.destroy();
+        this.manager.app.stage.removeChild(this.container);
+        this.container.destroy();
         if (this.lineDrawer) {
             // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
             this.manager.app.ticker.addOnce(() => {
@@ -169,10 +170,13 @@ export class GameplayState {
     }
 
     private endGame(): void {
-        this.butterflies.forEach(butterfly => {
-            butterfly.destroy();
-        });
-        this.manager.setState(new ResultState(this.manager));
+        // ２秒まつ
+        setTimeout(() => {
+            this.butterflies.forEach(butterfly => {
+                butterfly.destroy();
+            });
+            this.manager.setState(new ResultState(this.manager));
+        }, 2000);
     }
 
     private displayStartMessage(): void {
@@ -189,7 +193,7 @@ export class GameplayState {
         this.container.addChild(this.scoreMessage);
     }
 
-    private showActionMessage(message: string): void {
+    private showActionMessage(message: string, isFadeOut:boolean = true): void {
         if(this.actionMessage){
             this.actionMessage.alpha = 1;
             this.actionMessage.text = message;
@@ -200,9 +204,15 @@ export class GameplayState {
             this.actionMessage.y = this.manager.app.renderer.height / 2;
             this.container.addChild(this.actionMessage);    
         }
-        setTimeout(() => {
-            this.actionMessage.alpha = 0;
-        }, 3000);
+        if(isFadeOut){
+            setTimeout(() => {
+                this.hideActionmessage();
+            }, 1500);
+        }
+    }
+
+    private hideActionmessage(){
+        this.actionMessage.alpha = 0;
     }
 
     private updateScoreMessage(): void { 
@@ -256,10 +266,11 @@ export class GameplayState {
     private captureButterflies(butterflies: Butterfly[]): void {
         this.caputuredButterflies.push(...butterflies);
         this.updateScoreMessage();
+
         // score加算 全部同じ色の場合は蝶の数×10　それ以外は蝶の数×20
         const point = butterflies.length * (butterflies.every(b => b.color === butterflies[0].color) ? 10 : 20);
         this.stageScore += point
-        this.showActionMessage(`Loop! ${point} point`);
+        this.showActionMessage(`Loop! \r\n ${point} point`);
 
         butterflies.forEach(butterfly => {
             // butterfliesから同じやつを削除
@@ -269,6 +280,7 @@ export class GameplayState {
             butterfly.destroy();
         });
         if (this.caputuredButterflies.length >= this.needCount) {
+            this.showActionMessage('Stage Clear!', true);
             this.endGame();
         }else{
             // 捕まえた分だけ新しく蝶々を補充
@@ -283,6 +295,6 @@ export class GameplayState {
 
     private badLoop(): void {
         this.stageScore -= 20;
-        this.showActionMessage('Bad Loop! -20 point');
+        this.showActionMessage('Bad Loop! \r\n -20 point');
     }
 }

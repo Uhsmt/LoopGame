@@ -29,24 +29,26 @@ static check :
 
 ## TODO
 ### phase 1
-- [ ] stage start画面 animation
-- [ ] stage score画面
+- [ ] start menu
+- [ ] game stage
 - [ ] stage2~3
-- [ ] menu_stage animation
+
 - [ ] game over
 - [ ] game finish
 - [ ] soundセット
-- [ ] 猫ちゃんスプライトを作る
- - [ ]ノーマル
- - [ ]登場モーション
- - [ ]居眠りモーション
- - [ ]負けモーション
 - [ ] server upload
+- [ ] BitmapText font
+- [ ] 蝶々の属性作りこみ
 
 
 ### optional
 - [ ] loop判定エリアの拡大
 - [ ] メッセージの日本語/英語対応
+- [ ] 猫ちゃんスプライトを作る
+ - [ ]ノーマル
+ - [ ]登場モーション
+ - [ ]居眠りモーション
+ - [ ]負けモーション
 
 
 ### phase2
