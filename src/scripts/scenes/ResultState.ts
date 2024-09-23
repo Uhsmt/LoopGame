@@ -104,8 +104,8 @@ export class ResultState{
 
     private async displayStageResult(): Promise<void> {
         const topMsg = new Message(this.stageInfo.isClear ? `Level ${this.stageInfo.level} clear!!` : 'Game Over', 30);
-        const conditionMsg = new Message(`Need : ${this.stageInfo.needCount} `, 20);
-        const countMsg = new Message(`Got : ${this.stageInfo.captureCount} `, 20);
+        const conditionMsg = new Message(`Need :         × ${this.stageInfo.needCount} `, 20);
+        const countMsg = new Message(`Got :         × ${this.stageInfo.captureCount} `, 20);
         const lineMsg = new Message('----', 30);
         const baseScoreMsg = new Message(`base score : ${this.stageInfo.stagePoint}`, 20);
         const bonusMsg = new Message(`bonus score : ${this.stageInfo.bonusCount} × 100 = ${this.stageInfo.bonusPoint}`, 20);
@@ -128,7 +128,7 @@ export class ResultState{
         for(let i = 0; i < 2; i++){
             const butterfly = new Butterfly('small', this.stageInfo.butterflyColors[i]);
             butterfly.y = 100 + (this.manager.app.screen.height * 0.08 * (i+1));
-            butterfly.x = (this.manager.app.screen.width / 2 ) + 80;
+            butterfly.x = (this.manager.app.screen.width / 2 ) + 10;
             this.container.addChild(butterfly);
             this.messageButterflies.push(butterfly);
         }
