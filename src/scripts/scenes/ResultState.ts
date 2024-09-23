@@ -85,6 +85,8 @@ export class ResultState{
         if (this.stageInfo.isClear) {
             this.manager.setState(new GameplayState(this.manager, nextStageInfo ));
         }else{
+            // ゲームオーバーの場合はスタート画面に戻る
+            // TODO ゲームオーバー後の再スタート時の挙動がおかしい
             const manager = new GameStateManager(this.manager.app);
             const startState = new StartState(manager);
             this.manager.setState(startState);

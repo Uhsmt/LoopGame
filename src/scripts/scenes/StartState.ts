@@ -174,11 +174,6 @@ export class StartState {
 
     private onRuleSelected(): void {        
         //　TODO　RULEの実装
-        console.log("Rule");
-        this.butterflies.forEach(butterfly => {
-            butterfly.stopFly();
-        });
-
         // this.manager.setState(new RulesState(this.manager));
     }
 
