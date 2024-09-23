@@ -5,8 +5,9 @@ import { LineDrawer } from '../components/LineDrawer';
 import { Sun } from '../components/Sun';
 import { ResultState } from './ResultState';
 import { Butterfly } from '../components/Butterfly';
-import * as Utility from '../utils/utility';
-import { myConsts } from '../utils/const';
+import * as Utility from '../utils/Utility';
+import { myConsts } from '../utils/Const';
+import { StageInformation } from '../components/StageInformation';
 
 export class GameplayState {
     private manager: GameStateManager;
@@ -17,25 +18,24 @@ export class GameplayState {
     private lineDrawer: LineDrawer;
     private sun: Sun;
     private isRunning = true;
+    private isFinish = false;
     private gameTimer: number = 60;
     private elapsedTime: number = 0;
-    private stageScore = 0;
+    private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
-    private readonly butterflyCount = 10;
-    private needCount = 10; // TODO ステージによって変わる
-    //Butterfly TODO ステージによって蝶の条件が変わる
-    private readonly butterflyColors = Utility.chooseAtRandom(myConsts.COLOR_LIST,2);
-    private readonly butterflySize = 'large';
+    // private readonly butterflyCount = 10;
     pointerDownHandler: any;
+    stageInfo: StageInformation;
 
-    constructor(manager: GameStateManager) {
+    constructor(manager: GameStateManager, stageInfo: StageInformation) {
         this.manager = manager;
         this.container = new PIXI.Container();
         this.manager.app.stage.addChild(this.container);
         this.lineDrawer = new LineDrawer(this.manager.app, 0x000000);
         this.lineDrawer.on('loopAreaCompleted', this.handleLoopAreaCompleted.bind(this));        
 
+        this.stageInfo = stageInfo;
         const app = this.manager.app;
 
         // background
@@ -51,8 +51,8 @@ export class GameplayState {
         this.sun = new Sun();
         this.container.addChild(this.sun);
 
-        for (let i = 0; i < this.butterflyCount; i++) {
-            const butterfly = new Butterfly(this.butterflySize, Utility.chooseAtRandom(this.butterflyColors,1)[0]);
+        for (let i = 0; i < this.stageInfo.stageButterflyCount; i++) {
+            const butterfly = new Butterfly(this.stageInfo.butterflySize, Utility.chooseAtRandom(this.stageInfo.butterflyColors,1)[0]);
             this.butterflies.push(butterfly);
         }
 
@@ -77,7 +77,7 @@ export class GameplayState {
 
         this.butterflies.forEach(butterfly => {
             this.container.addChild(butterfly);            
-            this.setInitialPositionRandom(butterfly);
+            butterfly.setRandomInitialPoistion(this.manager.app.screen.width, this.manager.app.screen.height);
         });
 
         setTimeout(() => {
@@ -115,7 +115,7 @@ export class GameplayState {
         if (this.pointerDownHandler) {
             this.manager.app.stage.removeEventListener('pointerdown', this.pointerDownHandler);
         }
-        console.log('Gameplay State Exit. Score: '+ this.stageScore);
+        console.log('Gameplay State Exit. Score: '+ this.stagePoint);
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
         if (this.lineDrawer) {
@@ -144,50 +144,32 @@ export class GameplayState {
         this.sun.position.set(x, y);
     }
 
-    private setInitialPositionRandom(butterfly: Butterfly): void {
-        const positions = ['top', 'bottom', 'left', 'right'];
-        const position = Utility.chooseAtRandom(positions, 1)[0];
-        let x, y;
-        switch (position) {
-            case 'top':
-                x = Utility.random(0, this.manager.app.screen.width);
-                y = 0 - butterfly.height;
-                break;
-            case 'bottom':
-                x = Utility.random(0, this.manager.app.screen.width);
-                y = this.manager.app.screen.height + butterfly.height;
-                break;
-            case 'left':
-                x = 0 - butterfly.width;
-                y = Utility.random(0, this.manager.app.screen.height);
-                break;
-            case 'right':
-                x = this.manager.app.screen.width + butterfly.width;
-                y = Utility.random(0, this.manager.app.screen.height);
-                break;
-        }
-        butterfly.position.set(x, y);
-    }
-
     private endGame(): void {
-        // ２秒まつ
+        this.isRunning = false;
+        this.isFinish = true;
+        this.stageInfo.stagePoint = this.stagePoint;
+        this.stageInfo.captureCount = this.caputuredButterflies.length;
+        this.stageInfo.calcScore();
+
+        this.butterflies.forEach(butterfly => {
+            butterfly.stop();
+            butterfly.stopFlap();
+            butterfly.delete();
+        });
         setTimeout(() => {
-            this.butterflies.forEach(butterfly => {
-                butterfly.destroy();
-            });
-            this.manager.setState(new ResultState(this.manager));
-        }, 2000);
+            this.manager.setState(new ResultState(this.manager,this.stageInfo));
+        }, 3000);
     }
 
     private displayStartMessage(): void {
-        this.startMessage = new PIXI.BitmapText({text:`Catch ${this.needCount} butterflies!`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
+        this.startMessage = new PIXI.BitmapText({text:`Catch ${this.stageInfo.needCount} butterflies!`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
         this.startMessage.x = this.manager.app.renderer.width / 2 - this.startMessage.width / 2;
-        this.startMessage.y = 50;
+        this.startMessage.y = 100;
         this.container.addChild(this.startMessage);
     }
 
     private displayScoreMessage(): void {
-        this.scoreMessage = new PIXI.BitmapText({text:`0 / ${this.needCount}`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
+        this.scoreMessage = new PIXI.BitmapText({text:`0 / ${this.stageInfo.needCount}`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
         this.scoreMessage.x = this.manager.app.renderer.width / 2 - this.scoreMessage.width / 2;
         this.scoreMessage.y = this.manager.app.renderer.height - 50;
         this.container.addChild(this.scoreMessage);
@@ -216,12 +198,12 @@ export class GameplayState {
     }
 
     private updateScoreMessage(): void { 
-        this.scoreMessage.text = `${this.caputuredButterflies.length} / ${this.needCount}`;
+        this.scoreMessage.text = `${this.caputuredButterflies.length} / ${this.stageInfo.needCount}`;
     }
 
     // ループエリアが完成したときの処理
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics): void {
-        if (!this.isRunning) return;
+        if (!this.isRunning || this.isFinish ) return;
 
         // loopArea内にいる蝶を取得
         const butterfliesInLoopArea = this.butterflies.filter(butterfly => {
@@ -269,7 +251,7 @@ export class GameplayState {
 
         // score加算 全部同じ色の場合は蝶の数×10　それ以外は蝶の数×20
         const point = butterflies.length * (butterflies.every(b => b.color === butterflies[0].color) ? 10 : 20);
-        this.stageScore += point
+        this.stagePoint += point
         this.showActionMessage(`Loop! \r\n ${point} point`);
 
         butterflies.forEach(butterfly => {
@@ -277,24 +259,24 @@ export class GameplayState {
             this.butterflies = this.butterflies.filter(b => b !== butterfly);
 
             butterfly.stop();
-            butterfly.destroy();
+            butterfly.delete();
         });
-        if (this.caputuredButterflies.length >= this.needCount) {
+        if (this.caputuredButterflies.length >= this.stageInfo.needCount) {
             this.showActionMessage('Stage Clear!', true);
             this.endGame();
         }else{
             // 捕まえた分だけ新しく蝶々を補充
             for (let i = 0; i < butterflies.length; i++) {
-                const butterfly = new Butterfly(this.butterflySize, Utility.chooseAtRandom(this.butterflyColors,1)[0]);
+                const butterfly = new Butterfly(this.stageInfo.butterflySize, Utility.chooseAtRandom(this.stageInfo.butterflyColors,1)[0]);
                 this.butterflies.push(butterfly);
                 this.container.addChild(butterfly);
-                this.setInitialPositionRandom(butterfly);
+                butterfly.setRandomInitialPoistion(this.manager.app.screen.width, this.manager.app.screen.height);
             }
         }
     }
 
     private badLoop(): void {
-        this.stageScore -= 20;
+        this.stagePoint -= 20;
         this.showActionMessage('Bad Loop! \r\n -20 point');
     }
 }

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { imageSrcs } from './utils/const';
+import { imageSrcs } from './utils/Const';
 import { GameStateManager } from './scenes/GameStateManager';
 import { StartState } from './scenes/StartState';
 

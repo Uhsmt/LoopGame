@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import * as Utility from '../utils/utility';
+import * as Utility from '../utils/Utility';
 
 export class Butterfly extends PIXI.Container {
     private sprite: PIXI.Sprite;
@@ -11,6 +11,7 @@ export class Butterfly extends PIXI.Container {
     private flappingProgress:number = 0;
     private flappingSpeed = 0.01;
     private isFlying = true;
+    private isFlapping = true;
     color: number;
     private readonly xTernFrame = Utility.random(120, 150);    
     private readonly yTernFrame = Utility.random(120, 150);
@@ -22,21 +23,21 @@ export class Butterfly extends PIXI.Container {
             case 'large':
                 this.sprite = PIXI.Sprite.from('butterfly_large');
                 this.sprite.scale.set(0.20);
-                this.xDiretion = 0.7;
-                this.yDiretion = 0.5;
+                this.xDiretion = 0.6;
+                this.yDiretion = 0.4;
                 this.flappingSpeed = 0.005;
                 break;
             case 'medium':
                 this.sprite = PIXI.Sprite.from('butterfly_medium');
-                this.sprite.scale.set(0.15);
-                this.xDiretion = 0.9;
-                this.yDiretion = 0.7;
+                this.sprite.scale.set(0.16);
+                this.xDiretion = 0.75;
+                this.yDiretion = 0.6;
                 break;
             default:
                 this.sprite = PIXI.Sprite.from('butterfly_small');
-                this.sprite.scale.set(0.10);
-                this.xDiretion = 1.1;
-                this.yDiretion = 0.9;
+                this.sprite.scale.set(0.13);
+                this.xDiretion = 0.9;
+                this.yDiretion = 0.8;
                 break;
         }
         this.sprite.tint = color;
@@ -99,6 +100,8 @@ export class Butterfly extends PIXI.Container {
     }
 
     flap(): void {
+        if (!this.isFlapping) return;
+
         if (this.flappingProgress === 100){
             this.flappingProgress = 0;
             return;
@@ -115,26 +118,57 @@ export class Butterfly extends PIXI.Container {
         this.flappingProgress += 2;
     }
 
+    stopFlap(){
+        this.isFlapping = false;
+    }
+
+    stopFly(){
+        this.isFlying = false;
+    }
+
     switchColor(): void {
-        console.log("switchColor");
         if (!this.elipse) return;
         const mainColor:number = this.sprite.tint;
         const subColor:number = this.elipse.tint;
         
-        console.log(mainColor, subColor);
         this.sprite.tint = subColor;
         this.elipse.tint = mainColor;
         this.color = subColor;
     }
 
+    setRandomInitialPoistion(screenWidth: number, screenHeight: number): void {
+        const positions = ['top', 'bottom', 'left', 'right'];
+        const position = Utility.chooseAtRandom(positions, 1)[0];
+        let x, y;
+        switch (position) {
+            case 'top':
+                x = Utility.random(0, screenWidth);
+                y = 0 - this.height;
+                break;
+            case 'bottom':
+                x = Utility.random(0, screenWidth);
+                y = screenHeight + this.height;
+                break;
+            case 'left':
+                x = 0 - this.width;
+                y = Utility.random(0, screenHeight);
+                break;
+            case 'right':
+                x = screenWidth + this.width;
+                y = Utility.random(0, screenHeight);
+                break;
+        }
+        this.position.set(x, y);
+    }
+
+
     delete(): void {
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
             if (this.alpha > 0) {
-                this.alpha -= 0.01;
+                this.alpha -= 0.1;
                 requestAnimationFrame(fadeOut);
             } else {
-                console.log("destroy");
                 this.destroy();
                 this.removeFromParent();
             }

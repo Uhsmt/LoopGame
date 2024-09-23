@@ -2,8 +2,10 @@ import * as PIXI from 'pixi.js';
 import { GameStateManager } from "./GameStateManager";
 import { LineDrawer } from '../components/LineDrawer';
 import { GameplayState } from './GameplayState';
+import * as Utility from '../utils/Utility';
 import { Butterfly } from '../components/Butterfly';
-import { myConsts } from '../utils/const';
+import { myConsts } from '../utils/Const';
+import { StageInformation } from '../components/StageInformation';
 
 export class StartState {
     private manager: GameStateManager;
@@ -40,13 +42,24 @@ export class StartState {
         backgroundSprite.x = 0;
         backgroundSprite.scale = app.screen.width / backgroundSprite.width;
         backgroundSprite.y = app.screen.height;
+        this.container.addChild(backgroundSprite);
+
+        // title
+        const titleSprite = new PIXI.Sprite(PIXI.Texture.from('title'));
+        titleSprite.anchor.set(0.5);
+        titleSprite.x = app.screen.width / 2;
+        titleSprite.y = app.screen.height / 3;
+        titleSprite.scale.set(0.8);
+        this.container.addChild(titleSprite);
 
         // ボタン
-        this.startButton = this.button('Start', app.screen.width / 4 - 50, app.screen.height / 2);
-        this.ruleButton= this.button('Rules', app.screen.width * 3 / 4 - 50, app.screen.height / 2);
-        this.container.addChild(backgroundSprite);
+        this.startButton = this.button('Start', app.screen.width / 4 - 50, app.screen.height * 3 / 5);
+        this.ruleButton= this.button('Rules', app.screen.width * 3 / 4 - 50, app.screen.height * 3 / 5);
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
+
+        // 適当に蝶を飛ばす
+        this.dispButterfly();
 
         // this.debug();
     }
@@ -72,8 +85,22 @@ export class StartState {
         this.container.addChild(...this.butterflies);
     }
 
+    dispButterfly(){
+        myConsts.COLOR_LIST.forEach(color => {
+            const size = Utility.chooseAtRandom(['small', 'medium', 'large'], 1)[0];
+            const butterfly = new Butterfly(size, color);
+            butterfly.setRandomInitialPoistion(this.manager.app.screen.width, this.manager.app.screen.height);
+            this.butterflies.push(butterfly);
+        });
+        this.container.addChild(...this.butterflies);
+    }
+
+
     update(delta: number): void {
-        // Start Stateでは特にアップデートするロジックは不要
+        this.butterflies.forEach(butterfly => {
+            butterfly.flap();
+            butterfly.fly(this.manager.app.screen.width, this.manager.app.screen.height);
+        });
     }
 
     render(): void {
@@ -137,11 +164,21 @@ export class StartState {
 
     private onStartGameSelected(): void {
         console.log("Start Game");
-        this.manager.setState(new GameplayState(this.manager));
+        // Level1 ステージの設定
+        const butterflyColors = Utility.chooseAtRandom(myConsts.COLOR_LIST,2);
+        const needCount = 10;
+        const stageInfo1 = new StageInformation(1, butterflyColors, needCount, 10, 'large', false);
+
+        this.manager.setState(new GameplayState(this.manager, stageInfo1));
     }
 
     private onRuleSelected(): void {        
+        //　TODO　RULEの実装
         console.log("Rule");
+        this.butterflies.forEach(butterfly => {
+            butterfly.stopFly();
+        });
+
         // this.manager.setState(new RulesState(this.manager));
     }
 
