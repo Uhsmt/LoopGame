@@ -25,19 +25,21 @@ export class Butterfly extends PIXI.Container {
                 this.sprite.scale.set(0.20);
                 this.xDiretion = 0.6;
                 this.yDiretion = 0.4;
-                this.flappingSpeed = 0.005;
+                this.flappingSpeed = Utility.random(8, 10) / 1000;
                 break;
             case 'medium':
                 this.sprite = PIXI.Sprite.from('butterfly_medium');
                 this.sprite.scale.set(0.16);
                 this.xDiretion = 0.75;
                 this.yDiretion = 0.6;
+                this.flappingSpeed = Utility.random(12, 15) / 1000;
                 break;
             default:
                 this.sprite = PIXI.Sprite.from('butterfly_small');
                 this.sprite.scale.set(0.13);
                 this.xDiretion = 0.9;
                 this.yDiretion = 0.8;
+                this.flappingSpeed = Utility.random(13, 17) / 1000;
                 break;
         }
         this.sprite.tint = color;
@@ -58,6 +60,9 @@ export class Butterfly extends PIXI.Container {
         // for animation
         this.xFrame = Utility.random(1, 120);
         this.yFrame = Utility.random(1, 120);
+
+        // Set the pivot to the center
+        this.pivot.set(this.width / 2, this.height / 2);
     }
 
     fly(screenWidth: number, screenHeight: number){
@@ -102,20 +107,20 @@ export class Butterfly extends PIXI.Container {
     flap(): void {
         if (!this.isFlapping) return;
 
-        if (this.flappingProgress === 100){
-            this.flappingProgress = 0;
-            return;
+        // Calculate the scale based on flappingProgress
+        let scale = 1;
+        if (this.flappingProgress < 50) {
+            scale = 1 - (this.flappingProgress / 100);
+        } else {
+            scale = (this.flappingProgress / 100);
         }
-        let diff = 0;
+        this.scale.x = this.scale.y * scale;
 
-        if (this.flappingProgress < 50){
-            diff = this.flappingProgress * (this.flappingSpeed * -1);
-        }else{
-            diff = (100 - this.flappingProgress) * (this.flappingSpeed * -1);
+        // Update flappingProgress
+        this.flappingProgress += this.flappingSpeed * 100;
+        if (this.flappingProgress >= 100) {
+            this.flappingProgress = 0;
         }
-        this.scale.x = (1 + diff) * this.scale.x;
-        this.scale.x = (1 + diff) * this.scale.y;
-        this.flappingProgress += 2;
     }
 
     stopFlap(){
@@ -166,7 +171,7 @@ export class Butterfly extends PIXI.Container {
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
             if (this.alpha > 0) {
-                this.alpha -= 0.1;
+                this.alpha -= 0.05;
                 requestAnimationFrame(fadeOut);
             } else {
                 this.destroy();

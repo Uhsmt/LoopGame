@@ -62,6 +62,12 @@ export class ResultState{
             this.container.removeChild(msg);
             msg.destroy();
         });
+        //　蝶も消す
+        this.messageButterflies.forEach(butterfly => {
+            this.container.removeChild(butterfly);
+            butterfly.delete();
+        });
+        this.messageButterflies = [];
 
         const messageText = this.stageInfo.isClear ? `Next: Level ${nextStageInfo.level}`: 'Game Over';
         const nextMessage = new Message(messageText, 40);        
@@ -76,11 +82,6 @@ export class ResultState{
             resolve(null);
         }, 2000));
         
-        this.messageButterflies.forEach(butterfly => {
-            this.container.removeChild(butterfly);
-            butterfly.destroy();
-        });
-
         if (this.stageInfo.isClear) {
             this.manager.setState(new GameplayState(this.manager, nextStageInfo ));
         }else{
@@ -91,11 +92,6 @@ export class ResultState{
     }
     
     update(delta: number): void {
-        if(this.messageButterflies.length > 0){
-            this.messageButterflies.forEach(butterfly => {
-                butterfly.flap();
-            });
-        }
     }
 
     render(): void {
@@ -131,8 +127,8 @@ export class ResultState{
         // 2匹の蝶々を表示
         for(let i = 0; i < 2; i++){
             const butterfly = new Butterfly('small', this.stageInfo.butterflyColors[i]);
-            butterfly.y = 100 + (this.manager.app.screen.height * 0.08 * (i+1)) - butterfly.height/2;
-            butterfly.x = (this.manager.app.screen.width / 2 ) + 60;
+            butterfly.y = 100 + (this.manager.app.screen.height * 0.08 * (i+1));
+            butterfly.x = (this.manager.app.screen.width / 2 ) + 80;
             this.container.addChild(butterfly);
             this.messageButterflies.push(butterfly);
         }
