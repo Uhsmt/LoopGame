@@ -1,6 +1,6 @@
 # loop
 browser game 'loop'
-
+https://uhsmt.github.io/LoopGame/
 
 
 ## development memo
