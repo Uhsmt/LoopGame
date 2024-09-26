@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin'); // CopyWebpackPluginをインポート
 
 const isProduction = process.env.NODE_ENV === 'production';
 const publicPath = isProduction ? '/LoopGame/' : '/';
@@ -23,7 +24,7 @@ module.exports = {
         test: /\.(png|jpg|jpeg|gif)$/i,
         type: 'asset/resource',
         generator: {
-          filename: 'assets/[name][ext]'
+          filename: 'assets/[name][ext]'  // 画像ファイルをassetsフォルダに出力
         },
       },
       {
@@ -38,6 +39,12 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './index.html'
+    }),
+    new CopyPlugin({
+      patterns: [
+        { from: 'public/assets', to: 'assets' },  // public/assets ディレクトリの内容を dist/assets にコピー
+        { from: 'public/styles', to: 'styles' }  // public/styles ディレクトリの内容を dist/styles にコピー
+      ]
     })
   ],
   devServer: {
