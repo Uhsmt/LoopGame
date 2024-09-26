@@ -1,49 +1,51 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+const isProduction = process.env.NODE_ENV === 'production';
+const publicPath = isProduction ? '/LoopGame/' : '/';
+
 module.exports = {
-  mode: 'development',  // 開発用は 'development', 本番用は 'production'
-  entry: './src/scripts/game.ts',  // TypeScript のエントリファイル
+  mode: isProduction ? 'production' : 'development',
+  entry: './src/scripts/game.ts',
   output: {
-    filename: 'bundle.js',  // 出力ファイル名
-    path: path.resolve(__dirname, 'dist'),  // 出力ファイルのディレクトリ
-    publicPath: '/',  // 公開パス
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js',
+    publicPath: publicPath
   },
   module: {
     rules: [
       {
-        test: /\.ts$/,  // .ts ファイルに適用
+        test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/,
       },
       {
-        test: /\.(png|jpe?g|gif)$/i,  // 画像ファイルに適用
-        type: 'asset/resource',  // file-loaderの代わりにasset/resourceを使用
+        test: /\.(png|jpg|jpeg|gif)$/i,
+        type: 'asset/resource',
         generator: {
-          filename: 'assets/[name][ext]',  // 出力先のパスを指定
+          filename: 'assets/[name][ext]'
         },
       },
       {
         test: /\.css$/,
         use: ['style-loader', 'css-loader']
       },
-    ],
+    ]
   },
   resolve: {
-    extensions: ['.ts', '.js'],  // TypeScriptとJavaScriptの拡張子を解決
+    extensions: ['.ts', '.js']
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './index.html',  // HTMLテンプレートファイル
-      filename: 'index.html'
+      template: './index.html'
     })
   ],
   devServer: {
     static: {
-      directory: path.join(__dirname, 'public'),  // 以前のcontentBaseに相当
+      directory: path.join(__dirname, 'public'),
     },
+    historyApiFallback: true,
     compress: true,
-    port: 1234,
-    historyApiFallback: true
+    port: 1234
   }
 };
