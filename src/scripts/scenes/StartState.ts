@@ -174,6 +174,7 @@ export class StartState {
 
     private onRuleSelected(): void {        
         //　TODO　RULEの実装
+        console.log("Rule");
         // this.manager.setState(new RulesState(this.manager));
     }
 

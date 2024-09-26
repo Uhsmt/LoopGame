@@ -71,20 +71,10 @@ phase3
 
 
 # local
-npx webpack serve
+npm start
 http://localhost:1234/
 
 # build
-npx webpack
-
-# gh-pagesブランチの作成
-git checkout -b gh-pages
-
-# distフォルダの内容を追加
-git add dist -f
-
-# コミット
-git commit -m "Deploy to GitHub Pages"
-
+npm run build
 # プッシュ
-git push -u origin gh-pages
+git subtree push --prefix dist origin gh-pages
