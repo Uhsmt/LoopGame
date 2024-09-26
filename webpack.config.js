@@ -54,5 +54,9 @@ module.exports = {
     historyApiFallback: true,
     compress: true,
     port: 1234
+  },
+  stats: {
+    errorDetails: true,
+    children: true  // 子情報も詳細に出力する
   }
 };
