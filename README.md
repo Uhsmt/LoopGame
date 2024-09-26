@@ -1,6 +1,6 @@
 # loop
 browser game 'loop'
-
+https://uhsmt.github.io/LoopGame/
 
 
 ## development memo
@@ -70,11 +70,21 @@ phase3
  - [ ] loop不可
 
 
-# note
-build command: 
-- npm start
-- npm build
-- http://localhost:1234/
-
-
+# local
 npx webpack serve
+http://localhost:1234/
+
+# build
+npx webpack
+
+# gh-pagesブランチの作成
+git checkout -b gh-pages
+
+# distフォルダの内容を追加
+git add dist -f
+
+# コミット
+git commit -m "Deploy to GitHub Pages"
+
+# プッシュ
+git push -u origin gh-pages
