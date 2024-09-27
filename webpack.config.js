@@ -1,7 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin'); // CopyWebpackPluginをインポート
-
+const webpack = require('webpack'); // これを追加
 const isProduction = process.env.NODE_ENV === 'production';
 const publicPath = isProduction ? '/LoopGame/' : '/';
 
@@ -29,7 +29,21 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              url: (url, resourcePath) => {
+                // 本番環境の場合にBASE_URLをURLに追加
+                if (process.env.NODE_ENV === 'production') {
+                  return `${process.env.BASE_URL}/${url}`;
+                }
+                return url;
+              }
+            }
+          }
+        ]
       },
     ]
   },
@@ -45,6 +59,9 @@ module.exports = {
         { from: 'public/assets', to: 'assets' },  // public/assets ディレクトリの内容を dist/assets にコピー
         { from: 'public/styles', to: 'styles' }  // public/styles ディレクトリの内容を dist/styles にコピー
       ]
+    }),
+    new webpack.DefinePlugin({
+      BASE_URL: JSON.stringify(process.env.BASE_URL || '/')
     })
   ],
   devServer: {
