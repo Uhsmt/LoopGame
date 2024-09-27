@@ -3,30 +3,6 @@ browser game 'loop'
 https://uhsmt.github.io/LoopGame/
 
 
-## development memo
-
-first start :  
-install typescript
-`npm install`
-
-server start :  
-`npm run dev`
-
-build:
-`npm run build`
-
-access:  
-`http://localhost:3000/`
-
-server stop :  
-`Ctrl + C`
-
-
-static check :
-`npm run fix:eslint`
-`npx eslint filename (optional:--fix)`
-
-
 ## TODO
 ### phase 1
 - [ ] start menu
@@ -70,11 +46,17 @@ phase3
  - [ ] loop不可
 
 
+
+## development memo
+
+static check :
+`npm run fix:eslint`
+`npx eslint filename (optional:--fix)`
+
+
 # local
 npm start
 http://localhost:1234/
 
-# build
+# build(Not need. Github Action build and deploy automaticaly.)
 npm run build
-# プッシュ
-git subtree push --prefix dist origin gh-pages
