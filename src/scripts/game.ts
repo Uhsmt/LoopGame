@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const img = image as HTMLImageElement;
         img.src = baseUrl + img.getAttribute('src');
     });
-    console.log("base url: " + baseUrl);
 });
 
 async function setUp() {
