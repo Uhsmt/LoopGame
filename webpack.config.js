@@ -4,6 +4,7 @@ const CopyPlugin = require('copy-webpack-plugin'); // CopyWebpackPluginをイン
 const webpack = require('webpack'); // これを追加
 const isProduction = process.env.NODE_ENV === 'production';
 const publicPath = isProduction ? '/LoopGame/' : '/';
+const baseURL = isProduction ? '/LoopGame/' : '/';
 
 module.exports = {
   mode: isProduction ? 'production' : 'development',
@@ -61,7 +62,7 @@ module.exports = {
       ]
     }),
     new webpack.DefinePlugin({
-      BASE_URL: JSON.stringify(process.env.BASE_URL || '/')
+      BASE_URL: JSON.stringify(baseURL)
     })
   ],
   devServer: {

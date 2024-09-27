@@ -22,10 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const images = document.querySelectorAll('img');
     images.forEach((image) => {
         const img = image as HTMLImageElement;
-        console.log(baseUrl+img.getAttribute('src'));
         img.src = baseUrl + img.getAttribute('src');
     });
-    console.log(imageSrcs);
+    console.log("base url: " + baseUrl);
 });
 
 async function setUp() {
