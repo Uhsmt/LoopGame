@@ -164,10 +164,7 @@ export class StartState {
 
     private onStartGameSelected(): void {
         console.log("Start Game");
-        // Level1 ステージの設定
-        const butterflyColors = Utility.chooseAtRandom(myConsts.COLOR_LIST,2);
-        const needCount = 10;
-        const stageInfo1 = new StageInformation(1, butterflyColors, needCount, 10, 'large', false);
+        const stageInfo1 = new StageInformation();
 
         this.manager.setState(new GameplayState(this.manager, stageInfo1));
     }

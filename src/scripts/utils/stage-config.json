@@ -1,0 +1,50 @@
+[
+    {
+        "level": 0,
+        "butterflyColorNum": 2,
+        "needCount": 10,
+        "stageButterflyCount": 20,
+        "butterflySize": "small",
+        "isButterflyColorChange": false
+    },
+    {
+        "level": 1,
+        "butterflyColorNum": 2,
+        "needCount": 10,
+        "stageButterflyCount": 10,
+        "butterflySize": "large",
+        "isButterflyColorChange": false
+    },
+    {
+        "level": 2,
+        "butterflyColorNum": 3,
+        "needCount": 12,
+        "stageButterflyCount": 10,
+        "butterflySize": "medium",
+        "isButterflyColorChange": false
+    },
+    {
+        "level": 3,
+        "butterflyColorNum": 3,
+        "needCount": 14,
+        "stageButterflyCount": 15,
+        "butterflySize": "small",
+        "isButterflyColorChange": false
+    },
+    {
+        "level": 4,
+        "butterflyColorNum": 3,
+        "needCount": 16,
+        "stageButterflyCount": 12,
+        "butterflySize": "random",
+        "isButterflyColorChange": false
+    },
+    {
+        "level": 5,
+        "butterflyColorNum": 3,
+        "needCount": 18,
+        "stageButterflyCount": 10,
+        "butterflySize": "medium",
+        "isButterflyColorChange": true
+    }
+]

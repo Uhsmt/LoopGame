@@ -5,20 +5,16 @@ https://uhsmt.github.io/LoopGame/
 
 ## TODO
 ### phase 1
-- [ ] start menu
-- [ ] game stage
-- [ ] stage2~3
 
-- [ ] game over
-- [ ] game finish
-- [ ] soundセット
-- [ ] server upload
-- [ ] BitmapText font
 - [ ] 蝶々の属性作りこみ
+- [ ] game finish&restart
+- [ ] stage 設定ファイル
+- [ ] soundセット
+- [ ] BitmapText font
+- [ ] loop判定エリアの調整
 
 
 ### optional
-- [ ] loop判定エリアの拡大
 - [ ] メッセージの日本語/英語対応
 - [ ] 猫ちゃんスプライトを作る
  - [ ]ノーマル

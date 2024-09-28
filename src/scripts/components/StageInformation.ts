@@ -1,21 +1,14 @@
-// ステージの情報を保持するクラス。
-/**
- * level: ステージのレベル
- * butterflyColor: 出現する蝶の色
- * 
- * needCount: 必要な蝶の数
- * captureCount: 捕まえた蝶の数
- * point: 獲得したポイント
- * 
- */
+import { myConsts } from "../utils/Const";
+import * as Utility from '../utils/Utility';
+import stageConfig from '../utils/stage-config.json';
 
 export class StageInformation {
-    readonly level: number;
-    readonly butterflyColors: number[];
-    readonly butterflySize: string;
-    readonly isButterflyColorChange: boolean;
-    readonly needCount: number;
-    readonly stageButterflyCount: number;
+    level: number;
+    butterflyColors: number[];
+    butterflySize: string;
+    isButterflyColorChange: boolean;
+    needCount: number;
+    stageButterflyCount: number;
     captureCount: number = 0;
     stagePoint: number = 0;
     bonusCount: number = 0;
@@ -24,15 +17,26 @@ export class StageInformation {
     totalScore: number = 0;
     isClear: boolean = false; 
 
-    constructor(level: number, butterflyColors: number[], needCount: number, stageButterflyCount: number, butterflySize: string, isButterflyColorChange: boolean) {
-        this.level = level;
-        this.butterflyColors = butterflyColors;
-        this.needCount = needCount;
+    constructor() {
+        // level0 
+        this.setConfig(1)
         this.captureCount = 0;
         this.stagePoint = 0;
-        this.stageButterflyCount = stageButterflyCount;
-        this.butterflySize = butterflySize;
-        this.isButterflyColorChange = isButterflyColorChange;
+    }
+
+    private setConfig(level: number): void {
+        let config = stageConfig[level];
+        console.log(config)
+        if (config === undefined) {
+            // TODO : ゲームクリアにしたいけどいったんは最終ステージを繰り返す
+            config = stageConfig[stageConfig.length - 1];
+        }
+        this.level = level;
+        this.butterflyColors = Utility.chooseAtRandom(myConsts.COLOR_LIST,config.butterflyColorNum);
+        this.needCount = config.needCount;
+        this.stageButterflyCount = config.stageButterflyCount;
+        this.butterflySize = config.butterflySize;
+        this.isButterflyColorChange = config.isButterflyColorChange;
     }
 
     calcScore(): void {
@@ -47,5 +51,17 @@ export class StageInformation {
         this.bonusPoint = this.bonusCount * 100;
         this.stageTotalScore = this.stagePoint + this.bonusPoint;
         this.totalScore += this.stageTotalScore;
+    }
+
+    nextStage(): StageInformation{
+
+        const nextLevel = this.level + 1;
+
+        const nextStageInfo = new StageInformation();
+        nextStageInfo.setConfig(nextLevel);
+        nextStageInfo.totalScore = this.totalScore;
+
+        return nextStageInfo;
+      
     }
 }

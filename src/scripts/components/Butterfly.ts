@@ -19,6 +19,10 @@ export class Butterfly extends PIXI.Container {
     constructor(size: string, color: number, subColor:number = color) {
         super();
         this.color = color;
+        if (size === 'random') {
+            size = Utility.chooseAtRandom(['small', 'medium', 'large'], 1)[0];
+        }
+
         switch (size) {
             case 'large':
                 this.sprite = PIXI.Sprite.from('butterfly_large');

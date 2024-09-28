@@ -1,8 +1,6 @@
 import { StageInformation } from "../components/StageInformation";
-import { myConsts } from "../utils/Const";
 import { GameStateManager } from "./GameStateManager";
 import * as PIXI from 'pixi.js';
-import * as Utility from '../utils/Utility';
 import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
 import { Butterfly } from "../components/Butterfly";
@@ -45,12 +43,6 @@ export class ResultState{
         await this.displayStageResult();
 
         //　次のステージ情報を作成
-        // TODO ステージごとに持ってる設定ファイル作って、それ参照にしたい
-        const butterflyColors = Utility.chooseAtRandom(myConsts.COLOR_LIST,3);
-        const needCount = this.stageInfo.needCount + 3;
-        const size = Utility.chooseAtRandom(['large', 'medium', 'small'],1)[0];
-        const nextStageInfo = new StageInformation(this.stageInfo.level + 1, butterflyColors, needCount, 15, size, false);
-        nextStageInfo.totalScore = this.stageInfo.totalScore;
 
         // 5秒まつ
         await new Promise(resolve => setTimeout(() => {
@@ -68,6 +60,8 @@ export class ResultState{
             butterfly.delete();
         });
         this.messageButterflies = [];
+
+        const nextStageInfo = this.stageInfo.nextStage();
 
         const messageText = this.stageInfo.isClear ? `Next: Level ${nextStageInfo.level}`: 'Game Over';
         const nextMessage = new Message(messageText, 40);        

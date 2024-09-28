@@ -24,7 +24,6 @@ export class GameplayState {
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
-    // private readonly butterflyCount = 10;
     pointerDownHandler: any;
     stageInfo: StageInformation;
 
@@ -51,9 +50,17 @@ export class GameplayState {
         this.sun = new Sun();
         this.container.addChild(this.sun);
 
+        //　蝶々を生成
         for (let i = 0; i < this.stageInfo.stageButterflyCount; i++) {
-            const butterfly = new Butterfly(this.stageInfo.butterflySize, Utility.chooseAtRandom(this.stageInfo.butterflyColors,1)[0]);
-            this.butterflies.push(butterfly);
+            // const randomColors = Utility.chooseAtRandom(this.stageInfo.butterflyColors,2)
+            // if(this.stageInfo.isButterflyColorChange){
+            //     const butterfly = new Butterfly(this.stageInfo.butterflySize, randomColors[0],randomColors[1]);
+            //     this.butterflies.push(butterfly);
+            // }else{
+            //     const butterfly = new Butterfly(this.stageInfo.butterflySize, randomColors[0]);
+            //     this.butterflies.push(butterfly);    
+            // }
+            this.butterflies.push(this.createButterfly());
         }
 
         //　イベントリスナー：クリックしたら一時停止
@@ -128,7 +135,6 @@ export class GameplayState {
     }
 
     render(): void {
-        // レンダリングロジックはここに記述
     }
 
     private moveSun(delta: number): void {
@@ -267,7 +273,7 @@ export class GameplayState {
         }else{
             // 捕まえた分だけ新しく蝶々を補充
             for (let i = 0; i < butterflies.length; i++) {
-                const butterfly = new Butterfly(this.stageInfo.butterflySize, Utility.chooseAtRandom(this.stageInfo.butterflyColors,1)[0]);
+                const butterfly = this.createButterfly();
                 this.butterflies.push(butterfly);
                 this.container.addChild(butterfly);
                 butterfly.setRandomInitialPoistion(this.manager.app.screen.width, this.manager.app.screen.height);
@@ -278,5 +284,12 @@ export class GameplayState {
     private badLoop(): void {
         this.stagePoint -= 20;
         this.showActionMessage('Bad Loop! \r\n -20 point');
+    }
+
+    private createButterfly(): Butterfly {
+        const randomColors = Utility.chooseAtRandom(this.stageInfo.butterflyColors,2)
+        const mainColor = randomColors[0];
+        const subColor = this.stageInfo.isButterflyColorChange ? randomColors[1] : mainColor;
+        return new Butterfly(this.stageInfo.butterflySize, mainColor, subColor);
     }
 }

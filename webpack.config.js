@@ -49,7 +49,11 @@ module.exports = {
     ]
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js', 'json'],
+    fallback: {
+      "fs": false,
+      "path": false
+    }
   },
   plugins: [
     new HtmlWebpackPlugin({
