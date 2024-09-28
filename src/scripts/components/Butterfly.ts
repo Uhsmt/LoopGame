@@ -12,11 +12,12 @@ export class Butterfly extends PIXI.Container {
     private flappingSpeed = 0.01;
     private isFlying = true;
     private isFlapping = true;
+    multiplicationRate:number = 1;
     color: number;
     private readonly xTernFrame = Utility.random(120, 150);    
     private readonly yTernFrame = Utility.random(120, 150);
 
-    constructor(size: string, color: number, subColor:number = color) {
+    constructor(size: string, color: number, subColor:number, multiplicationRate: number = 1) {
         super();
         this.color = color;
         if (size === 'random') {
@@ -27,22 +28,22 @@ export class Butterfly extends PIXI.Container {
             case 'large':
                 this.sprite = PIXI.Sprite.from('butterfly_large');
                 this.sprite.scale.set(0.20);
-                this.xDiretion = 0.6;
-                this.yDiretion = 0.4;
+                this.xDiretion = 0.5;
+                this.yDiretion = 0.3;
                 this.flappingSpeed = Utility.random(8, 10) / 1000;
                 break;
             case 'medium':
                 this.sprite = PIXI.Sprite.from('butterfly_medium');
                 this.sprite.scale.set(0.16);
-                this.xDiretion = 0.75;
-                this.yDiretion = 0.6;
+                this.xDiretion = 0.7;
+                this.yDiretion = 0.5;
                 this.flappingSpeed = Utility.random(12, 15) / 1000;
                 break;
             default:
                 this.sprite = PIXI.Sprite.from('butterfly_small');
                 this.sprite.scale.set(0.13);
-                this.xDiretion = 0.9;
-                this.yDiretion = 0.8;
+                this.xDiretion = 0.8;
+                this.yDiretion = 0.7;
                 this.flappingSpeed = Utility.random(13, 17) / 1000;
                 break;
         }
@@ -59,6 +60,15 @@ export class Butterfly extends PIXI.Container {
             this.elipse = ellipse;
             this.elipse.tint = subColor;
             this.addChild(ellipse);
+        }
+
+        // for multiplications
+        this.multiplicationRate = multiplicationRate;
+        if(this.multiplicationRate >= 2){
+            const leaf = new MultipleLeaf(this.multiplicationRate)
+            leaf.x = this.sprite.width / 2;
+            leaf.y = this.sprite.height * 1.1;
+            this.addChild(leaf);
         }
 
         // for animation
@@ -171,7 +181,8 @@ export class Butterfly extends PIXI.Container {
     }
 
 
-    delete(): void {
+    async delete(): Promise<void> {
+        await setTimeout(() => {},1000);
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
             if (this.alpha > 0) {
@@ -186,5 +197,28 @@ export class Butterfly extends PIXI.Container {
     }
     stop(): void {
         this.isFlying = false;
+    }
+}
+
+class MultipleLeaf extends PIXI.Container{
+    constructor(number: number){
+        super();
+        const sprite = PIXI.Sprite.from('leaf');
+        sprite.scale.x = 0.1;
+        sprite.scale.y = 0.1;
+        sprite.anchor.set(0.5);
+        this.addChild(sprite);
+
+        const text = new PIXI.BitmapText({
+            text: `x${number}`,
+            style: {
+                fill: '#ffffff',
+                fontSize: 15,
+                fontFamily: "Arial",
+            },
+        });
+        text.anchor.set(0.5);
+        text.x = 2;
+        this.addChild(text);
     }
 }

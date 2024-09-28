@@ -41,3 +41,8 @@ export function isTrueRandom(_percentage:number):boolean
 {
     return Math.random() * 100 <= _percentage;
 }
+
+
+export function formatNumberWithCommas(x: number): string {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}

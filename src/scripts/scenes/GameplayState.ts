@@ -256,9 +256,21 @@ export class GameplayState {
         this.updateScoreMessage();
 
         // score加算 全部同じ色の場合は蝶の数×10　それ以外は蝶の数×20
-        const point = butterflies.length * (butterflies.every(b => b.color === butterflies[0].color) ? 10 : 20);
+        const basePoint = butterflies.length * (butterflies.every(b => b.color === butterflies[0].color) ? 10 : 20);
+        let point = basePoint;
+        let calculationText = "";
+        butterflies.forEach(butterfly => {
+            if(butterfly.multiplicationRate >= 2){
+                point *= butterfly.multiplicationRate;
+                calculationText += `x ${butterfly.multiplicationRate} `;
+            }
+        })
+        if(calculationText !== ""){
+            calculationText = `${basePoint} ${calculationText} = `;
+        }
+
         this.stagePoint += point
-        this.showActionMessage(`Loop! \r\n ${point} point`);
+        this.showActionMessage(`${calculationText} ${Utility.formatNumberWithCommas(point)} point`);
 
         butterflies.forEach(butterfly => {
             // butterfliesから同じやつを削除
@@ -268,7 +280,7 @@ export class GameplayState {
             butterfly.delete();
         });
         if (this.caputuredButterflies.length >= this.stageInfo.needCount) {
-            this.showActionMessage('Stage Clear!', true);
+            // this.showActionMessage('Stage Clear!', true);
             this.endGame();
         }else{
             // 捕まえた分だけ新しく蝶々を補充
@@ -290,6 +302,9 @@ export class GameplayState {
         const randomColors = Utility.chooseAtRandom(this.stageInfo.butterflyColors,2)
         const mainColor = randomColors[0];
         const subColor = this.stageInfo.isButterflyColorChange ? randomColors[1] : mainColor;
-        return new Butterfly(this.stageInfo.butterflySize, mainColor, subColor);
+        const isMultiple = Utility.isTrueRandom(this.stageInfo.muptipleButterflyRate * 100);
+        const multiplication = isMultiple? Utility.random(2,this.stageInfo.maxMultiplateRate) : 1;
+
+        return new Butterfly(this.stageInfo.butterflySize, mainColor, subColor,multiplication);
     }
 }

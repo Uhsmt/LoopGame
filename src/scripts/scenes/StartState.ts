@@ -61,15 +61,16 @@ export class StartState {
         // 適当に蝶を飛ばす
         this.dispButterfly();
 
-        // this.debug();
+        if (DEBUG_MODE){
+            this.debug();
+        }
     }
 
-    // TODO デバッグ終わったら消す
     debug(): void {
 
-        const butterfly1 = new Butterfly('small', myConsts.COLOR_LIST[0], myConsts.COLOR_LIST[1]);
-        const butterfly2 = new Butterfly('medium', myConsts.COLOR_LIST[2], myConsts.COLOR_LIST[3]);
-        const butterfly3 = new Butterfly('large', myConsts.COLOR_LIST[4], myConsts.COLOR_LIST[3]);
+        const butterfly1 = new Butterfly('small', myConsts.COLOR_LIST[0], myConsts.COLOR_LIST[1], 3);
+        const butterfly2 = new Butterfly('medium', myConsts.COLOR_LIST[2], myConsts.COLOR_LIST[3],4);
+        const butterfly3 = new Butterfly('large', myConsts.COLOR_LIST[4], myConsts.COLOR_LIST[3],5);
         
         butterfly1.x = 100;
         butterfly1.y = 100;
@@ -88,7 +89,7 @@ export class StartState {
     dispButterfly(){
         myConsts.COLOR_LIST.forEach(color => {
             const size = Utility.chooseAtRandom(['small', 'medium', 'large'], 1)[0];
-            const butterfly = new Butterfly(size, color);
+            const butterfly = new Butterfly(size, color, color);
             butterfly.setRandomInitialPoistion(this.manager.app.screen.width, this.manager.app.screen.height);
             this.butterflies.push(butterfly);
         });

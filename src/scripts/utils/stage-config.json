@@ -46,5 +46,17 @@
         "stageButterflyCount": 10,
         "butterflySize": "medium",
         "isButterflyColorChange": true
+    },
+    {
+        "level": 6,
+        "debug": true,
+        "butterflyColorNum": 3,
+        "needCount": 15,
+        "stageButterflyCount": 10,
+        "butterflySize": "large",
+        "isButterflyColorChange": true,
+        "maxMultiplateRate": 2,
+        "muptipleButterflyRate": 0.15
     }
+
 ]

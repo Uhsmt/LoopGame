@@ -4,12 +4,12 @@ import stageConfig from '../utils/stage-config.json';
 import stageDebugConfig from '../utils/stage-config-debug.json';
 
 export class StageInformation {
-    level: number;
-    butterflyColors: number[];
-    butterflySize: string;
-    isButterflyColorChange: boolean;
-    needCount: number;
-    stageButterflyCount: number;
+    level: number = 0;
+    butterflyColors: number[] = [];
+    butterflySize: string = 'random';
+    isButterflyColorChange: boolean = false;
+    needCount: number = 0;
+    stageButterflyCount: number = 10;
     captureCount: number = 0;
     stagePoint: number = 0;
     bonusCount: number = 0;
@@ -17,9 +17,11 @@ export class StageInformation {
     stageTotalScore: number = 0;
     totalScore: number = 0;
     isClear: boolean = false; 
-
+    muptipleButterflyRate:number = 0;
+    maxMultiplateRate:number = 1;
+    
     constructor() {
-        // level0 
+        // initial level
         this.setConfig(1)
         this.captureCount = 0;
         this.stagePoint = 0;
@@ -31,12 +33,13 @@ export class StageInformation {
             // TODO : ゲームクリアにしたいけどいったんは最終ステージを繰り返す
             config = DEBUG_MODE? stageDebugConfig[stageDebugConfig.length-1]: stageConfig[stageConfig.length - 1];
         }
+        Object.keys(config).forEach(key => {
+            if (key in this) {
+                (this as any)[key] = config[key as keyof typeof config];
+            }
+        });
         this.level = level;
         this.butterflyColors = Utility.chooseAtRandom(myConsts.COLOR_LIST,config.butterflyColorNum);
-        this.needCount = config.needCount;
-        this.stageButterflyCount = config.stageButterflyCount;
-        this.butterflySize = config.butterflySize;
-        this.isButterflyColorChange = config.isButterflyColorChange;
     }
 
     calcScore(): void {
