@@ -273,14 +273,12 @@ export class GameplayState {
         this.showActionMessage(`${calculationText} ${Utility.formatNumberWithCommas(point)} point`);
 
         butterflies.forEach(butterfly => {
-            // butterfliesから同じやつを削除
             this.butterflies = this.butterflies.filter(b => b !== butterfly);
-
             butterfly.stop();
             butterfly.delete();
         });
+        
         if (this.caputuredButterflies.length >= this.stageInfo.needCount) {
-            // this.showActionMessage('Stage Clear!', true);
             this.endGame();
         }else{
             // 捕まえた分だけ新しく蝶々を補充

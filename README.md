@@ -6,13 +6,11 @@ https://uhsmt.github.io/LoopGame/
 ## TODO
 ### phase 1
 
-- [ ] 蝶々の属性作りこみ
+- [ ] Loop当たり判定調整
 - [ ] game finish&restart
-- [ ] stage 設定ファイル
 - [ ] soundセット
 - [ ] BitmapText font
-- [ ] loop判定エリアの調整
-
+- [ ] canva外の場合のライン描画
 
 ### optional
 - [ ] メッセージの日本語/英語対応
@@ -45,17 +43,12 @@ phase3
 
 ## development memo
 
-static check :
-`npm run fix:eslint`
-`npx eslint filename (optional:--fix)`
-
-
-# local
+### local
 npm start
 http://localhost:1234/
 
-# debug
+### debug
 npm run debug
 
-# build(Not need. Github Action build and deploy automaticaly.)
+### build(Not need. Github Action build and deploy automaticaly.)
 npm run build

@@ -3,7 +3,7 @@ import * as Utility from '../utils/Utility';
 
 export class Butterfly extends PIXI.Container {
     private sprite: PIXI.Sprite;
-    private elipse: PIXI.Graphics;
+    private ellipse: PIXI.Graphics;
     private xDiretion:number;
     private yDiretion:number;
     private xFrame:number;
@@ -48,6 +48,7 @@ export class Butterfly extends PIXI.Container {
                 break;
         }
         this.sprite.tint = color;
+        this.sprite.anchor.set(0.5)
         this.addChild(this.sprite);
 
         // color change用のobject
@@ -55,10 +56,10 @@ export class Butterfly extends PIXI.Container {
             const ellipse = new PIXI.Graphics();
             ellipse.ellipse(0,0,30 * this.sprite.scale.x,40 * this.sprite.scale.x)
             ellipse.fill(0xffffff);
-            ellipse.x = this.sprite.width / 2;
-            ellipse.y = this.sprite.height / 2;
-            this.elipse = ellipse;
-            this.elipse.tint = subColor;
+            ellipse.x = 0;
+            ellipse.y = 0;
+            this.ellipse = ellipse;
+            this.ellipse.tint = subColor;
             this.addChild(ellipse);
         }
 
@@ -66,8 +67,8 @@ export class Butterfly extends PIXI.Container {
         this.multiplicationRate = multiplicationRate;
         if(this.multiplicationRate >= 2){
             const leaf = new MultipleLeaf(this.multiplicationRate)
-            leaf.x = this.sprite.width / 2;
-            leaf.y = this.sprite.height * 1.1;
+            leaf.x = 0;
+            leaf.y = this.sprite.height * 2 /3;
             this.addChild(leaf);
         }
 
@@ -87,10 +88,10 @@ export class Butterfly extends PIXI.Container {
         const butterflyHeight = this.sprite.height;
     
         // 横方向
-        if (this.xDiretion < 0 && this.x <= 0){
+        if (this.xDiretion < 0 && this.x <= butterflyWidth){
             this.xFrame = 0;
             this.xDiretion = Math.abs(this.xDiretion);
-        }else if (this.xDiretion > 0 && this.x >= screenWidth - butterflyWidth){
+        }else if (this.xDiretion > 0 && this.x >= screenWidth ){
             this.xFrame = 0;
             this.xDiretion = -1 * Math.abs(this.xDiretion);
         }else if (this.xFrame === this.xTernFrame){
@@ -101,10 +102,10 @@ export class Butterfly extends PIXI.Container {
         }
     
         // 縦方向
-        if (this.yDiretion < 0 && this.y <= 0){
+        if (this.yDiretion < 0 && this.y <= butterflyHeight){
             this.yFrame = 0;
             this.yDiretion = Math.abs(this.yDiretion);
-        }else if (this.yDiretion > 0 && this.y >= screenHeight - butterflyHeight){
+        }else if (this.yDiretion > 0 && this.y >= screenHeight){
             this.yFrame = 0;
             this.yDiretion = -1 * Math.abs(this.yDiretion);
         }else if (this.yFrame === this.yTernFrame){
@@ -128,7 +129,10 @@ export class Butterfly extends PIXI.Container {
         } else {
             scale = (this.flappingProgress / 100);
         }
-        this.scale.x = this.scale.y * scale;
+        this.sprite.scale.x = this.sprite.scale.y * scale;
+        if(this.ellipse){
+            this.ellipse.scale.x = scale;
+        }
 
         // Update flappingProgress
         this.flappingProgress += this.flappingSpeed * 100;
@@ -146,12 +150,12 @@ export class Butterfly extends PIXI.Container {
     }
 
     switchColor(): void {
-        if (!this.elipse) return;
+        if (!this.ellipse) return;
         const mainColor:number = this.sprite.tint;
-        const subColor:number = this.elipse.tint;
+        const subColor:number = this.ellipse.tint;
         
         this.sprite.tint = subColor;
-        this.elipse.tint = mainColor;
+        this.ellipse.tint = mainColor;
         this.color = subColor;
     }
 
@@ -182,11 +186,10 @@ export class Butterfly extends PIXI.Container {
 
 
     async delete(): Promise<void> {
-        await setTimeout(() => {},1000);
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
             if (this.alpha > 0) {
-                this.alpha -= 0.05;
+                this.alpha -= 0.02;
                 requestAnimationFrame(fadeOut);
             } else {
                 this.destroy();

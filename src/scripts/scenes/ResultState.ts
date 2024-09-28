@@ -102,7 +102,7 @@ export class ResultState{
     private async displayStageResult(): Promise<void> {
         const topMsg = new Message(this.stageInfo.isClear ? `Level ${this.stageInfo.level} clear!!` : 'Game Over', 30);
         const conditionMsg = new Message(`Need :         × ${this.stageInfo.needCount} `, 20);
-        const countMsg = new Message(`Got :         × ${this.stageInfo.captureCount} `, 20);
+        const countMsg = new Message(`Got :          × ${this.stageInfo.captureCount} `, 20);
         const lineMsg = new Message('----', 30);
         const baseScoreMsg = new Message(`base score : ${Utility.formatNumberWithCommas(this.stageInfo.stagePoint)}`, 20);
         const bonusMsg = new Message(`bonus score : ${this.stageInfo.bonusCount} × 100 = ${Utility.formatNumberWithCommas(this.stageInfo.bonusPoint)}`, 20);
@@ -112,20 +112,24 @@ export class ResultState{
         const top_msgs = [topMsg, conditionMsg, countMsg, lineMsg];
         const result_msgs = [baseScoreMsg, bonusMsg, stageScoreMsg, totalScoreMsg];
         this.messages = [...top_msgs, ...result_msgs];
+        const marginTop = 110;
+        const lineHeight = this.manager.app.screen.height * 0.08;
 
         top_msgs.forEach((msg, index) => {
             this.container.addChild(msg);
             msg.anchor.set(0.5);
             msg.x = this.manager.app.screen.width / 2;
-            msg.y = 110 + (this.manager.app.screen.height * 0.08 * index);
+            msg.y = marginTop + (lineHeight * index);
+            console.log(`${msg.y}:${msg.text}`);
             msg.show();
         });
 
         // 2匹の蝶々を表示
         for(let i = 0; i < 2; i++){
             const butterfly = new Butterfly('small', this.stageInfo.butterflyColors[i],this.stageInfo.butterflyColors[i]);
-            butterfly.y = 110 + (this.manager.app.screen.height * 0.08 * (i+1));
-            butterfly.x = (this.manager.app.screen.width / 2 ) + 10;
+            butterfly.y = marginTop + (lineHeight * (i+1)) + butterfly.height/2;
+            butterfly.x = (this.manager.app.screen.width / 2 ) + butterfly.width;
+            console.log(`${butterfly.y}:butterfly`);
             this.container.addChild(butterfly);
             this.messageButterflies.push(butterfly);
         }
@@ -140,7 +144,7 @@ export class ResultState{
             this.container.addChild(msg);
             msg.anchor.set(0.5);
             msg.x = this.manager.app.screen.width / 2;
-            msg.y = 110 + (this.manager.app.screen.height * 0.08 * (index + top_msgs.length));
+            msg.y = marginTop + (lineHeight * (index + top_msgs.length));
             if (msg === lineMsg) {
                 msg.show();
             } else {
