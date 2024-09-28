@@ -35,14 +35,14 @@ export class Butterfly extends PIXI.Container {
             case 'medium':
                 this.sprite = PIXI.Sprite.from('butterfly_medium');
                 this.sprite.scale.set(0.16);
-                this.xDiretion = 0.7;
+                this.xDiretion = 0.6;
                 this.yDiretion = 0.5;
                 this.flappingSpeed = Utility.random(12, 15) / 1000;
                 break;
             default:
                 this.sprite = PIXI.Sprite.from('butterfly_small');
                 this.sprite.scale.set(0.13);
-                this.xDiretion = 0.8;
+                this.xDiretion = 0.7;
                 this.yDiretion = 0.7;
                 this.flappingSpeed = Utility.random(13, 17) / 1000;
                 break;

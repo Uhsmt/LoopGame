@@ -211,7 +211,7 @@ export class GameplayState {
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics): void {
         if (!this.isRunning || this.isFinish ) return;
 
-        // loopArea内にいる蝶を取得
+        // loopArea内にいる蝶を取得　TODO: 矩形領域の判定を円領域に変更
         const butterfliesInLoopArea = this.butterflies.filter(butterfly => {
             // 蝶の位置を中心とした矩形領域を作成
             const butterflyBounds = new PIXI.Rectangle(
@@ -277,7 +277,7 @@ export class GameplayState {
             butterfly.stop();
             butterfly.delete();
         });
-        
+
         if (this.caputuredButterflies.length >= this.stageInfo.needCount) {
             this.endGame();
         }else{

@@ -41,5 +41,8 @@ async function setUp() {
             manager.update(app.ticker.deltaMS);
             manager.render();
         });
+        // カーソルのスタイルを変更
+        const cursorIcon = `url(\'${BASE_URL}assets/pencil.png\'),auto`;
+        app.renderer.events.cursorStyles.default = cursorIcon;        
     }
 }

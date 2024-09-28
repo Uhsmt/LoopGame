@@ -120,7 +120,6 @@ export class ResultState{
             msg.anchor.set(0.5);
             msg.x = this.manager.app.screen.width / 2;
             msg.y = marginTop + (lineHeight * index);
-            console.log(`${msg.y}:${msg.text}`);
             msg.show();
         });
 
@@ -129,7 +128,6 @@ export class ResultState{
             const butterfly = new Butterfly('small', this.stageInfo.butterflyColors[i],this.stageInfo.butterflyColors[i]);
             butterfly.y = marginTop + (lineHeight * (i+1)) + butterfly.height/2;
             butterfly.x = (this.manager.app.screen.width / 2 ) + butterfly.width;
-            console.log(`${butterfly.y}:butterfly`);
             this.container.addChild(butterfly);
             this.messageButterflies.push(butterfly);
         }

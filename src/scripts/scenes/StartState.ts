@@ -38,10 +38,16 @@ export class StartState {
         // background
         const backgroundSprite = new PIXI.Sprite(PIXI.Texture.from('menu_background'));
         backgroundSprite.interactive = true;
-        backgroundSprite.anchor.y = 1;
-        backgroundSprite.x = 0;
-        backgroundSprite.scale = app.screen.width / backgroundSprite.width;
-        backgroundSprite.y = app.screen.height;
+        backgroundSprite.anchor.set(0.5, 0.5);
+        const bgRateX = app.screen.width / backgroundSprite.width;
+        const bgRateY = app.screen.height / backgroundSprite.height;
+        let bgScale = bgRateX;
+        if(bgRateX < bgRateY){
+            bgScale = bgRateY;
+        }
+        backgroundSprite.scale.set(bgScale);
+        backgroundSprite.x = app.screen.width / 2;
+        backgroundSprite.y = app.screen.height / 2;
         this.container.addChild(backgroundSprite);
 
         // title
