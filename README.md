@@ -54,5 +54,8 @@ static check :
 npm start
 http://localhost:1234/
 
+# debug
+npm run debug
+
 # build(Not need. Github Action build and deploy automaticaly.)
 npm run build

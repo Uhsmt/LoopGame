@@ -1,0 +1,20 @@
+[
+    {
+        "level": 0,
+        "debug": true,
+        "butterflyColorNum": 2,
+        "needCount": 10,
+        "stageButterflyCount": 20,
+        "butterflySize": "small",
+        "isButterflyColorChange": false
+    },
+    {
+        "level": 1,
+        "debug": true,
+        "butterflyColorNum": 3,
+        "needCount": 15,
+        "stageButterflyCount": 20,
+        "butterflySize": "random",
+        "isButterflyColorChange": true
+    }
+]

@@ -1,6 +1,7 @@
 import { myConsts } from "../utils/Const";
 import * as Utility from '../utils/Utility';
 import stageConfig from '../utils/stage-config.json';
+import stageDebugConfig from '../utils/stage-config-debug.json';
 
 export class StageInformation {
     level: number;
@@ -25,11 +26,10 @@ export class StageInformation {
     }
 
     private setConfig(level: number): void {
-        let config = stageConfig[level];
-        console.log(config)
+        let config = DEBUG_MODE? stageDebugConfig[level]: stageConfig[level];
         if (config === undefined) {
             // TODO : ゲームクリアにしたいけどいったんは最終ステージを繰り返す
-            config = stageConfig[stageConfig.length - 1];
+            config = DEBUG_MODE? stageDebugConfig[stageDebugConfig.length-1]: stageConfig[stageConfig.length - 1];
         }
         this.level = level;
         this.butterflyColors = Utility.chooseAtRandom(myConsts.COLOR_LIST,config.butterflyColorNum);

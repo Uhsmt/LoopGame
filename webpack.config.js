@@ -66,7 +66,8 @@ module.exports = {
       ]
     }),
     new webpack.DefinePlugin({
-      BASE_URL: JSON.stringify(baseURL)
+      BASE_URL: JSON.stringify(baseURL),
+      DEBUG_MODE: process.env.DEBUG_MODE,
     })
   ],
   devServer: {
