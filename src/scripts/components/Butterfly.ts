@@ -12,10 +12,12 @@ export class Butterfly extends PIXI.Container {
     private flappingSpeed = 0.01;
     private isFlying = true;
     private isFlapping = true;
-    multiplicationRate:number = 1;
+    readonly multiplicationRate:number = 1;
     color: number;
     private readonly xTernFrame = Utility.random(120, 150);    
     private readonly yTernFrame = Utility.random(120, 150);
+    readonly spriteWith:number;
+    readonly hitAreaSize:number;
 
     constructor(size: string, color: number, subColor:number, multiplicationRate: number = 1) {
         super();
@@ -31,6 +33,7 @@ export class Butterfly extends PIXI.Container {
                 this.xDiretion = 0.5;
                 this.yDiretion = 0.3;
                 this.flappingSpeed = Utility.random(8, 10) / 1000;
+                this.hitAreaSize = 13;
                 break;
             case 'medium':
                 this.sprite = PIXI.Sprite.from('butterfly_medium');
@@ -38,18 +41,21 @@ export class Butterfly extends PIXI.Container {
                 this.xDiretion = 0.6;
                 this.yDiretion = 0.5;
                 this.flappingSpeed = Utility.random(12, 15) / 1000;
+                this.hitAreaSize = 11;
                 break;
             default:
                 this.sprite = PIXI.Sprite.from('butterfly_small');
-                this.sprite.scale.set(0.13);
+                this.sprite.scale.set(0.12);
                 this.xDiretion = 0.7;
                 this.yDiretion = 0.7;
                 this.flappingSpeed = Utility.random(13, 17) / 1000;
+                this.hitAreaSize = 9;
                 break;
         }
         this.sprite.tint = color;
         this.sprite.anchor.set(0.5)
         this.addChild(this.sprite);
+        this.spriteWith = this.sprite.width;
 
         // color change用のobject
         if (color != subColor){ 
@@ -84,11 +90,8 @@ export class Butterfly extends PIXI.Container {
 
         if (!this.isFlying) return;
 
-        const butterflyWidth = this.sprite.width;
-        const butterflyHeight = this.sprite.height;
-    
         // 横方向
-        if (this.xDiretion < 0 && this.x <= butterflyWidth){
+        if (this.xDiretion < 0 && this.x <= this.spriteWith){
             this.xFrame = 0;
             this.xDiretion = Math.abs(this.xDiretion);
         }else if (this.xDiretion > 0 && this.x >= screenWidth ){
@@ -102,7 +105,7 @@ export class Butterfly extends PIXI.Container {
         }
     
         // 縦方向
-        if (this.yDiretion < 0 && this.y <= butterflyHeight){
+        if (this.yDiretion < 0 && this.y <= this.sprite.height){
             this.yFrame = 0;
             this.yDiretion = Math.abs(this.yDiretion);
         }else if (this.yDiretion > 0 && this.y >= screenHeight){

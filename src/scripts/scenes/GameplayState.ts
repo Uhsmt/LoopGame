@@ -19,7 +19,7 @@ export class GameplayState {
     private sun: Sun;
     private isRunning = true;
     private isFinish = false;
-    private gameTimer: number = 60;
+    private gameTimer: number = 15;
     private elapsedTime: number = 0;
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
@@ -52,14 +52,6 @@ export class GameplayState {
 
         //　蝶々を生成
         for (let i = 0; i < this.stageInfo.stageButterflyCount; i++) {
-            // const randomColors = Utility.chooseAtRandom(this.stageInfo.butterflyColors,2)
-            // if(this.stageInfo.isButterflyColorChange){
-            //     const butterfly = new Butterfly(this.stageInfo.butterflySize, randomColors[0],randomColors[1]);
-            //     this.butterflies.push(butterfly);
-            // }else{
-            //     const butterfly = new Butterfly(this.stageInfo.butterflySize, randomColors[0]);
-            //     this.butterflies.push(butterfly);    
-            // }
             this.butterflies.push(this.createButterfly());
         }
 
@@ -147,10 +139,16 @@ export class GameplayState {
         const x = startX + t * (endX - startX);
         const y = startY - (4 * peakY * t * (1 - t));
 
-        this.sun.position.set(x, y);
+        if(x > endX){
+            this.sun.position.set(endX, this.manager.app.renderer.height);
+        }else{
+            this.sun.position.set(x, y);
+        }
     }
 
     private endGame(): void {
+        if (this.isFinish) return;
+
         this.isRunning = false;
         this.isFinish = true;
         this.stageInfo.stagePoint = this.stagePoint;
@@ -209,23 +207,11 @@ export class GameplayState {
 
     // ループエリアが完成したときの処理
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics): void {
-        if (!this.isRunning || this.isFinish ) return;
+        if ((!this.isRunning && !DEBUG_MODE) || this.isFinish ) return;
 
         // loopArea内にいる蝶を取得　TODO: 矩形領域の判定を円領域に変更
         const butterfliesInLoopArea = this.butterflies.filter(butterfly => {
-            // 蝶の位置を中心とした矩形領域を作成
-            const butterflyBounds = new PIXI.Rectangle(
-                butterfly.position.x - butterfly.width / 2 ,
-                butterfly.position.y - butterfly.height / 2 ,
-                butterfly.width ,
-                butterfly.height
-            );
-
-            // 矩形領域がloopAreaに含まれているかをチェック
-            return loopArea.containsPoint(new PIXI.Point(butterflyBounds.x, butterflyBounds.y)) ||
-                loopArea.containsPoint(new PIXI.Point(butterflyBounds.x + butterflyBounds.width, butterflyBounds.y)) ||
-                loopArea.containsPoint(new PIXI.Point(butterflyBounds.x, butterflyBounds.y + butterflyBounds.height)) ||
-                loopArea.containsPoint(new PIXI.Point(butterflyBounds.x + butterflyBounds.width, butterflyBounds.y + butterflyBounds.height));
+            return this.isIncludeButterfly(butterfly, loopArea);
         });
 
         if (butterfliesInLoopArea.length <= 0) return;
@@ -249,6 +235,28 @@ export class GameplayState {
                 this.badLoop();
             }
         }
+    }
+
+    private isIncludeButterfly(butterfly: Butterfly, loopArea: PIXI.Graphics): boolean {
+        const butterflyCenter = { x: butterfly.x - butterfly.spriteWith/2  , y: butterfly.y- butterfly.height/2 };
+        const points: PIXI.Point[] = [];
+
+        for (let i = 0; i < 36; i++) {
+            const angle = (i * 10) * Math.PI / 180;
+            const x = butterflyCenter.x + Math.cos(angle) * butterfly.hitAreaSize;
+            const y = butterflyCenter.y + Math.sin(angle) * butterfly.hitAreaSize;
+            points.push(new PIXI.Point(x, y));
+        }
+
+        // ループエリア内のpointの数がhitsRateを超えていれば、ループエリア内と判定
+        const hitsRate = 0.7;
+        let hits = 0;
+        points.forEach(point => {
+            if (loopArea.containsPoint(point)) {
+                hits++;
+            }
+        });
+        return hits / points.length > hitsRate;
     }
 
     private captureButterflies(butterflies: Butterfly[]): void {
