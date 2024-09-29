@@ -19,7 +19,7 @@ export class GameplayState {
     private sun: Sun;
     private isRunning = true;
     private isFinish = false;
-    private gameTimer: number = 15;
+    private gameTimer: number = 60;
     private elapsedTime: number = 0;
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
