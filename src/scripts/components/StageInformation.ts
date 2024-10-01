@@ -19,7 +19,8 @@ export class StageInformation {
     isClear: boolean = false; 
     muptipleButterflyRate:number = 0;
     maxMultiplateRate:number = 1;
-    
+    stageTime:number = 60;
+
     constructor() {
         // initial level
         this.setConfig(1)
@@ -30,9 +31,11 @@ export class StageInformation {
     private setConfig(level: number): void {
         let config = DEBUG_MODE? stageDebugConfig[level]: stageConfig[level];
         if (config === undefined) {
-            // TODO : ゲームクリアにしたいけどいったんは最終ステージを繰り返す
+            // 最終まで来た場合はとりあえず＋２
             config = DEBUG_MODE? stageDebugConfig[stageDebugConfig.length-1]: stageConfig[stageConfig.length - 1];
+            config.needCount += 2;
         }
+
         Object.keys(config).forEach(key => {
             if (key in this) {
                 (this as any)[key] = config[key as keyof typeof config];

@@ -36,6 +36,7 @@ export class GameplayState {
 
         this.stageInfo = stageInfo;
         const app = this.manager.app;
+        this.gameTimer = this.stageInfo.stageTime;
 
         // background
         const backgroundSprite = new PIXI.Sprite(PIXI.Texture.from('background'));
@@ -92,7 +93,7 @@ export class GameplayState {
         if (!this.isRunning) return;
 
         this.elapsedTime += delta;
-        this.moveSun(delta);
+        this.moveSun();
 
         this.butterflies.forEach(butterfly => {
             butterfly.fly(this.manager.app.screen.width, this.manager.app.screen.height);
@@ -129,7 +130,7 @@ export class GameplayState {
     render(): void {
     }
 
-    private moveSun(delta: number): void {
+    private moveSun(): void {
         const totalTime = this.gameTimer * 1000;
         const startX = 0;
         const endX = this.manager.app.renderer.width;

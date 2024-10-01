@@ -10,13 +10,14 @@
     },
     {
         "level": 1,
+        "stageTime": 15,
         "debug": true,
-        "butterflyColorNum": 3,
-        "needCount": 10,
-        "stageButterflyCount": 15,
-        "butterflySize": "large",
-        "isButterflyColorChange": true,
+        "butterflyColorNum": 4,
+        "needCount": 26,
+        "stageButterflyCount": 12,
+        "butterflySize": "small",
+        "isButterflyColorChange": false,
         "maxMultiplateRate": 2,
-        "muptipleButterflyRate": 0.15
+        "muptipleButterflyRate": 0.2
     }
 ]
