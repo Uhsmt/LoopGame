@@ -4,22 +4,27 @@ import stageConfig from '../utils/stage-config.json';
 import stageDebugConfig from '../utils/stage-config-debug.json';
 
 export class StageInformation {
+    //settings
     level: number = 0;
+    stageTime:number = 60;
     butterflyColors: number[] = [];
-    butterflySize: string = 'random';
-    isButterflyColorChange: boolean = false;
     needCount: number = 0;
     stageButterflyCount: number = 10;
+    butterflySize: string = 'random';
+    isButterflyColorChange: boolean = false;
+    muptipleButterflyRate:number = 0;
+    maxMultiplateRate:number = 1;
+
+    // scores
     captureCount: number = 0;
     stagePoint: number = 0;
     bonusCount: number = 0;
     bonusPoint: number = 0;
     stageTotalScore: number = 0;
     totalScore: number = 0;
+
+    //status
     isClear: boolean = false; 
-    muptipleButterflyRate:number = 0;
-    maxMultiplateRate:number = 1;
-    stageTime:number = 60;
 
     constructor() {
         // initial level
@@ -59,15 +64,10 @@ export class StageInformation {
         this.totalScore += this.stageTotalScore;
     }
 
-    nextStage(): StageInformation{
-
+    next(): void{
         const nextLevel = this.level + 1;
-
-        const nextStageInfo = new StageInformation();
-        nextStageInfo.setConfig(nextLevel);
-        nextStageInfo.totalScore = this.totalScore;
-
-        return nextStageInfo;
-      
+        this.setConfig(nextLevel);
+        this.captureCount = 0;
+        this.isClear = false;
     }
 }

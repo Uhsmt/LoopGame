@@ -62,9 +62,7 @@ export class ResultState{
         });
         this.messageButterflies = [];
 
-        const nextStageInfo = this.stageInfo.nextStage();
-
-        const messageText = this.stageInfo.isClear ? `Level ${nextStageInfo.level}`: 'Game Over';
+        const messageText = this.stageInfo.isClear ? `Level ${this.stageInfo.level+1}`: 'Game Over';
         const nextMessage = new Message(messageText, 40);        
         nextMessage.anchor.set(0.5);
         nextMessage.x = this.manager.app.screen.width / 2;
@@ -78,12 +76,13 @@ export class ResultState{
         }, 2000));
         
         if (this.stageInfo.isClear) {
-            this.manager.setState(new GameplayState(this.manager, nextStageInfo ));
+            this.stageInfo.next();
+            this.manager.setState(new GameplayState(this.manager, this.stageInfo));
         }else{
             // ゲームオーバーの場合はスタート画面に戻る
             // TODO ゲームオーバー後の再スタート時の挙動がおかしい
-            const manager = new GameStateManager(this.manager.app);
-            const startState = new StartState(manager);
+//            const manager = new GameStateManager(this.manager.app);
+            const startState = new StartState(this.manager);
             this.manager.setState(startState);
         }
     }
@@ -100,7 +99,7 @@ export class ResultState{
     }
 
     private async displayStageResult(): Promise<void> {
-        const topMsg = new Message(this.stageInfo.isClear ? `Level ${this.stageInfo.level} clear!!` : 'Game Over', 30);
+        const topMsg = new Message(`Level ${this.stageInfo.level}`, 30);
         const conditionMsg = new Message(`Need :         × ${this.stageInfo.needCount} `, 20);
         const countMsg = new Message(`Got :          × ${this.stageInfo.captureCount} `, 20);
         const lineMsg = new Message('----', 30);

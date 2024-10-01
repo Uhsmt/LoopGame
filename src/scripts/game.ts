@@ -6,7 +6,6 @@ import { StartState } from './scenes/StartState';
 const app = new PIXI.Application();
 
 window.addEventListener('load', async () => {
-    console.log('Loading assets...')
     await app.init({ 
         width: 800,
         height: 600,

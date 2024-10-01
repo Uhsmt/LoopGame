@@ -22,9 +22,7 @@ export class StartState {
         this.manager.app.stage.addChild(this.container);
     }
 
-    onEnter(): void {        
-        console.log("Entered Start State");
-        
+    onEnter(): void {                
         if (!this.manager || !this.manager.app) {
             console.error("ManagerまたはManagerのappが定義されていません");
             return;
@@ -92,7 +90,7 @@ export class StartState {
         this.container.addChild(...this.butterflies);
     }
 
-    dispButterfly(){
+    private dispButterfly(){
         myConsts.COLOR_LIST.forEach(color => {
             const size = Utility.chooseAtRandom(['small', 'medium', 'large'], 1)[0];
             const butterfly = new Butterfly(size, color, color);
@@ -170,9 +168,7 @@ export class StartState {
     }
 
     private onStartGameSelected(): void {
-        console.log("Start Game");
         const stageInfo1 = new StageInformation();
-
         this.manager.setState(new GameplayState(this.manager, stageInfo1));
     }
 

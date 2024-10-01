@@ -6,10 +6,13 @@ https://uhsmt.github.io/LoopGame/
 ## TODO
 ### phase 1 for release
 - [x] Loop当たり判定調整
-- [ ] game finish&restart
+- [x] game finish&restart
 - [ ] soundセット
 - [ ] BitmapText font
 - [ ] canvas外の場合のライン描画
+
+### phase1.5
+- [ ] 記録保持 
 
 ### Design
 - [ ] メッセージの日本語/英語対応

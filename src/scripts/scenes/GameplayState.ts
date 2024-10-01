@@ -115,7 +115,6 @@ export class GameplayState {
         if (this.pointerDownHandler) {
             this.manager.app.stage.removeEventListener('pointerdown', this.pointerDownHandler);
         }
-        console.log('Gameplay State Exit. Score: '+ this.stagePoint);
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
         if (this.lineDrawer) {
