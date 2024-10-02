@@ -103,8 +103,8 @@ export class StartState {
 
     update(delta: number): void {
         this.butterflies.forEach(butterfly => {
-            butterfly.flap();
-            butterfly.fly(this.manager.app.screen.width, this.manager.app.screen.height);
+            butterfly.flap(delta);
+            butterfly.fly(this.manager.app.screen.width, this.manager.app.screen.height, delta);
         });
     }
 

@@ -87,7 +87,7 @@ export class GameplayState {
 
     update(delta: number): void {
         this.butterflies.forEach(butterfly => {
-            butterfly.flap();
+            butterfly.flap(delta);
         });
 
         if (!this.isRunning) return;
@@ -96,7 +96,7 @@ export class GameplayState {
         this.moveSun();
 
         this.butterflies.forEach(butterfly => {
-            butterfly.fly(this.manager.app.screen.width, this.manager.app.screen.height);
+            butterfly.fly(this.manager.app.screen.width, this.manager.app.screen.height, delta);
         });
 
         // 残り10秒を切ったらblinkさせる

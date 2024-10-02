@@ -7,6 +7,7 @@ https://uhsmt.github.io/LoopGame/
 ### phase 1 for release
 - [x] Loop当たり判定調整
 - [x] game finish&restart
+- [x] deltaによるスピード調整
 - [ ] soundセット
 - [ ] BitmapText font
 - [ ] canvas外の場合のライン描画
@@ -39,6 +40,7 @@ https://uhsmt.github.io/LoopGame/
  - [ ] bonus入りの分岐とクリア判定
  - [ ] 専用背景素材
 
+### phase5 スマホ対応
 
 ## development memo
 

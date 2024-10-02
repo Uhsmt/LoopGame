@@ -86,7 +86,7 @@ export class Butterfly extends PIXI.Container {
         this.pivot.set(this.width / 2, this.height / 2);
     }
 
-    fly(screenWidth: number, screenHeight: number){
+    fly(screenWidth: number, screenHeight: number, delta: number): void {
 
         if (!this.isFlying) return;
 
@@ -117,12 +117,11 @@ export class Butterfly extends PIXI.Container {
         }else{
             this.yFrame += 1;
         }
-    
-        this.x += this.xDiretion;
-        this.y += this.yDiretion;
+        this.x += this.xDiretion * delta / 16;
+        this.y += this.yDiretion * delta / 16;
     }
 
-    flap(): void {
+    flap(delta: number): void {
         if (!this.isFlapping) return;
 
         // Calculate the scale based on flappingProgress
@@ -138,7 +137,7 @@ export class Butterfly extends PIXI.Container {
         }
 
         // Update flappingProgress
-        this.flappingProgress += this.flappingSpeed * 100;
+        this.flappingProgress += this.flappingSpeed * 8 * delta ;
         if (this.flappingProgress >= 100) {
             this.flappingProgress = 0;
         }
@@ -165,23 +164,29 @@ export class Butterfly extends PIXI.Container {
     setRandomInitialPoistion(screenWidth: number, screenHeight: number): void {
         const positions = ['top', 'bottom', 'left', 'right'];
         const position = Utility.chooseAtRandom(positions, 1)[0];
+        const top_y =  0;
+        const bottom_y = screenHeight + this.height;
+        const left_x = 0;
+        const right_x = screenWidth + this.width;
+
+
         let x, y;
         switch (position) {
             case 'top':
-                x = Utility.random(0, screenWidth);
-                y = 0 - this.height;
+                x = Utility.random(left_x, right_x);
+                y = top_y;
                 break;
             case 'bottom':
-                x = Utility.random(0, screenWidth);
-                y = screenHeight + this.height;
+                x = Utility.random(left_x, right_x);
+                y = bottom_y;
                 break;
             case 'left':
-                x = 0 - this.width;
-                y = Utility.random(0, screenHeight);
+                x = left_x;
+                y = Utility.random(top_y, bottom_y);
                 break;
             case 'right':
-                x = screenWidth + this.width;
-                y = Utility.random(0, screenHeight);
+                x = right_x;
+                y = Utility.random(top_y, bottom_y);
                 break;
         }
         this.position.set(x, y);
