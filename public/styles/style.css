@@ -9,6 +9,10 @@ body {
   color: #83cbc0;
 }
 
+#main{
+  margin-top: 50px;
+}
+
 #loading, #mainCanvas, details {
   width: 100%;
   max-width: 800px; /* 必要に応じて調整 */

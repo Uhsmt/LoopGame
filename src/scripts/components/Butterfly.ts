@@ -30,7 +30,7 @@ export class Butterfly extends PIXI.Container {
             case 'large':
                 this.sprite = PIXI.Sprite.from('butterfly_large');
                 this.sprite.scale.set(0.20);
-                this.xDiretion = 0.5;
+                this.xDiretion = 0.4;
                 this.yDiretion = 0.3;
                 this.flappingSpeed = Utility.random(8, 10) / 1000;
                 this.hitAreaSize = 13;
@@ -38,16 +38,16 @@ export class Butterfly extends PIXI.Container {
             case 'medium':
                 this.sprite = PIXI.Sprite.from('butterfly_medium');
                 this.sprite.scale.set(0.16);
-                this.xDiretion = 0.6;
-                this.yDiretion = 0.5;
+                this.xDiretion = 0.5;
+                this.yDiretion = 0.4;
                 this.flappingSpeed = Utility.random(12, 15) / 1000;
                 this.hitAreaSize = 11;
                 break;
             default:
                 this.sprite = PIXI.Sprite.from('butterfly_small');
                 this.sprite.scale.set(0.12);
-                this.xDiretion = 0.7;
-                this.yDiretion = 0.7;
+                this.xDiretion = 0.6;
+                this.yDiretion = 0.6;
                 this.flappingSpeed = Utility.random(13, 17) / 1000;
                 this.hitAreaSize = 9;
                 break;
@@ -192,6 +192,27 @@ export class Butterfly extends PIXI.Container {
         this.position.set(x, y);
     }
 
+    isHit(loopArea: PIXI.Graphics): boolean {
+        const butterflyCenter = { x: this.x - this.spriteWith/2  , y: this.y- this.height/2 };
+        const points: PIXI.Point[] = [];
+
+        for (let i = 0; i < 36; i++) {
+            const angle = (i * 10) * Math.PI / 180;
+            const x = butterflyCenter.x + Math.cos(angle) * this.hitAreaSize;
+            const y = butterflyCenter.y + Math.sin(angle) * this.hitAreaSize;
+            points.push(new PIXI.Point(x, y));
+        }
+
+        // ループエリア内のpointの数がhitsRateを超えていれば、ループエリア内と判定
+        const hitsRate = 0.7;
+        let hits = 0;
+        points.forEach(point => {
+            if (loopArea.containsPoint(point)) {
+                hits++;
+            }
+        });
+        return hits / points.length > hitsRate;
+    }
 
     async delete(): Promise<void> {
         // アニメーションで透明度を徐々に減少させる

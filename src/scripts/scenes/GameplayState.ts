@@ -70,7 +70,8 @@ export class GameplayState {
         app.stage.addEventListener('pointerdown', this.pointerDownHandler);
     }
 
-    onEnter(): void {
+    async onEnter(): Promise<void> {
+        this.isRunning = false;
         this.displayStartMessage();
         this.displayScoreMessage();
         this.sun.position.set(0, this.manager.app.screen.height); 
@@ -80,9 +81,16 @@ export class GameplayState {
             butterfly.setRandomInitialPoistion(this.manager.app.screen.width, this.manager.app.screen.height);
         });
 
-        setTimeout(() => {
+        const deleteMessage = new Promise(resolve => setTimeout(() => {
             this.container.removeChild(this.startMessage);
-        }, 3000);
+            resolve(null);
+        },3000));
+
+        const startGame = new Promise(resolve => setTimeout(() => {
+            this.isRunning = true;
+            resolve(null);
+        }, 1000));
+        await Promise.all([deleteMessage, startGame]);
     }
 
     update(delta: number): void {
@@ -168,7 +176,7 @@ export class GameplayState {
     private displayStartMessage(): void {
         this.startMessage = new PIXI.BitmapText({text:`Catch ${this.stageInfo.needCount} butterflies!`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
         this.startMessage.x = this.manager.app.renderer.width / 2 - this.startMessage.width / 2;
-        this.startMessage.y = 100;
+        this.startMessage.y = this.manager.app.renderer.height / 3;
         this.container.addChild(this.startMessage);
     }
 
@@ -198,7 +206,9 @@ export class GameplayState {
     }
 
     private hideActionmessage(){
-        this.actionMessage.alpha = 0;
+        if(this.actionMessage){
+            this.actionMessage.alpha = 0;
+        }
     }
 
     private updateScoreMessage(): void { 
@@ -211,7 +221,7 @@ export class GameplayState {
 
         // loopArea内にいる蝶を取得
         const butterfliesInLoopArea = this.butterflies.filter(butterfly => {
-            return this.isIncludeButterfly(butterfly, loopArea);
+            return butterfly.isHit(loopArea);
         });
 
         if (butterfliesInLoopArea.length <= 0) return;
@@ -235,28 +245,6 @@ export class GameplayState {
                 this.badLoop();
             }
         }
-    }
-
-    private isIncludeButterfly(butterfly: Butterfly, loopArea: PIXI.Graphics): boolean {
-        const butterflyCenter = { x: butterfly.x - butterfly.spriteWith/2  , y: butterfly.y- butterfly.height/2 };
-        const points: PIXI.Point[] = [];
-
-        for (let i = 0; i < 36; i++) {
-            const angle = (i * 10) * Math.PI / 180;
-            const x = butterflyCenter.x + Math.cos(angle) * butterfly.hitAreaSize;
-            const y = butterflyCenter.y + Math.sin(angle) * butterfly.hitAreaSize;
-            points.push(new PIXI.Point(x, y));
-        }
-
-        // ループエリア内のpointの数がhitsRateを超えていれば、ループエリア内と判定
-        const hitsRate = 0.7;
-        let hits = 0;
-        points.forEach(point => {
-            if (loopArea.containsPoint(point)) {
-                hits++;
-            }
-        });
-        return hits / points.length > hitsRate;
     }
 
     private captureButterflies(butterflies: Butterfly[]): void {

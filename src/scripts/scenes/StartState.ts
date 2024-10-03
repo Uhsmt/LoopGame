@@ -6,6 +6,7 @@ import * as Utility from '../utils/Utility';
 import { Butterfly } from '../components/Butterfly';
 import { myConsts } from '../utils/Const';
 import { StageInformation } from '../components/StageInformation';
+import { resolve } from 'path';
 
 export class StartState {
     private manager: GameStateManager;
@@ -15,6 +16,7 @@ export class StartState {
     private ruleButton: PIXI.BitmapText;
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
+    private titleSprite: PIXI.Sprite;
 
     constructor(manager: GameStateManager) {
         this.manager = manager;
@@ -54,6 +56,7 @@ export class StartState {
         titleSprite.x = app.screen.width / 2;
         titleSprite.y = app.screen.height / 3;
         titleSprite.scale.set(0.8);
+        this.titleSprite = titleSprite;
         this.container.addChild(titleSprite);
 
         // ボタン
@@ -167,8 +170,15 @@ export class StartState {
                rect1.y + rect1.height > rect2.y;
     }
 
-    private onStartGameSelected(): void {
+    private async onStartGameSelected(): Promise<void> {
         const stageInfo1 = new StageInformation();
+    
+        this.butterflies.map(butterfly => butterfly.stop());
+        await Promise.all([this.fadeOut(this.startButton), this.fadeOut(this.ruleButton), this.fadeOut(this.titleSprite), this.butterflies.map(butterfly => butterfly.delete())]);
+        await new Promise(resolve => setTimeout(() => {
+            resolve(null);
+        }, 500));
+
         this.manager.setState(new GameplayState(this.manager, stageInfo1));
     }
 
@@ -189,5 +199,20 @@ export class StartState {
                 this.lineDrawer = null; // 破棄
             });
         }
+    }
+
+    // containerを引数に、フェードアウトさせて完全に消えたたらresolveするPromiseを返す
+    private fadeOut(container: PIXI.Container): Promise<void> {
+        return new Promise(resolve => {
+            const fadeOut = () => {
+                if (container.alpha > 0) {
+                    container.alpha -= 0.02;
+                    requestAnimationFrame(fadeOut);
+                } else {
+                    resolve();
+                }
+            };
+            fadeOut();
+        });
     }
 }
