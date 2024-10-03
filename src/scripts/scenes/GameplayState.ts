@@ -209,7 +209,7 @@ export class GameplayState {
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics): void {
         if ((!this.isRunning && !DEBUG_MODE) || this.isFinish ) return;
 
-        // loopArea内にいる蝶を取得　TODO: 矩形領域の判定を円領域に変更
+        // loopArea内にいる蝶を取得
         const butterfliesInLoopArea = this.butterflies.filter(butterfly => {
             return this.isIncludeButterfly(butterfly, loopArea);
         });

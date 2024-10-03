@@ -8,9 +8,10 @@ https://uhsmt.github.io/LoopGame/
 - [x] Loop当たり判定調整
 - [x] game finish&restart
 - [x] deltaによるスピード調整
-- [ ] soundセット
 - [ ] BitmapText font
 - [ ] canvas外の場合のライン描画
+- [ ] soundセット
+- [ ] lint
 
 ### phase1.5
 - [ ] 記録保持 
@@ -18,10 +19,10 @@ https://uhsmt.github.io/LoopGame/
 ### Design
 - [ ] メッセージの日本語/英語対応
 - [ ] 猫ちゃんスプライトを作る
- - [ ]ノーマル
- - [ ]登場モーション
- - [ ]居眠りモーション
- - [ ]負けモーション
+ - [ ] ノーマル
+ - [ ] 登場モーション
+ - [ ] 居眠りモーション
+ - [ ] 負けモーション
 
 ### phase2 お助けオブジェクト
 - [ ] お助けsprite作成

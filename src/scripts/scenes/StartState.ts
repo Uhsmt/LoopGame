@@ -14,7 +14,7 @@ export class StartState {
     private startButton: PIXI.BitmapText;
     private ruleButton: PIXI.BitmapText;
     butterflies: Butterfly[] = [];
-
+    private backgroundSprite: PIXI.Sprite;
 
     constructor(manager: GameStateManager) {
         this.manager = manager;
@@ -34,19 +34,19 @@ export class StartState {
         this.lineDrawer.on('loopAreaCompleted', this.handleLoopAreaCompleted.bind(this));
 
         // background
-        const backgroundSprite = new PIXI.Sprite(PIXI.Texture.from('menu_background'));
-        backgroundSprite.interactive = true;
-        backgroundSprite.anchor.set(0.5, 0.5);
-        const bgRateX = app.screen.width / backgroundSprite.width;
-        const bgRateY = app.screen.height / backgroundSprite.height;
+        this.backgroundSprite = new PIXI.Sprite(PIXI.Texture.from('menu_background'));
+        this.backgroundSprite.interactive = true;
+        this.backgroundSprite.anchor.set(0.5, 0.5);
+        const bgRateX = app.screen.width / this.backgroundSprite.width;
+        const bgRateY = app.screen.height / this.backgroundSprite.height;
         let bgScale = bgRateX;
         if(bgRateX < bgRateY){
             bgScale = bgRateY;
         }
-        backgroundSprite.scale.set(bgScale);
-        backgroundSprite.x = app.screen.width / 2;
-        backgroundSprite.y = app.screen.height / 2;
-        this.container.addChild(backgroundSprite);
+        this.backgroundSprite.scale.set(bgScale);
+        this.backgroundSprite.x = app.screen.width / 2;
+        this.backgroundSprite.y = app.screen.height / 2;
+        this.container.addChild(this.backgroundSprite);
 
         // title
         const titleSprite = new PIXI.Sprite(PIXI.Texture.from('title'));
@@ -179,7 +179,6 @@ export class StartState {
     }
 
     onExit(): void {
-        // Exit logic if any
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
 
