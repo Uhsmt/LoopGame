@@ -9,7 +9,7 @@ window.addEventListener('load', async () => {
     await app.init({ 
         width: 800,
         height: 600,
-        backgroundColor: 0x000000, // Changed to black
+        backgroundColor: 0xfefff1,
         antialias: true
     }); 
     // Load bitmap font

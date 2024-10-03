@@ -89,7 +89,7 @@ export class GameplayState {
         const startGame = new Promise(resolve => setTimeout(() => {
             this.isRunning = true;
             resolve(null);
-        }, 1000));
+        }, 1500));
         await Promise.all([deleteMessage, startGame]);
     }
 

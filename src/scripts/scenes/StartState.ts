@@ -6,7 +6,6 @@ import * as Utility from '../utils/Utility';
 import { Butterfly } from '../components/Butterfly';
 import { myConsts } from '../utils/Const';
 import { StageInformation } from '../components/StageInformation';
-import { resolve } from 'path';
 
 export class StartState {
     private manager: GameStateManager;
@@ -125,7 +124,6 @@ export class StartState {
             },
         });
 
-
         // const button = new PIXI.Text(name, style);
         button.interactive = true;
         button.x = _x;
@@ -171,14 +169,26 @@ export class StartState {
     }
 
     private async onStartGameSelected(): Promise<void> {
-        const stageInfo1 = new StageInformation();
     
         this.butterflies.map(butterfly => butterfly.stop());
-        await Promise.all([this.fadeOut(this.startButton), this.fadeOut(this.ruleButton), this.fadeOut(this.titleSprite), this.butterflies.map(butterfly => butterfly.delete())]);
-        await new Promise(resolve => setTimeout(() => {
-            resolve(null);
-        }, 500));
 
+        // next background
+        const nextBGSprite = new PIXI.Sprite(PIXI.Texture.from('background'));
+        nextBGSprite.anchor.y = 1;
+        nextBGSprite.x = 0;
+        nextBGSprite.scale = this.manager.app.screen.height / nextBGSprite.height;
+        nextBGSprite.y = this.manager.app.screen.height;
+        this.container.addChildAt(nextBGSprite, 0);
+
+        await Promise.all([
+            this.fadeOut(this.startButton), 
+            this.fadeOut(this.ruleButton), 
+            this.fadeOut(this.titleSprite), 
+            this.fadeOut(this.backgroundSprite),
+            this.butterflies.map(butterfly => butterfly.delete())
+        ]);
+
+        const stageInfo1 = new StageInformation();
         this.manager.setState(new GameplayState(this.manager, stageInfo1));
     }
 
@@ -202,11 +212,11 @@ export class StartState {
     }
 
     // containerを引数に、フェードアウトさせて完全に消えたたらresolveするPromiseを返す
-    private fadeOut(container: PIXI.Container): Promise<void> {
+    private fadeOut(container: PIXI.Container, fadespeed:number = 0.01, alpha:number=0): Promise<void> {
         return new Promise(resolve => {
             const fadeOut = () => {
-                if (container.alpha > 0) {
-                    container.alpha -= 0.02;
+                if (container.alpha > alpha) {
+                    container.alpha -= fadespeed;
                     requestAnimationFrame(fadeOut);
                 } else {
                     resolve();
