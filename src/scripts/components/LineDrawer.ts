@@ -6,7 +6,7 @@ export class LineDrawer extends EventEmitter{
     private graphics: PIXI.Graphics;
     private startPoint: PIXI.Point | null = null;
     private segments: { start: PIXI.Point, end: PIXI.Point, graphics: PIXI.Graphics }[] = [];
-    private lineDrawTime: number = 1000;
+    private lineDrawTime: number = 1200;
     private lineColor: number = 0xffffff;
     pointerMoveHandler: any;
 
@@ -143,5 +143,9 @@ export class LineDrawer extends EventEmitter{
             this.graphics.clear();
         }
         this.startPoint = null;
+    }
+
+    setLineTime(time: number): void {
+        this.lineDrawTime = time;
     }
 }
