@@ -1,12 +1,13 @@
 {
   "name": "loop",
+  "type": "module",
   "version": "1.0.0",
   "description": "browser game 'loop'",
   "main": "webpack.config.js",
   "scripts": {
     "start": "webpack serve --open",
-    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js",
-    "debug": "cross-env NODE_ENV=development DEBUG_MODE=true webpack serve --open"
+    "build": "cross-env NODE_ENV=production webpack --config webpack.config.cjs",
+    "debug": "cross-env NODE_ENV=development DEBUG_MODE=true webpack serve --open --config webpack.config.cjs"
   },
   "repository": {
     "type": "git",
@@ -20,15 +21,20 @@
   },
   "homepage": "https://github.com/Uhsmt/LoopGame#readme",
   "dependencies": {
-    "@types/node": "^22.5.5",
-    "@types/pixi.js": "^5.0.0",
-    "typescript": "^5.6.2"
+    "@types/pixi.js": "^5.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.7.4",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
+    "eslint": "^9.12.0",
+    "eslint-config-prettier": "^9.1.0",
     "html-webpack-plugin": "^5.6.0",
+    "prettier": "^3.3.3",
     "ts-loader": "^9.5.1",
+    "typescript": "^5.6.2",
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.1.0"

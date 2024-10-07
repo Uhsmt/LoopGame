@@ -54,3 +54,9 @@ npm run debug
 
 ### build(Not need. Github Action build and deploy automaticaly.)
 npm run build
+
+### pritter
+npx prettier --write ./src/scripts/utils/Utility.ts
+
+### eslint 
+npx eslint --fix "src/scripts/utils/Utility.ts"
