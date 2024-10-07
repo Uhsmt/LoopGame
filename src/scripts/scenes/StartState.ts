@@ -18,21 +18,12 @@ export class StartState {
     private titleSprite: PIXI.Sprite;
 
     constructor(manager: GameStateManager) {
+        const app = manager.app;
+
         this.manager = manager;
         this.container = new PIXI.Container();
         this.manager.app.stage.addChild(this.container);
-    }
-
-    onEnter(): void {                
-        if (!this.manager || !this.manager.app) {
-            console.error("ManagerまたはManagerのappが定義されていません");
-            return;
-        }
-        const app = this.manager.app;
-
-        //LineDrawerを初期化
         this.lineDrawer = new LineDrawer(this.manager.app);
-        this.lineDrawer.on('loopAreaCompleted', this.handleLoopAreaCompleted.bind(this));
 
         // background
         this.backgroundSprite = new PIXI.Sprite(PIXI.Texture.from('menu_background'));
@@ -58,11 +49,23 @@ export class StartState {
         this.titleSprite = titleSprite;
         this.container.addChild(titleSprite);
 
+
         // ボタン
         this.startButton = this.button('Start', app.screen.width / 4 - 50, app.screen.height * 3 / 5);
         this.ruleButton= this.button('Rules', app.screen.width * 3 / 4 - 50, app.screen.height * 3 / 5);
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
+    }
+
+    onEnter(): void {                
+        if (!this.manager || !this.manager.app) {
+            console.error("ManagerまたはManagerのappが定義されていません");
+            return;
+        }
+        const app = this.manager.app;
+
+        //LineDrawerのイベントハンドラを設定
+        this.lineDrawer.on('loopAreaCompleted', this.handleLoopAreaCompleted.bind(this));
 
         // 適当に蝶を飛ばす
         this.dispButterfly();
@@ -206,7 +209,7 @@ export class StartState {
             // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
             this.manager.app.ticker.addOnce(() => {
                 this.lineDrawer.cleanup();
-                this.lineDrawer = null; // 破棄
+                // this.lineDrawer; // 破棄
             });
         }
     }

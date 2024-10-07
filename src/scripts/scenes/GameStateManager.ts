@@ -2,7 +2,7 @@ import { GameState } from "./GameState";
 import * as PIXI from 'pixi.js';
 
 export class GameStateManager {
-    private currentState: GameState;
+    private currentState!: GameState;
     public app: PIXI.Application;
 
     constructor(app: PIXI.Application) {

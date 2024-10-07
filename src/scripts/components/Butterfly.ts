@@ -58,16 +58,18 @@ export class Butterfly extends PIXI.Container {
         this.spriteWith = this.sprite.width;
 
         // color change用のobject
-        if (color != subColor){ 
-            const ellipse = new PIXI.Graphics();
-            ellipse.ellipse(0,0,30 * this.sprite.scale.x,40 * this.sprite.scale.x)
-            ellipse.fill(0xffffff);
-            ellipse.x = 0;
-            ellipse.y = 0;
-            this.ellipse = ellipse;
+        const ellipse = new PIXI.Graphics();
+        ellipse.ellipse(0,0,30 * this.sprite.scale.x,40 * this.sprite.scale.x)
+        ellipse.fill(0xffffff);
+        ellipse.x = 0;
+        ellipse.y = 0;
+        this.ellipse = ellipse;
+        if (color == subColor){ 
+            this.ellipse.alpha = 0;
+        }else{
             this.ellipse.tint = subColor;
-            this.addChild(ellipse);
         }
+        this.addChild(ellipse);
 
         // for multiplications
         this.multiplicationRate = multiplicationRate;

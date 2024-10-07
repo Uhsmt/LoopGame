@@ -56,6 +56,26 @@ export class GameplayState {
             this.butterflies.push(this.createButterfly());
         }
 
+        //　スタートメッセージ
+        this.startMessage = new PIXI.BitmapText({text:`Catch ${this.stageInfo.needCount} butterflies!`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
+        this.startMessage.x = this.manager.app.renderer.width / 2 - this.startMessage.width / 2;
+        this.startMessage.y = this.manager.app.renderer.height / 3;
+        this.startMessage.alpha = 0;
+        this.container.addChild(this.startMessage);
+
+        //　スコアメッセージ
+        this.scoreMessage = new PIXI.BitmapText({text:`0 / ${this.stageInfo.needCount}`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
+        this.scoreMessage.x = this.manager.app.renderer.width / 2 - this.scoreMessage.width / 2;
+        this.scoreMessage.y = this.manager.app.renderer.height - 50;
+        this.scoreMessage.alpha = 0;
+        this.container.addChild(this.scoreMessage);
+
+        //　アクションメッセージ
+        this.actionMessage = new PIXI.BitmapText({text:"", style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
+        this.actionMessage.y = this.manager.app.renderer.height / 2;
+        this.actionMessage.alpha = 0;
+        this.container.addChild(this.actionMessage);
+
         //　イベントリスナー：クリックしたら一時停止
         this.pointerDownHandler = () => {
             this.isRunning = !this.isRunning;
@@ -129,7 +149,7 @@ export class GameplayState {
             // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
             this.manager.app.ticker.addOnce(() => {
                 this.lineDrawer.cleanup();
-                this.lineDrawer = null; // 破棄
+                // this.lineDrawer = null; // 破棄
             });
         }
     }
@@ -174,30 +194,18 @@ export class GameplayState {
     }
 
     private displayStartMessage(): void {
-        this.startMessage = new PIXI.BitmapText({text:`Catch ${this.stageInfo.needCount} butterflies!`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
-        this.startMessage.x = this.manager.app.renderer.width / 2 - this.startMessage.width / 2;
-        this.startMessage.y = this.manager.app.renderer.height / 3;
-        this.container.addChild(this.startMessage);
+        this.startMessage.alpha = 1;
     }
 
     private displayScoreMessage(): void {
-        this.scoreMessage = new PIXI.BitmapText({text:`0 / ${this.stageInfo.needCount}`, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
-        this.scoreMessage.x = this.manager.app.renderer.width / 2 - this.scoreMessage.width / 2;
-        this.scoreMessage.y = this.manager.app.renderer.height - 50;
-        this.container.addChild(this.scoreMessage);
+        this.scoreMessage.alpha = 1;
     }
 
     private showActionMessage(message: string, isFadeOut:boolean = true): void {
-        if(this.actionMessage){
-            this.actionMessage.alpha = 1;
-            this.actionMessage.text = message;
-            this.actionMessage.x = this.manager.app.renderer.width / 2 - this.actionMessage.width / 2;
-        }else{
-            this.actionMessage = new PIXI.BitmapText({text:message, style:new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 24, fill: 0x000000 })});
-            this.actionMessage.x = this.manager.app.renderer.width / 2 - this.actionMessage.width / 2;
-            this.actionMessage.y = this.manager.app.renderer.height / 2;
-            this.container.addChild(this.actionMessage);    
-        }
+        this.actionMessage.alpha = 1;
+        this.actionMessage.text = message;
+        this.actionMessage.x = this.manager.app.renderer.width / 2 - this.actionMessage.width / 2;
+        
         if(isFadeOut){
             setTimeout(() => {
                 this.hideActionmessage();
