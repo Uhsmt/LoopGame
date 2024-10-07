@@ -12,6 +12,7 @@ export class LineDrawer extends EventEmitter {
     }[] = [];
     private lineDrawTime: number = 1200;
     private lineColor: number = 0xffffff;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pointerMoveHandler: any;
 
     constructor(app: PIXI.Application, color: number = 0xffffff) {
@@ -28,6 +29,7 @@ export class LineDrawer extends EventEmitter {
         if (this.pointerMoveHandler) {
             this.app.stage.removeEventListener(
                 "pointermove",
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 this.pointerMoveHandler,
             );
         }
@@ -44,6 +46,7 @@ export class LineDrawer extends EventEmitter {
         }) => {
             this.onPointerMove(e.data.global.x, e.data.global.y);
         };
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         this.app.stage.addEventListener("pointermove", this.pointerMoveHandler);
     }
 

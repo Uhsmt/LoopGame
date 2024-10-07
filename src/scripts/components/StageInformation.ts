@@ -45,6 +45,7 @@ export class StageInformation {
 
         Object.keys(config).forEach((key) => {
             if (key in this) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                 (this as any)[key] = config[key as keyof typeof config];
             }
         });

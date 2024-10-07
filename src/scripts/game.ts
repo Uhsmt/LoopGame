@@ -5,6 +5,7 @@ import { StartState } from "./scenes/StartState";
 
 const app = new PIXI.Application();
 
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 window.addEventListener("load", async () => {
     await app.init({
         width: 800,
@@ -13,19 +14,19 @@ window.addEventListener("load", async () => {
         antialias: true,
     });
     // Load bitmap font
-    PIXI.Assets.load(imageSrcs).then(setUp);
+    await PIXI.Assets.load(imageSrcs).then(setUp);
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    var baseUrl = BASE_URL;
+    const baseUrl = BASE_URL;
     const images = document.querySelectorAll("img");
     images.forEach((image) => {
-        const img = image as HTMLImageElement;
+        const img = image;
         img.src = baseUrl + img.getAttribute("src");
     });
 });
 
-async function setUp() {
+function setUp() {
     const appView = app.canvas as HTMLCanvasElement | null;
     appView!.id = "app";
     if (appView) {
@@ -36,11 +37,12 @@ async function setUp() {
         const startState = new StartState(manager);
         manager.setState(startState);
 
-        app.ticker.add((deltaTime) => {
+        app.ticker.add(() => {
             manager.update(app.ticker.deltaMS);
             manager.render();
         });
         // カーソルのスタイルを変更
+        // eslint-disable-next-line no-useless-escape
         const cursorIcon = `url(\'${BASE_URL}assets/pencil.png\'),auto`;
         app.renderer.events.cursorStyles.default = cursorIcon;
     }

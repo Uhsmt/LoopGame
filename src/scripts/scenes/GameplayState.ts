@@ -6,7 +6,6 @@ import { Sun } from "../components/Sun";
 import { ResultState } from "./ResultState";
 import { Butterfly } from "../components/Butterfly";
 import * as Utility from "../utils/Utility";
-import { myConsts } from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 
 export class GameplayState {
@@ -24,7 +23,7 @@ export class GameplayState {
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
-    pointerDownHandler: any;
+    pointerDownHandler: (event: PIXI.FederatedPointerEvent) => void;
     stageInfo: StageInformation;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
@@ -56,12 +55,12 @@ export class GameplayState {
         this.sun = new Sun();
         this.container.addChild(this.sun);
 
-        //　蝶々を生成
+        // 蝶々を生成
         for (let i = 0; i < this.stageInfo.stageButterflyCount; i++) {
             this.butterflies.push(this.createButterfly());
         }
 
-        //　スタートメッセージ
+        // スタートメッセージ
         this.startMessage = new PIXI.BitmapText({
             text: `Catch ${this.stageInfo.needCount} butterflies!`,
             style: new PIXI.TextStyle({
@@ -76,7 +75,7 @@ export class GameplayState {
         this.startMessage.alpha = 0;
         this.container.addChild(this.startMessage);
 
-        //　スコアメッセージ
+        // スコアメッセージ
         this.scoreMessage = new PIXI.BitmapText({
             text: `0 / ${this.stageInfo.needCount}`,
             style: new PIXI.TextStyle({
@@ -91,7 +90,7 @@ export class GameplayState {
         this.scoreMessage.alpha = 0;
         this.container.addChild(this.scoreMessage);
 
-        //　アクションメッセージ
+        // アクションメッセージ
         this.actionMessage = new PIXI.BitmapText({
             text: "",
             style: new PIXI.TextStyle({
@@ -104,7 +103,7 @@ export class GameplayState {
         this.actionMessage.alpha = 0;
         this.container.addChild(this.actionMessage);
 
-        //　イベントリスナー：クリックしたら一時停止
+        // イベントリスナー：クリックしたら一時停止
         this.pointerDownHandler = () => {
             this.isRunning = !this.isRunning;
             this.lineDrawer.clearAllSegments();
@@ -284,7 +283,7 @@ export class GameplayState {
             // １匹だけの時は、colorChange
             butterfliesInLoopArea[0].switchColor();
         } else if (butterfliesInLoopArea.length === 2) {
-            //　2匹の時は、同じ色であればGet
+            // 2匹の時は、同じ色であればGet
             if (
                 butterfliesInLoopArea[0].color ===
                 butterfliesInLoopArea[1].color
@@ -313,7 +312,7 @@ export class GameplayState {
         this.caputuredButterflies.push(...butterflies);
         this.updateScoreMessage();
 
-        // score加算 全部同じ色の場合は蝶の数×10　それ以外は蝶の数×20
+        // score加算 全部同じ色の場合は蝶の数×10 それ以外は蝶の数×20
         const basePoint =
             butterflies.length *
             (butterflies.every((b) => b.color === butterflies[0].color)

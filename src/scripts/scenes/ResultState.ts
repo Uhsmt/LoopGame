@@ -42,7 +42,7 @@ export class ResultState {
         this.container.addChild(stickySprite);
         await this.displayStageResult();
 
-        //　次のステージ情報を作成
+        // 次のステージ情報を作成
 
         // 5秒まつ
         await new Promise((resolve) =>
@@ -56,7 +56,7 @@ export class ResultState {
             this.container.removeChild(msg);
             msg.destroy();
         });
-        //　蝶も消す
+        // 蝶も消す
         this.messageButterflies.forEach((butterfly) => {
             this.container.removeChild(butterfly);
             butterfly.delete();
@@ -92,6 +92,7 @@ export class ResultState {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     update(delta: number): void {}
 
     render(): void {}

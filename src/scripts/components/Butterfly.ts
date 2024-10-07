@@ -227,7 +227,7 @@ export class Butterfly extends PIXI.Container {
         return hits / points.length > hitsRate;
     }
 
-    async delete(): Promise<void> {
+    delete(){
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
             if (this.alpha > 0) {

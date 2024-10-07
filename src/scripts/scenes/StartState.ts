@@ -71,8 +71,6 @@ export class StartState {
             console.error("ManagerまたはManagerのappが定義されていません");
             return;
         }
-        const app = this.manager.app;
-
         //LineDrawerのイベントハンドラを設定
         this.lineDrawer.on(
             "loopAreaCompleted",
@@ -175,7 +173,7 @@ export class StartState {
         if (this.isRuleButtonInLoopArea(loopArea)) {
             this.onRuleSelected();
         } else if (this.isStartButtonInLoopArea(loopArea)) {
-            this.onStartGameSelected();
+            void this.onStartGameSelected();
         }
     }
 
@@ -256,7 +254,7 @@ export class StartState {
     }
 
     private onRuleSelected(): void {
-        //　TODO　RULEの実装
+        //TODO RULEの実装
         console.log("Rule is here.");
         // this.manager.setState(new RulesState(this.manager));
     }

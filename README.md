@@ -11,7 +11,8 @@ https://uhsmt.github.io/LoopGame/
 - [ ] BitmapText font
 - [ ] canvas外の場合のライン描画
 - [ ] soundセット
-- [ ] lint
+- [ ] eslint
+- [x] Prettier
 
 ### phase1.5
 - [ ] 記録保持 

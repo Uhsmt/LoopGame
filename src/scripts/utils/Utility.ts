@@ -14,10 +14,10 @@ export function random(min: number, max: number): number {
  * @param {*} _count
  * @returns array[]
  */
-export function chooseAtRandom(_arrayData: any[], _count: number): any[] {
+export function chooseAtRandom<T>(_arrayData: T[], _count: number): T[] {
     const count = _count || 1;
-    const copyArray = JSON.parse(JSON.stringify(_arrayData));
-    const result = [];
+    const copyArray = [..._arrayData]; // 型安全な方法で配列をコピーする
+    const result: T[] = [];
 
     for (let i = 0; i < count; i++) {
         const arrayIndex = Math.floor(Math.random() * copyArray.length);
@@ -28,7 +28,6 @@ export function chooseAtRandom(_arrayData: any[], _count: number): any[] {
 
     return result;
 }
-
 /**
  * 指定した確率でtrueを返す
  * @param {*} _percentage
