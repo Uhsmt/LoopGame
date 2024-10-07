@@ -1,0 +1,8 @@
+# ignore package-lock.json
+package.json
+package-lock.json
+
+README.md
+
+# .github/workflows
+.github/workflows

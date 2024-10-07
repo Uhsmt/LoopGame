@@ -108,7 +108,7 @@
         "butterflyColorNum": 3,
         "needCount": 28,
         "stageButterflyCount": 15,
-        "butterflySize": "random"   ,
+        "butterflySize": "random",
         "isButterflyColorChange": true,
         "maxMultiplateRate": 3,
         "muptipleButterflyRate": 0.15

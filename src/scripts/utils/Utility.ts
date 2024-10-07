@@ -5,7 +5,7 @@
  * @returns number
  */
 export function random(min: number, max: number): number {
-  return min + Math.round(Math.random() * (max - min));
+    return min + Math.round(Math.random() * (max - min));
 }
 
 /**
@@ -15,18 +15,18 @@ export function random(min: number, max: number): number {
  * @returns array[]
  */
 export function chooseAtRandom(_arrayData: any[], _count: number): any[] {
-  const count = _count || 1;
-  const copyArray = JSON.parse(JSON.stringify(_arrayData));
-  const result = [];
+    const count = _count || 1;
+    const copyArray = JSON.parse(JSON.stringify(_arrayData));
+    const result = [];
 
-  for (let i = 0; i < count; i++) {
-    const arrayIndex = Math.floor(Math.random() * copyArray.length);
+    for (let i = 0; i < count; i++) {
+        const arrayIndex = Math.floor(Math.random() * copyArray.length);
 
-    result[i] = copyArray[arrayIndex];
-    copyArray.splice(arrayIndex, 1);
-  }
+        result[i] = copyArray[arrayIndex];
+        copyArray.splice(arrayIndex, 1);
+    }
 
-  return result;
+    return result;
 }
 
 /**
@@ -35,9 +35,9 @@ export function chooseAtRandom(_arrayData: any[], _count: number): any[] {
  * @returns boolean
  */
 export function isTrueRandom(_percentage: number): boolean {
-  return Math.random() * 100 <= _percentage;
+    return Math.random() * 100 <= _percentage;
 }
 
 export function formatNumberWithCommas(x: number): string {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }

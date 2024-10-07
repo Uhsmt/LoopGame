@@ -1,5 +1,5 @@
 import { GameState } from "./GameState";
-import * as PIXI from 'pixi.js';
+import * as PIXI from "pixi.js";
 
 export class GameStateManager {
     private currentState!: GameState;
@@ -8,7 +8,7 @@ export class GameStateManager {
     constructor(app: PIXI.Application) {
         this.app = app;
         // for cursor move
-        app.stage.eventMode = 'static';
+        app.stage.eventMode = "static";
         app.stage.hitArea = app.screen;
     }
 
@@ -28,4 +28,3 @@ export class GameStateManager {
         this.currentState.render();
     }
 }
-

@@ -1,4 +1,4 @@
-import * as PIXI from 'pixi.js';
+import * as PIXI from "pixi.js";
 
 export class Sun extends PIXI.Container {
     public blinking: boolean;
@@ -6,7 +6,7 @@ export class Sun extends PIXI.Container {
     constructor() {
         super(); // 親クラスのコンストラクタを呼び出す
         this.blinking = false;
-        const sprite = PIXI.Sprite.from('sun');
+        const sprite = PIXI.Sprite.from("sun");
 
         sprite.scale.set(0.7);
         sprite.anchor.set(0.5);
