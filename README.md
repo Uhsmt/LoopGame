@@ -10,12 +10,16 @@ https://uhsmt.github.io/LoopGame/
 - [x] deltaによるスピード調整
 - [ ] BitmapText font
 - [ ] canvas外の場合のライン描画
-- [ ] soundセット
-- [ ] eslint
+- [x] eslint
 - [x] Prettier
 
 ### phase1.5
 - [ ] 記録保持 
+
+### Rule
+- [ ] basic rule
+- [ ] paging
+- [ ] 特殊オブジェクト
 
 ### Design
 - [ ] メッセージの日本語/英語対応
@@ -24,12 +28,14 @@ https://uhsmt.github.io/LoopGame/
  - [ ] 登場モーション
  - [ ] 居眠りモーション
  - [ ] 負けモーション
+- [ ] soundセット
 
 ### phase2 お助けオブジェクト
 - [ ] お助けsprite作成
 - [ ] あつまれ！
 - [ ] 時間延長
 - [ ] ループ延長
+- [ ] とまれ！
 
 ### phase3 お邪魔オブジェクト
 - [ ] お邪魔sprite作成
