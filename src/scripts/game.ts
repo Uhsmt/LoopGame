@@ -21,9 +21,9 @@ window.addEventListener("load", async () => {
         return;
     }
     await app.init({
-        width: 800,
-        height: 600,
-        backgroundColor: 0xfefff1,
+        width: 900,
+        height: 700,
+        backgroundColor: 0xffd700,
         antialias: true,
     });
     // Load bitmap font

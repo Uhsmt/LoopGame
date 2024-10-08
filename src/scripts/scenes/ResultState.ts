@@ -5,44 +5,42 @@ import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
 import { Butterfly } from "../components/Butterfly";
 import * as Utility from "../utils/Utility";
+import { StateBase } from "./BaseState";
 
-export class ResultState {
-    private manager: GameStateManager;
-    private container: PIXI.Container;
+export class ResultState extends StateBase {
     private stageInfo: StageInformation;
     private messages: Message[] = [];
     private messageButterflies: Butterfly[] = [];
+    private stickySprite: PIXI.Sprite;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
-        this.manager = manager;
-        this.container = new PIXI.Container();
-        this.manager.app.stage.addChild(this.container);
-        this.stageInfo = stageInfo;
+        super(manager);
 
-        const app = this.manager.app;
+        this.stageInfo = stageInfo;
 
         // background
         const backgroundSprite = new PIXI.Sprite(
             PIXI.Texture.from("background"),
         );
-        backgroundSprite.interactive = true;
-        backgroundSprite.anchor.y = 1;
-        backgroundSprite.x = 0;
-        backgroundSprite.scale = app.screen.height / backgroundSprite.height;
-        backgroundSprite.y = app.screen.height;
+        this.adjustBackGroundSprite(backgroundSprite);
         this.container.addChild(backgroundSprite);
+
+        // sticky
+        const stickySprite = new PIXI.Sprite(PIXI.Texture.from("sticky"));
+        stickySprite.anchor.set(0.5);
+        stickySprite.scale.set(0.25);
+        stickySprite.x = this.manager.app.screen.width / 2;
+        stickySprite.y = this.manager.app.screen.height / 2;
+        this.stickySprite = stickySprite;
+        this.container.addChild(stickySprite);
+
+        // frame
+        this.addFrameGraphic();
     }
 
     async onEnter(): Promise<void> {
-        const stickySprite = new PIXI.Sprite(PIXI.Texture.from("sticky"));
-        stickySprite.anchor.set(0.5);
-        stickySprite.x = this.manager.app.screen.width / 2;
-        stickySprite.y = this.manager.app.screen.height / 2;
-        stickySprite.scale.set(0.25);
-        this.container.addChild(stickySprite);
+        // disp result
         await this.displayStageResult();
-
-        // 次のステージ情報を作成
 
         // 5秒まつ
         await new Promise((resolve) =>
@@ -138,7 +136,10 @@ export class ResultState {
             totalScoreMsg,
         ];
         this.messages = [...top_msgs, ...result_msgs];
-        const marginTop = 110;
+        const marginTop =
+            this.stickySprite.y -
+            this.stickySprite.height / 2 +
+            this.stickySprite.height * 0.12;
         const lineHeight = this.manager.app.screen.height * 0.08;
 
         top_msgs.forEach((msg, index) => {

@@ -6,10 +6,9 @@ import * as Utility from "../utils/Utility";
 import { Butterfly } from "../components/Butterfly";
 import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
+import { StateBase } from "./BaseState";
 
-export class StartState {
-    private manager: GameStateManager;
-    private container: PIXI.Container;
+export class StartState extends StateBase {
     private lineDrawer: LineDrawer;
     private startButton: PIXI.BitmapText;
     private ruleButton: PIXI.BitmapText;
@@ -18,29 +17,19 @@ export class StartState {
     private titleSprite: PIXI.Sprite;
 
     constructor(manager: GameStateManager) {
+        super(manager);
         const app = manager.app;
-
-        this.manager = manager;
-        this.container = new PIXI.Container();
-        this.manager.app.stage.addChild(this.container);
         this.lineDrawer = new LineDrawer(this.manager.app);
 
         // background
         this.backgroundSprite = new PIXI.Sprite(
             PIXI.Texture.from("menu_background"),
         );
-        this.backgroundSprite.interactive = true;
-        this.backgroundSprite.anchor.set(0.5, 0.5);
-        const bgRateX = app.screen.width / this.backgroundSprite.width;
-        const bgRateY = app.screen.height / this.backgroundSprite.height;
-        let bgScale = bgRateX;
-        if (bgRateX < bgRateY) {
-            bgScale = bgRateY;
-        }
-        this.backgroundSprite.scale.set(bgScale);
-        this.backgroundSprite.x = app.screen.width / 2;
-        this.backgroundSprite.y = app.screen.height / 2;
+        this.adjustBackGroundSprite(this.backgroundSprite);
         this.container.addChild(this.backgroundSprite);
+
+        // 適当に蝶を飛ばす
+        this.dispButterfly();
 
         // title
         const titleSprite = new PIXI.Sprite(PIXI.Texture.from("title"));
@@ -64,6 +53,9 @@ export class StartState {
         );
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
+
+        // Frame
+        this.addFrameGraphic();
     }
 
     onEnter(): void {
@@ -76,9 +68,6 @@ export class StartState {
             "loopAreaCompleted",
             this.handleLoopAreaCompleted.bind(this),
         );
-
-        // 適当に蝶を飛ばす
-        this.dispButterfly();
 
         if (DEBUG_MODE) {
             this.debug();
@@ -116,7 +105,7 @@ export class StartState {
         this.butterflies.push(butterfly2);
         this.butterflies.push(butterfly3);
 
-        this.container.addChild(...this.butterflies);
+        // this.container.addChild(...this.butterflies);
     }
 
     private dispButterfly() {
@@ -231,11 +220,7 @@ export class StartState {
 
         // next background
         const nextBGSprite = new PIXI.Sprite(PIXI.Texture.from("background"));
-        nextBGSprite.anchor.y = 1;
-        nextBGSprite.x = 0;
-        nextBGSprite.scale =
-            this.manager.app.screen.height / nextBGSprite.height;
-        nextBGSprite.y = this.manager.app.screen.height;
+        this.adjustBackGroundSprite(nextBGSprite);
         this.container.addChildAt(nextBGSprite, 0);
 
         await Promise.all([

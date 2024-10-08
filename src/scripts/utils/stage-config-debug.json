@@ -13,10 +13,10 @@
         "stageTime": 60,
         "debug": true,
         "butterflyColorNum": 4,
-        "needCount": 2,
+        "needCount": 5,
         "stageButterflyCount": 12,
         "butterflySize": "large",
-        "isButterflyColorChange": true,
+        "isButterflyColorChange": false,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.2
     },

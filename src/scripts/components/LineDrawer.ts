@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import { EventEmitter } from "events";
+import * as Const from "../utils/Const";
 
 export class LineDrawer extends EventEmitter {
     private app: PIXI.Application;
@@ -51,6 +52,18 @@ export class LineDrawer extends EventEmitter {
     }
 
     private onPointerMove(x: number, y: number): void {
+        if (x < Const.MARGIN) {
+            x = Const.MARGIN;
+        } else if (x > this.app.screen.width - Const.MARGIN) {
+            x = this.app.screen.width - Const.MARGIN;
+        }
+
+        if (y < Const.MARGIN) {
+            y = Const.MARGIN;
+        } else if (y > this.app.screen.height - Const.MARGIN) {
+            y = this.app.screen.height - Const.MARGIN;
+        }
+
         if (!this.startPoint) {
             // 線の描画開始点が未設定の場合、現在の位置を開始点とする
             this.startPoint = new PIXI.Point(x, y);

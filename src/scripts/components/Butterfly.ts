@@ -75,10 +75,9 @@ export class Butterfly extends PIXI.Container {
         ellipse.x = 0;
         ellipse.y = 0;
         this.ellipse = ellipse;
+        this.ellipse.tint = subColor;
         if (color == subColor) {
             this.ellipse.alpha = 0;
-        } else {
-            this.ellipse.tint = subColor;
         }
         this.addChild(ellipse);
 
@@ -101,12 +100,16 @@ export class Butterfly extends PIXI.Container {
 
     fly(screenWidth: number, screenHeight: number, delta: number): void {
         if (!this.isFlying) return;
+        const left = Const.MARGIN;
+        const right = screenWidth - Const.MARGIN;
+        const top = Const.MARGIN;
+        const bottom = screenHeight - Const.MARGIN;
 
         // 横方向
-        if (this.xDiretion < 0 && this.x <= this.spriteWith) {
+        if (this.xDiretion < 0 && this.x <= left + this.spriteWith) {
             this.xFrame = 0;
             this.xDiretion = Math.abs(this.xDiretion);
-        } else if (this.xDiretion > 0 && this.x >= screenWidth) {
+        } else if (this.xDiretion > 0 && this.x >= right) {
             this.xFrame = 0;
             this.xDiretion = -1 * Math.abs(this.xDiretion);
         } else if (this.xFrame === this.xTernFrame) {
@@ -117,10 +120,10 @@ export class Butterfly extends PIXI.Container {
         }
 
         // 縦方向
-        if (this.yDiretion < 0 && this.y <= this.sprite.height) {
+        if (this.yDiretion < top && this.y <= this.sprite.height + top) {
             this.yFrame = 0;
             this.yDiretion = Math.abs(this.yDiretion);
-        } else if (this.yDiretion > 0 && this.y >= screenHeight) {
+        } else if (this.yDiretion > 0 && this.y >= bottom) {
             this.yFrame = 0;
             this.yDiretion = -1 * Math.abs(this.yDiretion);
         } else if (this.yFrame === this.yTernFrame) {
@@ -176,10 +179,10 @@ export class Butterfly extends PIXI.Container {
     setRandomInitialPoistion(screenWidth: number, screenHeight: number): void {
         const positions = ["top", "bottom", "left", "right"];
         const position = Utility.chooseAtRandom(positions, 1)[0];
-        const top_y = 0;
-        const bottom_y = screenHeight + this.height;
-        const left_x = 0;
-        const right_x = screenWidth + this.width;
+        const top_y = Const.MARGIN;
+        const bottom_y = screenHeight - Const.MARGIN + this.height;
+        const left_x = Const.MARGIN;
+        const right_x = screenWidth - Const.MARGIN + this.width;
 
         let x, y;
         switch (position) {

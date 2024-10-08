@@ -6,11 +6,11 @@ import { Sun } from "../components/Sun";
 import { ResultState } from "./ResultState";
 import { Butterfly } from "../components/Butterfly";
 import * as Utility from "../utils/Utility";
+import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
+import { StateBase } from "./BaseState";
 
-export class GameplayState {
-    private manager: GameStateManager;
-    private container: PIXI.Container;
+export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
     private scoreMessage: PIXI.BitmapText;
     private actionMessage: PIXI.BitmapText;
@@ -27,9 +27,8 @@ export class GameplayState {
     stageInfo: StageInformation;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
-        this.manager = manager;
-        this.container = new PIXI.Container();
-        this.manager.app.stage.addChild(this.container);
+        super(manager);
+
         this.lineDrawer = new LineDrawer(this.manager.app, 0x000000);
         this.lineDrawer.on(
             "loopAreaCompleted",
@@ -44,21 +43,12 @@ export class GameplayState {
         const backgroundSprite = new PIXI.Sprite(
             PIXI.Texture.from("background"),
         );
-        backgroundSprite.interactive = true;
-        backgroundSprite.anchor.y = 1;
-        backgroundSprite.x = 0;
-        backgroundSprite.scale = app.screen.height / backgroundSprite.height;
-        backgroundSprite.y = app.screen.height;
+        this.adjustBackGroundSprite(backgroundSprite);
         this.container.addChild(backgroundSprite);
 
         // SUN
         this.sun = new Sun();
         this.container.addChild(this.sun);
-
-        // 蝶々を生成
-        for (let i = 0; i < this.stageInfo.stageButterflyCount; i++) {
-            this.butterflies.push(this.createButterfly());
-        }
 
         // スタートメッセージ
         this.startMessage = new PIXI.BitmapText({
@@ -71,7 +61,8 @@ export class GameplayState {
         });
         this.startMessage.x =
             this.manager.app.renderer.width / 2 - this.startMessage.width / 2;
-        this.startMessage.y = this.manager.app.renderer.height / 3;
+        this.startMessage.y =
+            this.manager.app.renderer.height / 3 + Const.MARGIN;
         this.startMessage.alpha = 0;
         this.container.addChild(this.startMessage);
 
@@ -86,7 +77,10 @@ export class GameplayState {
         });
         this.scoreMessage.x =
             this.manager.app.renderer.width / 2 - this.scoreMessage.width / 2;
-        this.scoreMessage.y = this.manager.app.renderer.height - 50;
+        this.scoreMessage.y =
+            this.manager.app.renderer.height -
+            Const.MARGIN -
+            this.scoreMessage.height * 1.5;
         this.scoreMessage.alpha = 0;
         this.container.addChild(this.scoreMessage);
 
@@ -102,6 +96,21 @@ export class GameplayState {
         this.actionMessage.y = this.manager.app.renderer.height / 2;
         this.actionMessage.alpha = 0;
         this.container.addChild(this.actionMessage);
+
+        // 蝶々を生成
+        for (let i = 0; i < this.stageInfo.stageButterflyCount; i++) {
+            this.butterflies.push(this.createButterfly());
+        }
+        this.butterflies.forEach((butterfly) => {
+            this.container.addChild(butterfly);
+            butterfly.setRandomInitialPoistion(
+                this.manager.app.screen.width,
+                this.manager.app.screen.height,
+            );
+        });
+
+        // Frame
+        this.addFrameGraphic();
 
         // イベントリスナー：クリックしたら一時停止
         this.pointerDownHandler = () => {
@@ -122,14 +131,6 @@ export class GameplayState {
         this.displayStartMessage();
         this.displayScoreMessage();
         this.sun.position.set(0, this.manager.app.screen.height);
-
-        this.butterflies.forEach((butterfly) => {
-            this.container.addChild(butterfly);
-            butterfly.setRandomInitialPoistion(
-                this.manager.app.screen.width,
-                this.manager.app.screen.height,
-            );
-        });
 
         const deleteMessage = new Promise((resolve) =>
             setTimeout(() => {
@@ -198,10 +199,12 @@ export class GameplayState {
 
     private moveSun(): void {
         const totalTime = this.gameTimer * 1000;
-        const startX = 0;
-        const endX = this.manager.app.renderer.width;
-        const startY = this.manager.app.renderer.height;
-        const peakY = this.manager.app.renderer.height * 0.8;
+        const startX = Const.MARGIN;
+        const endX = this.manager.app.renderer.width - Const.MARGIN;
+        const startY = this.manager.app.renderer.height - Const.MARGIN;
+        const peakY =
+            Const.MARGIN +
+            (this.manager.app.renderer.height - Const.MARGIN * 2) * 0.5;
         const t = this.elapsedTime / totalTime;
         const x = startX + t * (endX - startX);
         const y = startY - 4 * peakY * t * (1 - t);
@@ -348,7 +351,10 @@ export class GameplayState {
             for (let i = 0; i < butterflies.length; i++) {
                 const butterfly = this.createButterfly();
                 this.butterflies.push(butterfly);
-                this.container.addChild(butterfly);
+                this.container.addChildAt(
+                    butterfly,
+                    this.container.children.length - 2,
+                );
                 butterfly.setRandomInitialPoistion(
                     this.manager.app.screen.width,
                     this.manager.app.screen.height,
