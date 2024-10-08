@@ -5,7 +5,6 @@ import { StartState } from "./scenes/StartState";
 
 const app = new PIXI.Application();
 
-
 function isMobileDevice(): boolean {
     const userAgent = navigator.userAgent || navigator.vendor;
     return /android/i.test(userAgent) || /iPad|iPhone|iPod/.test(userAgent);
@@ -14,7 +13,6 @@ function isMobileDevice(): boolean {
 function showMobileMessage(): void {
     alert("Sorry! This game is for PC only. Smartphone ver is coming soon!");
 }
-
 
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 window.addEventListener("load", async () => {

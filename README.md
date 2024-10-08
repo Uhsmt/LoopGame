@@ -12,6 +12,7 @@ https://uhsmt.github.io/LoopGame/
 - [ ] canvas外の場合のライン描画
 - [x] eslint
 - [x] Prettier
+- [ ] スマホ制御
 
 ### phase1.5
 - [ ] 記録保持 
@@ -62,8 +63,9 @@ npm run debug
 ### build(Not need. Github Action build and deploy automaticaly.)
 npm run build
 
-### pritter
-npx prettier --write ./src/scripts/utils/Utility.ts
+### pritter & eslint
+- npm run lint:fix
 
-### eslint 
-npx eslint --fix "src/scripts/utils/Utility.ts"
+別々にやりたいとき
+- npx prettier --write filename
+- npx eslint --fix filename
