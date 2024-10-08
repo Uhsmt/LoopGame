@@ -9,10 +9,11 @@ https://uhsmt.github.io/LoopGame/
 - [x] game finish&restart
 - [x] deltaによるスピード調整
 - [ ] BitmapText font
-- [ ] canvas外の場合のライン描画
+- [x] canvas外の場合のライン描画
 - [x] eslint
 - [x] Prettier
-- [ ] スマホ制御
+- [x] スマホ制御
+- [ ] 蝶のカラー調整
 
 ### phase1.5
 - [ ] 記録保持 

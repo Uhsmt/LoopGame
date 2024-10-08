@@ -21,8 +21,8 @@ window.addEventListener("load", async () => {
         return;
     }
     await app.init({
-        width: 900,
-        height: 700,
+        width: 850,
+        height: 650,
         backgroundColor: 0xffd700,
         antialias: true,
     });

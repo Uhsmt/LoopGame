@@ -9,7 +9,7 @@ export const COLOR_LIST = [
 
 export const SIZE_LIST = ["small", "medium", "large"] as const;
 
-export const MARGIN = 50;
+export const MARGIN = 25;
 
 export const imageSrcs = [
     { alias: "title", src: `${BASE_URL}assets/title.png` },
