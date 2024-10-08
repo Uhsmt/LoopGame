@@ -1,22 +1,13 @@
 /* eslint @typescript-eslint/no-namespace: 0 */
-export namespace myConsts {
-    export const BUTTERFLY_WIDTH = 260;
-    export const BUTTERFLY_HEIGHT = 256;
-    export const FLAP_DURATION = 12;
-    export const COLOR_LIST = [
-        0xffd700, // gold
-        0xff69b4, // hotpink
-        0xdc143c, // crimson
-        0x6a5acd, // slateblue
-        0xadff2f, // greenyellow
-    ];
-}
+export const COLOR_LIST = [
+    0xffd700, // gold
+    0xff69b4, // hotpink
+    0xdc143c, // crimson
+    0x6a5acd, // slateblue
+    0xadff2f, // greenyellow
+] as const;
 
-export const ButterflySizeType = {
-    SMALL: "small",
-    MEDIUM: "medium",
-    LARGE: "large",
-} as const;
+export const SIZE_LIST = ["small", "medium", "large"] as const;
 
 export const imageSrcs = [
     { alias: "title", src: `${BASE_URL}assets/title.png` },

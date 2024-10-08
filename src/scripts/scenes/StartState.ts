@@ -4,7 +4,7 @@ import { LineDrawer } from "../components/LineDrawer";
 import { GameplayState } from "./GameplayState";
 import * as Utility from "../utils/Utility";
 import { Butterfly } from "../components/Butterfly";
-import { myConsts } from "../utils/Const";
+import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 
 export class StartState {
@@ -88,20 +88,20 @@ export class StartState {
     debug(): void {
         const butterfly1 = new Butterfly(
             "small",
-            myConsts.COLOR_LIST[0],
-            myConsts.COLOR_LIST[1],
+            Const.COLOR_LIST[0],
+            Const.COLOR_LIST[1],
             3,
         );
         const butterfly2 = new Butterfly(
             "medium",
-            myConsts.COLOR_LIST[2],
-            myConsts.COLOR_LIST[3],
+            Const.COLOR_LIST[2],
+            Const.COLOR_LIST[3],
             4,
         );
         const butterfly3 = new Butterfly(
             "large",
-            myConsts.COLOR_LIST[4],
-            myConsts.COLOR_LIST[3],
+            Const.COLOR_LIST[4],
+            Const.COLOR_LIST[3],
             5,
         );
 
@@ -120,11 +120,8 @@ export class StartState {
     }
 
     private dispButterfly() {
-        myConsts.COLOR_LIST.forEach((color) => {
-            const size = Utility.chooseAtRandom(
-                ["small", "medium", "large"],
-                1,
-            )[0];
+        Const.COLOR_LIST.forEach((color) => {
+            const size = Utility.chooseAtRandom([...Const.SIZE_LIST], 1)[0];
             const butterfly = new Butterfly(size, color, color);
             butterfly.setRandomInitialPoistion(
                 this.manager.app.screen.width,

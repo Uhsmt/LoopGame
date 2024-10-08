@@ -1,4 +1,4 @@
-import { myConsts } from "../utils/Const";
+import * as Const from "../utils/Const";
 import * as Utility from "../utils/Utility";
 import stageConfig from "../utils/stage-config.json";
 import stageDebugConfig from "../utils/stage-config-debug.json";
@@ -51,7 +51,7 @@ export class StageInformation {
         });
         this.level = level;
         this.butterflyColors = Utility.chooseAtRandom(
-            myConsts.COLOR_LIST,
+            [...Const.COLOR_LIST],
             config.butterflyColorNum,
         );
     }

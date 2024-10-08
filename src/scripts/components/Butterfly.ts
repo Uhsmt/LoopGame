@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import * as Utility from "../utils/Utility";
+import * as Const from "../utils/Const";
 
 export class Butterfly extends PIXI.Container {
     private sprite: PIXI.Sprite;
@@ -28,7 +29,7 @@ export class Butterfly extends PIXI.Container {
         super();
         this.color = color;
         if (size === "random") {
-            size = Utility.chooseAtRandom(["small", "medium", "large"], 1)[0];
+            size = Utility.chooseAtRandom([...Const.SIZE_LIST], 1)[0];
         }
 
         switch (size) {
