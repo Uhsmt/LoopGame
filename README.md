@@ -14,6 +14,7 @@ https://uhsmt.github.io/LoopGame/
 - [x] Prettier
 - [x] スマホ制御
 - [ ] 蝶のカラー調整
+- [ ] share card
 
 ### phase1.5
 - [ ] 記録保持 
