@@ -63,7 +63,7 @@ module.exports = {
             patterns: [
                 { from: "public/assets", to: "assets" }, // public/assets ディレクトリの内容を dist/assets にコピー
                 { from: "public/styles", to: "styles" }, // public/styles ディレクトリの内容を dist/styles にコピー
-                { from: 'favicon.ico', to: 'dist' }               
+                { from: 'favicon.ico', to: '' }               
             ],
         }),
         new webpack.DefinePlugin({
