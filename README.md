@@ -13,7 +13,7 @@ https://uhsmt.github.io/LoopGame/
 - [x] eslint
 - [x] Prettier
 - [x] スマホ制御
-- [ ] 蝶のカラー調整
+- [x] 蝶のカラー調整
 - [ ] share card
 
 ### phase1.5

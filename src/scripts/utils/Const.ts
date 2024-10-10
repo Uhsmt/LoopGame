@@ -1,10 +1,10 @@
 /* eslint @typescript-eslint/no-namespace: 0 */
 export const COLOR_LIST = [
-    0xffd700, // gold
     0xff69b4, // hotpink
     0xdc143c, // crimson
     0x6a5acd, // slateblue
-    0xadff2f, // greenyellow
+    0x00F3EB, // lightblue
+    0xffa519, // orange
 ] as const;
 
 export const SIZE_LIST = ["small", "medium", "large"] as const;
