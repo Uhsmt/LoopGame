@@ -45,4 +45,30 @@ export class StateBase {
         });
         this.container.addChild(frameGraphics);
     }
+
+    protected fadeOut(
+        container: PIXI.Container,
+        fadespeed: number = 0.01,
+        alpha: number = 0,
+    ): Promise<void> {
+        return new Promise((resolve) => {
+            const fadeOut = () => {
+                if (container.alpha > alpha) {
+                    container.alpha -= fadespeed;
+                    requestAnimationFrame(fadeOut);
+                } else {
+                    resolve();
+                }
+            };
+            fadeOut();
+        });
+    }
+
+    protected wait(time: number): Promise<void> {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, time);
+        });
+    }
 }

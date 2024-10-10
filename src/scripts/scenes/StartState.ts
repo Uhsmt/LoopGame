@@ -146,7 +146,6 @@ export class StartState extends StateBase {
             },
         });
 
-        // const button = new PIXI.Text(name, style);
         button.interactive = true;
         button.x = _x;
         button.y = _y;
@@ -224,11 +223,11 @@ export class StartState extends StateBase {
         this.container.addChildAt(nextBGSprite, 0);
 
         await Promise.all([
-            this.fadeOut(this.startButton),
             this.fadeOut(this.ruleButton),
             this.fadeOut(this.titleSprite),
-            this.fadeOut(this.backgroundSprite),
             this.butterflies.map((butterfly) => butterfly.delete()),
+            this.wait(300).then(() => {return this.fadeOut(this.startButton)}),
+            this.wait(300).then(() => {return this.fadeOut(this.backgroundSprite)}),
         ]);
 
         const stageInfo1 = new StageInformation();
@@ -252,24 +251,5 @@ export class StartState extends StateBase {
                 // this.lineDrawer; // 破棄
             });
         }
-    }
-
-    // containerを引数に、フェードアウトさせて完全に消えたたらresolveするPromiseを返す
-    private fadeOut(
-        container: PIXI.Container,
-        fadespeed: number = 0.01,
-        alpha: number = 0,
-    ): Promise<void> {
-        return new Promise((resolve) => {
-            const fadeOut = () => {
-                if (container.alpha > alpha) {
-                    container.alpha -= fadespeed;
-                    requestAnimationFrame(fadeOut);
-                } else {
-                    resolve();
-                }
-            };
-            fadeOut();
-        });
     }
 }
