@@ -226,8 +226,12 @@ export class StartState extends StateBase {
             this.fadeOut(this.ruleButton),
             this.fadeOut(this.titleSprite),
             this.butterflies.map((butterfly) => butterfly.delete()),
-            this.wait(300).then(() => {return this.fadeOut(this.startButton)}),
-            this.wait(300).then(() => {return this.fadeOut(this.backgroundSprite)}),
+            this.wait(300).then(() => {
+                return this.fadeOut(this.startButton);
+            }),
+            this.wait(300).then(() => {
+                return this.fadeOut(this.backgroundSprite);
+            }),
         ]);
 
         const stageInfo1 = new StageInformation();

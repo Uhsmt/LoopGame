@@ -3,7 +3,7 @@ export const COLOR_LIST = [
     0xff69b4, // hotpink
     0xdc143c, // crimson
     0x6a5acd, // slateblue
-    0x00F3EB, // lightblue
+    0x00f3eb, // lightblue
     0xffa519, // orange
 ] as const;
 
