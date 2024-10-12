@@ -198,7 +198,7 @@ class Message extends PIXI.BitmapText {
     constructor(message: string, size: number) {
         super();
         const style = new PIXI.TextStyle({
-            fontFamily: "Arial",
+            fontFamily: "Snippet",
             fontSize: size,
             fill: 0x000000,
         });

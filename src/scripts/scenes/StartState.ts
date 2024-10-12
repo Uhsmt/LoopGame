@@ -10,8 +10,8 @@ import { StateBase } from "./BaseState";
 
 export class StartState extends StateBase {
     private lineDrawer: LineDrawer;
-    private startButton: PIXI.BitmapText;
-    private ruleButton: PIXI.BitmapText;
+    private startButton: PIXI.Text;
+    private ruleButton: PIXI.Text;
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
     private titleSprite: PIXI.Sprite;
@@ -42,7 +42,7 @@ export class StartState extends StateBase {
 
         // ボタン
         this.startButton = this.button(
-            "Start",
+            "Start!",
             app.screen.width / 4 - 50,
             (app.screen.height * 3) / 5,
         );
@@ -136,13 +136,22 @@ export class StartState extends StateBase {
         // 描画はPixiJSがハンドルするのでここでは何もしない
     }
 
-    private button(name: string, _x: number, _y: number): PIXI.BitmapText {
-        const button = new PIXI.BitmapText({
+    private button(name: string, _x: number, _y: number): PIXI.Text {
+        // const button = new PIXI.BitmapText({
+        //     text: name,
+        //     style: {
+        //         fill: "#ffffff",
+        //         fontSize: 40,
+        //         fontFamily: "Arial",
+        //     },
+        // });
+        const button = new PIXI.Text({
             text: name,
             style: {
-                fill: "#ffffff",
+                fontFamily: "Snippet",
                 fontSize: 40,
-                fontFamily: "Arial",
+                fill: "#ffffff",
+                align: "left",
             },
         });
 

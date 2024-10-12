@@ -3,6 +3,19 @@ import { imageSrcs } from "./utils/Const";
 import { GameStateManager } from "./scenes/GameStateManager";
 import { StartState } from "./scenes/StartState";
 
+interface WebFontConfig {
+    google: {
+        families: string[];
+    };
+    active(): void;
+}
+
+declare global {
+    interface Window {
+        WebFontConfig: WebFontConfig;
+    }
+}
+
 const app = new PIXI.Application();
 
 function isMobileDevice(): boolean {
@@ -14,7 +27,28 @@ function showMobileMessage(): void {
     alert("Sorry! This game is for PC only. Smartphone ver is coming soon!");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+/* eslint-disable */
+// include the web-font loader script
+(function () {
+    const wf = document.createElement("script");
+    wf.src = `${
+        document.location.protocol === "https:" ? "https" : "http"
+    }://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js`;
+    wf.type = "text/javascript";
+    wf.async = true;
+    const s = document.getElementsByTagName("script")[0];
+    s.parentNode!.insertBefore(wf, s);
+})();
+/* eslint-enabled */
+window.WebFontConfig = {
+    google: {
+        families: ["Snippet", "Yanone+Kaffeesatz:wght@400"],
+    },
+    active() {
+        console.log("font loaded");
+    },
+};
+
 window.addEventListener("load", async () => {
     if (isMobileDevice()) {
         showMobileMessage();
@@ -26,7 +60,6 @@ window.addEventListener("load", async () => {
         backgroundColor: 0xffd700,
         antialias: true,
     });
-    // Load bitmap font
     await PIXI.Assets.load(imageSrcs).then(setUp);
 });
 
@@ -55,7 +88,6 @@ function setUp() {
             manager.render();
         });
         // カーソルのスタイルを変更
-        // eslint-disable-next-line no-useless-escape
         const cursorIcon = `url(\'${BASE_URL}assets/pencil.png\'),auto`;
         app.renderer.events.cursorStyles.default = cursorIcon;
     }
