@@ -42,12 +42,12 @@ export class StartState extends StateBase {
 
         // ボタン
         this.startButton = this.button(
-            "Start!",
+            "Start",
             app.screen.width / 4 - 50,
             (app.screen.height * 3) / 5,
         );
         this.ruleButton = this.button(
-            "Rules",
+            "Rule",
             (app.screen.width * 3) / 4 - 50,
             (app.screen.height * 3) / 5,
         );
@@ -137,14 +137,6 @@ export class StartState extends StateBase {
     }
 
     private button(name: string, _x: number, _y: number): PIXI.Text {
-        // const button = new PIXI.BitmapText({
-        //     text: name,
-        //     style: {
-        //         fill: "#ffffff",
-        //         fontSize: 40,
-        //         fontFamily: "Arial",
-        //     },
-        // });
         const button = new PIXI.Text({
             text: name,
             style: {
