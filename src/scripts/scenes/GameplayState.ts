@@ -54,9 +54,10 @@ export class GameplayState extends StateBase {
         this.startMessage = new PIXI.BitmapText({
             text: `Catch ${this.stageInfo.needCount} butterflies!`,
             style: new PIXI.TextStyle({
-                fontFamily: "Snippet",
+                fontFamily: Const.FONT_ENGLISH,
                 fontSize: 24,
                 fill: 0x000000,
+                fontWeight: Const.FONT_ENGLISH_BOLD,
             }),
         });
         this.startMessage.x =
@@ -70,7 +71,8 @@ export class GameplayState extends StateBase {
         this.scoreMessage = new PIXI.BitmapText({
             text: `0 / ${this.stageInfo.needCount}`,
             style: new PIXI.TextStyle({
-                fontFamily: "Snippet",
+                fontFamily: Const.FONT_ENGLISH,
+                fontWeight: Const.FONT_ENGLISH_BOLD,
                 fontSize: 24,
                 fill: 0x000000,
             }),
@@ -88,7 +90,8 @@ export class GameplayState extends StateBase {
         this.actionMessage = new PIXI.BitmapText({
             text: "",
             style: new PIXI.TextStyle({
-                fontFamily: "Snippet",
+                fontFamily: Const.FONT_ENGLISH,
+                fontWeight: Const.FONT_ENGLISH_BOLD,
                 fontSize: 24,
                 fill: 0x000000,
             }),

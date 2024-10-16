@@ -140,7 +140,8 @@ export class StartState extends StateBase {
         const button = new PIXI.Text({
             text: name,
             style: {
-                fontFamily: "Snippet",
+                fontFamily: Const.FONT_ENGLISH,
+                fontWeight: Const.FONT_ENGLISH_BOLD,
                 fontSize: 40,
                 fill: "#ffffff",
                 align: "left",

@@ -5,6 +5,7 @@ import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
 import { Butterfly } from "../components/Butterfly";
 import * as Utility from "../utils/Utility";
+import * as Const from "../utils/Const";
 import { StateBase } from "./BaseState";
 
 export class ResultState extends StateBase {
@@ -198,7 +199,8 @@ class Message extends PIXI.BitmapText {
     constructor(message: string, size: number) {
         super();
         const style = new PIXI.TextStyle({
-            fontFamily: "Snippet",
+            fontFamily: Const.FONT_ENGLISH,
+            fontWeight: Const.FONT_ENGLISH_BOLD,
             fontSize: size,
             fill: 0x000000,
         });

@@ -42,7 +42,7 @@ function showMobileMessage(): void {
 /* eslint-enabled */
 window.WebFontConfig = {
     google: {
-        families: ["Snippet", "Yanone+Kaffeesatz:wght@400"],
+        families: ["BIZ+UDGothic:wght@400;700", "Rajdhani:wght@700"],
     },
     active() {
         console.log("font loaded");

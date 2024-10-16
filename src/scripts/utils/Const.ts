@@ -11,6 +11,12 @@ export const SIZE_LIST = ["small", "medium", "large"] as const;
 
 export const MARGIN = 25;
 
+export const FONT_ENGLISH = "Rajdhani";
+export const FONT_ENGLISH_BOLD = "600";
+
+export const FONT_JAPANESE = "BIZ UDGothic";
+export const FONT_JAPANESE_BOLD = "400";
+
 export const imageSrcs = [
     { alias: "title", src: `${BASE_URL}assets/title.png` },
     { alias: "background", src: `${BASE_URL}assets/background.jpg` },

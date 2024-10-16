@@ -8,13 +8,13 @@ https://uhsmt.github.io/LoopGame/
 - [x] Loop当たり判定調整
 - [x] game finish&restart
 - [x] deltaによるスピード調整
-- [ ] BitmapText font
+- [x] Font
 - [x] canvas外の場合のライン描画
 - [x] eslint
 - [x] Prettier
 - [x] スマホ制御
 - [x] 蝶のカラー調整
-- [ ] share card
+- [x] share card
 
 ### phase1.5
 - [ ] 記録保持 
