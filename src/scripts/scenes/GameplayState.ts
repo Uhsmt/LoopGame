@@ -48,6 +48,7 @@ export class GameplayState extends StateBase {
 
         // SUN
         this.sun = new Sun();
+        this.sun.move(0, app.screen.width, app.screen.height);
         this.container.addChild(this.sun);
 
         // スタートメッセージ
@@ -159,7 +160,8 @@ export class GameplayState extends StateBase {
         if (!this.isRunning) return;
 
         this.elapsedTime += delta;
-        this.moveSun();
+        const progress = this.elapsedTime / (this.gameTimer * 1000);
+        this.sun.move(progress, this.manager.app.screen.width, this.manager.app.screen.height);
 
         this.butterflies.forEach((butterfly) => {
             butterfly.fly(
@@ -193,31 +195,11 @@ export class GameplayState extends StateBase {
             // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
             this.manager.app.ticker.addOnce(() => {
                 this.lineDrawer.cleanup();
-                // this.lineDrawer = null; // 破棄
             });
         }
     }
 
     render(): void {}
-
-    private moveSun(): void {
-        const totalTime = this.gameTimer * 1000;
-        const startX = Const.MARGIN;
-        const endX = this.manager.app.renderer.width - Const.MARGIN;
-        const startY = this.manager.app.renderer.height - Const.MARGIN;
-        const peakY =
-            Const.MARGIN +
-            (this.manager.app.renderer.height - Const.MARGIN * 2) * 0.5;
-        const t = this.elapsedTime / totalTime;
-        const x = startX + t * (endX - startX);
-        const y = startY - 4 * peakY * t * (1 - t);
-
-        if (x > endX) {
-            this.sun.position.set(endX, this.manager.app.renderer.height);
-        } else {
-            this.sun.position.set(x, y);
-        }
-    }
 
     private endGame(): void {
         if (this.isFinish) return;

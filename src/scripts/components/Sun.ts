@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import * as Const from "../utils/Const";
 
 export class Sun extends PIXI.Container {
     public blinking: boolean;
@@ -31,4 +32,23 @@ export class Sun extends PIXI.Container {
         this.removeChildAt(0);
         this.addChild(blinkSprite);
     }
+
+    move(progress :number, screen_width:number, screen_height: number): void {
+        const startX = Const.MARGIN;
+        const endX = screen_width - Const.MARGIN;
+        const startY = screen_height - Const.MARGIN;
+        const peakY =
+            Const.MARGIN +
+            (screen_height - Const.MARGIN * 2) * 0.5;
+        
+        const x = startX + progress * (endX - startX);
+        const y = startY - 4 * peakY * progress * (1 - progress);
+
+        if (x > endX) {
+            this.position.set(endX, screen_height);
+        } else {
+            this.position.set(x, y);
+        }
+    }
+
 }
