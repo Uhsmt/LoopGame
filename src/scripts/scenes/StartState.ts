@@ -7,6 +7,7 @@ import { Butterfly } from "../components/Butterfly";
 import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
+import { HelpFlower } from "../components/HelpFlower";
 
 export class StartState extends StateBase {
     private lineDrawer: LineDrawer;
@@ -15,6 +16,7 @@ export class StartState extends StateBase {
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
     private titleSprite: PIXI.Sprite;
+    debugFlowers: HelpFlower[] = [];
 
     constructor(manager: GameStateManager) {
         super(manager);
@@ -25,6 +27,12 @@ export class StartState extends StateBase {
         this.backgroundSprite = new PIXI.Sprite(
             PIXI.Texture.from("menu_background"),
         );
+        if (DEBUG_MODE) {
+            this.backgroundSprite = new PIXI.Sprite(
+                PIXI.Texture.from("background"),
+            );
+        }
+
         this.adjustBackGroundSprite(this.backgroundSprite);
         this.container.addChild(this.backgroundSprite);
 
@@ -75,37 +83,29 @@ export class StartState extends StateBase {
     }
 
     debug(): void {
-        const butterfly1 = new Butterfly(
-            "small",
-            Const.COLOR_LIST[0],
-            Const.COLOR_LIST[1],
-            3,
+        const flower1 = new HelpFlower(
+            "freeze",
+            this.manager.app.screen.width,
+            this.manager.app.screen.height,
         );
-        const butterfly2 = new Butterfly(
-            "medium",
-            Const.COLOR_LIST[2],
-            Const.COLOR_LIST[3],
-            4,
+        const flower2 = new HelpFlower(
+            "time_plus",
+            this.manager.app.screen.width,
+            this.manager.app.screen.height,
         );
-        const butterfly3 = new Butterfly(
-            "large",
-            Const.COLOR_LIST[4],
-            Const.COLOR_LIST[3],
-            5,
+        const flower3 = new HelpFlower(
+            "gather",
+            this.manager.app.screen.width,
+            this.manager.app.screen.height,
+        );
+        const flower4 = new HelpFlower(
+            "long",
+            this.manager.app.screen.width,
+            this.manager.app.screen.height,
         );
 
-        butterfly1.x = 100;
-        butterfly1.y = 100;
-        butterfly2.x = 200;
-        butterfly2.y = 200;
-        butterfly3.x = 300;
-        butterfly3.y = 300;
-
-        this.butterflies.push(butterfly1);
-        this.butterflies.push(butterfly2);
-        this.butterflies.push(butterfly3);
-
-        // this.container.addChild(...this.butterflies);
+        this.debugFlowers.push(flower1, flower2, flower3, flower4);
+        this.container.addChild(...this.debugFlowers);
     }
 
     private dispButterfly() {
@@ -129,6 +129,11 @@ export class StartState extends StateBase {
                 this.manager.app.screen.height,
                 delta,
             );
+        });
+        this.debugFlowers.forEach((flower) => {
+            flower.spin(delta);
+            // flower.update(delta);
+            flower.fall(delta);
         });
     }
 

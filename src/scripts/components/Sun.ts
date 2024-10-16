@@ -33,14 +33,12 @@ export class Sun extends PIXI.Container {
         this.addChild(blinkSprite);
     }
 
-    move(progress :number, screen_width:number, screen_height: number): void {
+    move(progress: number, screen_width: number, screen_height: number): void {
         const startX = Const.MARGIN;
         const endX = screen_width - Const.MARGIN;
         const startY = screen_height - Const.MARGIN;
-        const peakY =
-            Const.MARGIN +
-            (screen_height - Const.MARGIN * 2) * 0.5;
-        
+        const peakY = Const.MARGIN + (screen_height - Const.MARGIN * 2) * 0.5;
+
         const x = startX + progress * (endX - startX);
         const y = startY - 4 * peakY * progress * (1 - progress);
 
@@ -50,5 +48,4 @@ export class Sun extends PIXI.Container {
             this.position.set(x, y);
         }
     }
-
 }

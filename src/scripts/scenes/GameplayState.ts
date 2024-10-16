@@ -134,7 +134,6 @@ export class GameplayState extends StateBase {
         this.isRunning = false;
         this.displayStartMessage();
         this.displayScoreMessage();
-        this.sun.position.set(0, this.manager.app.screen.height);
 
         const deleteMessage = new Promise((resolve) =>
             setTimeout(() => {
@@ -161,7 +160,11 @@ export class GameplayState extends StateBase {
 
         this.elapsedTime += delta;
         const progress = this.elapsedTime / (this.gameTimer * 1000);
-        this.sun.move(progress, this.manager.app.screen.width, this.manager.app.screen.height);
+        this.sun.move(
+            progress,
+            this.manager.app.screen.width,
+            this.manager.app.screen.height,
+        );
 
         this.butterflies.forEach((butterfly) => {
             butterfly.fly(
