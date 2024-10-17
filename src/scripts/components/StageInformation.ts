@@ -14,6 +14,7 @@ export class StageInformation {
     isButterflyColorChange: boolean = false;
     muptipleButterflyRate: number = 0;
     maxMultiplateRate: number = 1;
+    helpObjectNum: number = 0;
 
     // scores
     captureCount: number = 0;

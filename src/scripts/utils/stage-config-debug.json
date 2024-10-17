@@ -18,7 +18,8 @@
         "butterflySize": "large",
         "isButterflyColorChange": false,
         "maxMultiplateRate": 2,
-        "muptipleButterflyRate": 0.2
+        "muptipleButterflyRate": 0.2,
+        "helpObjectNum": 5
     },
     {
         "level": 2,
@@ -30,10 +31,11 @@
         "butterflySize": "medium",
         "isButterflyColorChange": true,
         "maxMultiplateRate": 2,
-        "muptipleButterflyRate": 0.2
+        "muptipleButterflyRate": 0.2,
+        "helpObjectNum": 3
     },
     {
-        "level": 2,
+        "level": 3,
         "stageTime": 60,
         "debug": true,
         "butterflyColorNum": 3,
@@ -42,6 +44,7 @@
         "butterflySize": "large",
         "isButterflyColorChange": true,
         "maxMultiplateRate": 2,
-        "muptipleButterflyRate": 0.2
+        "muptipleButterflyRate": 0.2,
+        "helpObjectNum": 3
     }
 ]

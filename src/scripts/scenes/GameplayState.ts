@@ -9,6 +9,7 @@ import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
+import { HelpFlower } from "../components/HelpFlower";
 
 export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
@@ -23,8 +24,10 @@ export class GameplayState extends StateBase {
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
+    flowers: HelpFlower[] = [];
     pointerDownHandler: (event: PIXI.FederatedPointerEvent) => void;
-    stageInfo: StageInformation;
+    private stageInfo: StageInformation;
+    private readonly helpFlowersTiming: number[] = [];
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -113,6 +116,19 @@ export class GameplayState extends StateBase {
             );
         });
 
+        // helpオブジェクトを出すタイミングを設定
+        if (this.stageInfo.helpObjectNum > 0) {
+            // gameTimerをhelpObjectNum+1 で等分割（2つだったら1/3, 2/3）
+            for (let i = 1; i <= this.stageInfo.helpObjectNum; i++) {
+                this.helpFlowersTiming.push(
+                    Math.floor(
+                        (this.gameTimer / (this.stageInfo.helpObjectNum + 1)) *
+                            i,
+                    ),
+                );
+            }
+        }
+
         // Frame
         this.addFrameGraphic();
 
@@ -154,6 +170,33 @@ export class GameplayState extends StateBase {
     update(delta: number): void {
         this.butterflies.forEach((butterfly) => {
             butterfly.flap(delta);
+        });
+        // helpオブジェクトを出すタイミングで表示
+        if (
+            this.helpFlowersTiming.includes(Math.floor(this.elapsedTime / 1000))
+        ) {
+            const flowerType = Utility.chooseAtRandom(
+                ["freeze", "time_plus", "gather", "long"],
+                1,
+            )[0];
+            const flower = new HelpFlower(
+                flowerType,
+                this.manager.app.screen.width,
+                this.manager.app.screen.height,
+            );
+            this.flowers.push(flower);
+            this.container.addChildAt(
+                flower,
+                this.container.children.length - 2,
+            );
+            this.helpFlowersTiming.shift();
+        }
+
+        this.flowers.forEach((flower) => {
+            if (flower.isRunning) {
+                flower.spin(delta);
+                flower.fall(delta);
+            }
         });
 
         if (!this.isRunning) return;
@@ -218,6 +261,12 @@ export class GameplayState extends StateBase {
             butterfly.stopFlap();
             butterfly.delete();
         });
+
+        this.flowers.forEach((flower) => {
+            flower.stop();
+            flower.delete();
+        });
+
         setTimeout(() => {
             this.manager.setState(
                 new ResultState(this.manager, this.stageInfo),
