@@ -1,12 +1,13 @@
 import * as PIXI from "pixi.js";
 import * as Utility from "../utils/Utility";
+import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
-export class HelpFlower extends PIXI.Container {
-    private sprite: PIXI.Sprite;
+export class HelpFlower extends BaseCaptureableObject {
     private type: string;
     private elapsedX: number = 0; // 時間パラメータ
     private elapsedY: number = 0; // 時間パラメータ
     private message: string;
+    isRunning: boolean = true;
     private readonly screenWidth: number;
     private readonly screenHeight: number;
     private readonly initialX: number;
@@ -69,5 +70,9 @@ export class HelpFlower extends PIXI.Container {
 
     spin(delta: number): void {
         this.sprite.rotation += 0.001 * delta * Utility.random(7, 10);
+    }
+
+    stop(): void {
+        this.isRunning = false;
     }
 }

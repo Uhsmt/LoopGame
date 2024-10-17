@@ -1,9 +1,9 @@
 import * as PIXI from "pixi.js";
 import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
+import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
-export class Butterfly extends PIXI.Container {
-    private sprite: PIXI.Sprite;
+export class Butterfly extends BaseCaptureableObject {
     private ellipse: PIXI.Graphics;
     private xDiretion: number;
     private yDiretion: number;
@@ -17,8 +17,6 @@ export class Butterfly extends PIXI.Container {
     color: number;
     private readonly xTernFrame = Utility.random(120, 150);
     private readonly yTernFrame = Utility.random(120, 150);
-    readonly spriteWith: number;
-    readonly hitAreaSize: number;
 
     constructor(
         size: string,
@@ -231,19 +229,6 @@ export class Butterfly extends PIXI.Container {
         return hits / points.length > hitsRate;
     }
 
-    delete() {
-        // アニメーションで透明度を徐々に減少させる
-        const fadeOut = () => {
-            if (this.alpha > 0) {
-                this.alpha -= 0.02;
-                requestAnimationFrame(fadeOut);
-            } else {
-                this.destroy();
-                this.removeFromParent();
-            }
-        };
-        fadeOut();
-    }
     stop(): void {
         this.isFlying = false;
     }
