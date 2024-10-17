@@ -15,6 +15,7 @@ export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
     private scoreMessage: PIXI.BitmapText;
     private actionMessage: PIXI.BitmapText;
+    private helpMessage: PIXI.BitmapText;
     private lineDrawer: LineDrawer;
     private sun: Sun;
     private isRunning = true;
@@ -92,7 +93,7 @@ export class GameplayState extends StateBase {
 
         // アクションメッセージ
         this.actionMessage = new PIXI.BitmapText({
-            text: "",
+            text: "A",
             style: new PIXI.TextStyle({
                 fontFamily: Const.FONT_ENGLISH,
                 fontWeight: Const.FONT_ENGLISH_BOLD,
@@ -103,6 +104,20 @@ export class GameplayState extends StateBase {
         this.actionMessage.y = this.manager.app.renderer.height / 2;
         this.actionMessage.alpha = 0;
         this.container.addChild(this.actionMessage);
+
+        // ヘルプメッセージ
+        this.helpMessage = new PIXI.BitmapText({
+            text: "A",
+            style: new PIXI.TextStyle({
+                fontFamily: Const.FONT_ENGLISH,
+                fontWeight: Const.FONT_ENGLISH_BOLD,
+                fontSize: 24,
+                fill: 0x000000,
+            }),
+        });
+        this.helpMessage.y = this.actionMessage.height * 1.1 +  this.manager.app.renderer.height / 2;
+        this.helpMessage.alpha = 0;
+        this.container.addChild(this.helpMessage);
 
         // 蝶々を生成
         for (let i = 0; i < this.stageInfo.stageButterflyCount; i++) {
@@ -171,6 +186,9 @@ export class GameplayState extends StateBase {
         this.butterflies.forEach((butterfly) => {
             butterfly.flap(delta);
         });
+
+        if (!this.isRunning) return; //TODO 後で消す
+        
         // helpオブジェクトを出すタイミングで表示
         if (
             this.helpFlowersTiming.includes(Math.floor(this.elapsedTime / 1000))
@@ -298,6 +316,16 @@ export class GameplayState extends StateBase {
         }
     }
 
+    private showHelpMessage(message:string): void {
+        this.helpMessage.alpha = 1;
+        this.helpMessage.text = message;
+        this.helpMessage.x =
+            this.manager.app.renderer.width / 2 - this.helpMessage.width / 2;
+        setTimeout(() => {
+            this.helpMessage.alpha = 0;
+        }, 1500);
+    }
+
     private hideActionmessage() {
         if (this.actionMessage) {
             this.actionMessage.alpha = 0;
@@ -316,10 +344,14 @@ export class GameplayState extends StateBase {
         const butterfliesInLoopArea = this.butterflies.filter((butterfly) => {
             return butterfly.isHit(loopArea);
         });
+        // loopArea内にあるflowerを取得
+        const flowersInLoopArea = this.flowers.filter((flower) => {
+            return flower.isHit(loopArea);
+        });
 
-        if (butterfliesInLoopArea.length <= 0) return;
-
-        if (butterfliesInLoopArea.length === 1) {
+        if (butterfliesInLoopArea.length <= 0) {
+            this.captureFlowers(flowersInLoopArea);
+        } else if (butterfliesInLoopArea.length === 1) {
             // １匹だけの時は、colorChange
             butterfliesInLoopArea[0].switchColor();
         } else if (butterfliesInLoopArea.length === 2) {
@@ -329,6 +361,7 @@ export class GameplayState extends StateBase {
                 butterfliesInLoopArea[1].color
             ) {
                 this.captureButterflies(butterfliesInLoopArea);
+                this.captureFlowers(flowersInLoopArea);
             } else {
                 this.badLoop();
             }
@@ -342,6 +375,7 @@ export class GameplayState extends StateBase {
                 new Set(colors).size === colors.length
             ) {
                 this.captureButterflies(butterfliesInLoopArea);
+                this.captureFlowers(flowersInLoopArea);
             } else {
                 this.badLoop();
             }
@@ -398,6 +432,15 @@ export class GameplayState extends StateBase {
                 );
             }
         }
+    }
+
+    private captureFlowers(flowers: HelpFlower[]): void {
+        flowers.forEach((flower) => {
+            this.flowers = this.flowers.filter((f) => f !== flower);
+            this.showHelpMessage(flower.message);
+            flower.stop();
+            flower.delete();
+        });
     }
 
     private badLoop(): void {
