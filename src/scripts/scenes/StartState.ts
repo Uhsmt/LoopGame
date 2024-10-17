@@ -27,11 +27,6 @@ export class StartState extends StateBase {
         this.backgroundSprite = new PIXI.Sprite(
             PIXI.Texture.from("menu_background"),
         );
-        if (DEBUG_MODE) {
-            this.backgroundSprite = new PIXI.Sprite(
-                PIXI.Texture.from("background"),
-            );
-        }
 
         this.adjustBackGroundSprite(this.backgroundSprite);
         this.container.addChild(this.backgroundSprite);
@@ -132,7 +127,6 @@ export class StartState extends StateBase {
         });
         this.debugFlowers.forEach((flower) => {
             flower.spin(delta);
-            // flower.update(delta);
             flower.fall(delta);
         });
     }
