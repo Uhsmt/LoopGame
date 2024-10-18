@@ -190,8 +190,6 @@ export class GameplayState extends StateBase {
             butterfly.flap(delta);
         });
 
-        if (!this.isRunning) return; // TODO 後で消す
-
         // helpオブジェクトを出すタイミングで表示
         if (
             this.helpFlowersTiming.includes(Math.floor(this.elapsedTime / 1000))
