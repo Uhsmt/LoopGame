@@ -5,6 +5,7 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
 export class Butterfly extends BaseCaptureableObject {
     private ellipse: PIXI.Graphics;
+    private sprite: PIXI.Sprite;
     private xDiretion: number;
     private yDiretion: number;
     private xFrame: number;
@@ -17,6 +18,8 @@ export class Butterfly extends BaseCaptureableObject {
     color: number;
     private readonly xTernFrame = Utility.random(120, 150);
     private readonly yTernFrame = Utility.random(120, 150);
+    readonly spriteWith: number;
+    readonly hitAreaSize: number;
 
     constructor(
         size: string,
@@ -94,6 +97,13 @@ export class Butterfly extends BaseCaptureableObject {
 
         // Set the pivot to the center
         this.pivot.set(this.width / 2, this.height / 2);
+    }
+
+    protected getObjectCenter(): { x: number; y: number } {
+        return {
+            x: this.x - this.spriteWith / 2,
+            y: this.y - this.height / 2,
+        };
     }
 
     fly(screenWidth: number, screenHeight: number, delta: number): void {
@@ -204,31 +214,19 @@ export class Butterfly extends BaseCaptureableObject {
         this.position.set(x, y);
     }
 
-    isHit(loopArea: PIXI.Graphics): boolean {
-        const butterflyCenter = {
-            x: this.x - this.spriteWith / 2,
-            y: this.y - this.height / 2,
-        };
-        const points: PIXI.Point[] = [];
-
-        for (let i = 0; i < 36; i++) {
-            const angle = (i * 10 * Math.PI) / 180;
-            const x = butterflyCenter.x + Math.cos(angle) * this.hitAreaSize;
-            const y = butterflyCenter.y + Math.sin(angle) * this.hitAreaSize;
-            points.push(new PIXI.Point(x, y));
-        }
-
-        // ループエリア内のpointの数がhitsRateを超えていれば、ループエリア内と判定
-        const hitsRate = 0.7;
-        let hits = 0;
-        points.forEach((point) => {
-            if (loopArea.containsPoint(point)) {
-                hits++;
+    delete() {
+        // アニメーションで透明度を徐々に減少させる
+        const fadeOut = () => {
+            if (this.alpha > 0) {
+                this.alpha -= 0.02;
+                requestAnimationFrame(fadeOut);
+            } else {
+                this.destroy();
+                this.removeFromParent();
             }
-        });
-        return hits / points.length > hitsRate;
+        };
+        fadeOut();
     }
-
     stop(): void {
         this.isFlying = false;
     }

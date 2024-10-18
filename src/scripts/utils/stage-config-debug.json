@@ -14,12 +14,12 @@
         "debug": true,
         "butterflyColorNum": 2,
         "needCount": 5,
-        "stageButterflyCount": 20,
+        "stageButterflyCount": 10,
         "butterflySize": "large",
-        "isButterflyColorChange": false,
+        "isButterflyColorChange": true,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.2,
-        "helpObjectNum": 5
+        "helpObjectNum": 10
     },
     {
         "level": 2,

@@ -6,8 +6,9 @@ export class HelpFlower extends BaseCaptureableObject {
     private type: string;
     private elapsedX: number = 0; // 時間パラメータ
     private elapsedY: number = 0; // 時間パラメータ
-    private message: string;
+    message: string;
     isRunning: boolean = true;
+    private sprite: PIXI.Sprite;
     private readonly screenWidth: number;
     private readonly screenHeight: number;
     private readonly initialX: number;
@@ -38,10 +39,10 @@ export class HelpFlower extends BaseCaptureableObject {
                 this.message = "Long Loop!";
                 break;
         }
-        this.addChild(this.sprite);
-        this.addChild(this.sprite);
-        this.sprite.anchor.set(0.5);
         this.scale.set(0.3);
+        this.sprite.anchor.set(0.5);
+        this.addChild(this.sprite);
+        this.hitAreaSize = this.width / 2;
 
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -55,6 +56,13 @@ export class HelpFlower extends BaseCaptureableObject {
             (this.screenWidth * 5) / 6,
         );
         this.y = Utility.random(-this.screenHeight / 4, 0);
+    }
+
+    protected getObjectCenter(): { x: number; y: number } {
+        return {
+            x: this.x,
+            y: this.y,
+        };
     }
 
     fall(delta: number): void {

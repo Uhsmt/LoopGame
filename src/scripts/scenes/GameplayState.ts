@@ -115,7 +115,9 @@ export class GameplayState extends StateBase {
                 fill: 0x000000,
             }),
         });
-        this.helpMessage.y = this.actionMessage.height * 1.1 +  this.manager.app.renderer.height / 2;
+        this.helpMessage.y =
+            this.actionMessage.height * 1.1 +
+            this.manager.app.renderer.height / 2;
         this.helpMessage.alpha = 0;
         this.container.addChild(this.helpMessage);
 
@@ -183,12 +185,13 @@ export class GameplayState extends StateBase {
     }
 
     update(delta: number): void {
+        // 蝶々の羽ばたき
         this.butterflies.forEach((butterfly) => {
             butterfly.flap(delta);
         });
 
-        if (!this.isRunning) return; //TODO 後で消す
-        
+        if (!this.isRunning) return; // TODO 後で消す
+
         // helpオブジェクトを出すタイミングで表示
         if (
             this.helpFlowersTiming.includes(Math.floor(this.elapsedTime / 1000))
@@ -218,6 +221,8 @@ export class GameplayState extends StateBase {
         });
 
         if (!this.isRunning) return;
+
+        // ↑ pause中でも動く処理、↓ pause中は動かない処理
 
         this.elapsedTime += delta;
         const progress = this.elapsedTime / (this.gameTimer * 1000);
@@ -316,7 +321,7 @@ export class GameplayState extends StateBase {
         }
     }
 
-    private showHelpMessage(message:string): void {
+    private showHelpMessage(message: string): void {
         this.helpMessage.alpha = 1;
         this.helpMessage.text = message;
         this.helpMessage.x =
@@ -354,6 +359,7 @@ export class GameplayState extends StateBase {
         } else if (butterfliesInLoopArea.length === 1) {
             // １匹だけの時は、colorChange
             butterfliesInLoopArea[0].switchColor();
+            this.captureFlowers(flowersInLoopArea);
         } else if (butterfliesInLoopArea.length === 2) {
             // 2匹の時は、同じ色であればGet
             if (
