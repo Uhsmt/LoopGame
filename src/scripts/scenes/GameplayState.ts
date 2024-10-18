@@ -458,14 +458,10 @@ export class GameplayState extends StateBase {
                     void this.freezeEffect();
                     break;
                 case "time_plus":
-                    this.elapsedTime -= 5000;
-                    if (this.elapsedTime < 0) {
-                        this.elapsedTime = 0;
-                    }
+                    this.TimePlusEffect();
                     break;
                 case "gather":
-                    // TODO logic
-                    console.log("gather");
+                    this.gatherEffect();
                     break;
                 case "long":
                     void this.longLoopEffect();
@@ -494,6 +490,22 @@ export class GameplayState extends StateBase {
         await this.wait(5000);
         this.lineDrawer.setLineDrawTime(this.lineDrawer.originalLineDrawTime);
         this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
+    }
+
+    private TimePlusEffect(): void {
+        this.elapsedTime -= 5000;
+        if (this.elapsedTime < 0) {
+            this.elapsedTime = 0;
+        }
+        // 残り10秒を切ったらblinkさせる
+        if (this.elapsedTime < this.gameTimer * 1000 - 10000) {
+            this.sun.stopBlink();
+        }
+    }
+
+    private gatherEffect(): void {
+        console.log("gather");
+        // TODO logic
     }
 
     private badLoop(): void {
