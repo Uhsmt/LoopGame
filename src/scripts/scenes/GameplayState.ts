@@ -201,7 +201,7 @@ export class GameplayState extends StateBase {
             //     ["freeze", "time_plus", "gather", "long"],
             //     1,
             // )[0];
-            const flowerType = "time_plus";
+            const flowerType = "long";
 
             const flower = new HelpFlower(
                 flowerType,
@@ -482,16 +482,6 @@ export class GameplayState extends StateBase {
         });
     }
 
-    private async longLoopEffect(): Promise<void> {
-        this.lineDrawer.setLineDrawTime(
-            this.lineDrawer.originalLineDrawTime + 500,
-        );
-        this.lineDrawer.setLineColor(0x0000ff);
-        await this.wait(5000);
-        this.lineDrawer.setLineDrawTime(this.lineDrawer.originalLineDrawTime);
-        this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
-    }
-
     private TimePlusEffect(): void {
         this.elapsedTime -= 5000;
         if (this.elapsedTime < 0) {
@@ -501,6 +491,16 @@ export class GameplayState extends StateBase {
         if (this.elapsedTime < this.gameTimer * 1000 - 10000) {
             this.sun.stopBlink();
         }
+    }
+
+    private async longLoopEffect(): Promise<void> {
+        this.lineDrawer.setLineDrawTime(
+            this.lineDrawer.originalLineDrawTime + 500,
+        );
+        this.lineDrawer.setLineColor(0x0081af);
+        await this.wait(5000);
+        this.lineDrawer.setLineDrawTime(this.lineDrawer.originalLineDrawTime);
+        this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
     }
 
     private gatherEffect(): void {
