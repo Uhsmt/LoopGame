@@ -111,6 +111,7 @@ export class StartState extends StateBase {
                 this.manager.app.screen.width,
                 this.manager.app.screen.height,
             );
+            butterfly.appear(false);
             this.butterflies.push(butterfly);
         });
         this.container.addChild(...this.butterflies);

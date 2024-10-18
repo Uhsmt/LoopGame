@@ -23,6 +23,7 @@ export class GameplayState extends StateBase {
     private gameTimer: number = 60;
     private elapsedTime: number = 0;
     private stagePoint = 0;
+    private status: string = "playing";
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
     flowers: HelpFlower[] = [];
@@ -131,6 +132,7 @@ export class GameplayState extends StateBase {
                 this.manager.app.screen.width,
                 this.manager.app.screen.height,
             );
+            butterfly.appear();
         });
 
         // helpオブジェクトを出すタイミングを設定
@@ -194,10 +196,13 @@ export class GameplayState extends StateBase {
         if (
             this.helpFlowersTiming.includes(Math.floor(this.elapsedTime / 1000))
         ) {
-            const flowerType = Utility.chooseAtRandom(
-                ["freeze", "time_plus", "gather", "long"],
-                1,
-            )[0];
+            // TODO 検証ができたものから有効にする
+            // const flowerType = Utility.chooseAtRandom(
+            //     ["freeze", "time_plus", "gather", "long"],
+            //     1,
+            // )[0];
+            const flowerType = "freeze";
+
             const flower = new HelpFlower(
                 flowerType,
                 this.manager.app.screen.width,
@@ -230,14 +235,15 @@ export class GameplayState extends StateBase {
             this.manager.app.screen.height,
         );
 
-        this.butterflies.forEach((butterfly) => {
-            butterfly.fly(
-                this.manager.app.screen.width,
-                this.manager.app.screen.height,
-                delta,
-            );
-        });
-
+        if (this.status !== "freeze") {
+            this.butterflies.forEach((butterfly) => {
+                butterfly.fly(
+                    this.manager.app.screen.width,
+                    this.manager.app.screen.height,
+                    delta,
+                );
+            });
+        }
         // 残り10秒を切ったらblinkさせる
         if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
             this.sun.blink();
@@ -434,6 +440,7 @@ export class GameplayState extends StateBase {
                     this.manager.app.screen.width,
                     this.manager.app.screen.height,
                 );
+                butterfly.appear();
             }
         }
     }
@@ -444,7 +451,49 @@ export class GameplayState extends StateBase {
             this.showHelpMessage(flower.message);
             flower.stop();
             flower.delete();
+
+            // effect
+            switch (flower.getType()) {
+                case "freeze":
+                    void this.freeze();
+                    break;
+                case "time_plus":
+                    this.elapsedTime -= 5000;
+                    if (this.elapsedTime < 0) {
+                        this.elapsedTime = 0;
+                    }
+                    break;
+                case "gather":
+                    // TODO logic
+                    console.log("gather");
+                    break;
+                case "long":
+                    void this.longLoop();
+                    break;
+            }
         });
+    }
+
+    private async freeze(): Promise<void> {
+        this.status = "freeze";
+        this.butterflies.forEach((butterfly) => {
+            butterfly.stop();
+        });
+        await this.wait(5000);
+        this.status = "playing";
+        this.butterflies.forEach((butterfly) => {
+            butterfly.reFly();
+        });
+    }
+
+    private async longLoop(): Promise<void> {
+        this.lineDrawer.setLineDrawTime(
+            this.lineDrawer.originalLineDrawTime + 500,
+        );
+        this.lineDrawer.setLineColor(0x0000ff);
+        await this.wait(5000);
+        this.lineDrawer.setLineDrawTime(this.lineDrawer.originalLineDrawTime);
+        this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
     }
 
     private badLoop(): void {

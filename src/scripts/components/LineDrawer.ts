@@ -11,14 +11,18 @@ export class LineDrawer extends EventEmitter {
         end: PIXI.Point;
         graphics: PIXI.Graphics;
     }[] = [];
-    private lineDrawTime: number = 1200;
-    private lineColor: number = 0xffffff;
+    readonly originalLineDrawTime: number = 1200;
+    readonly originalLineColor: number = 0xffffff;
+    private lineDrawTime: number;
+    private lineColor: number;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pointerMoveHandler: any;
 
     constructor(app: PIXI.Application, color: number = 0xffffff) {
         super();
         this.app = app;
+        this.originalLineColor = color;
+        this.lineDrawTime = this.originalLineDrawTime;
         this.lineColor = color;
         this.graphics = new PIXI.Graphics();
         this.app.stage.addChild(this.graphics);
@@ -200,7 +204,22 @@ export class LineDrawer extends EventEmitter {
         this.startPoint = null;
     }
 
-    setLineTime(time: number): void {
+    setLineColor(color: number): void {
+        this.lineColor = color;
+    }
+
+    setLineDrawTime(time: number): void {
         this.lineDrawTime = time;
     }
+
+    // setLongMode(mode: boolean): void {
+    //     this.longMode = mode;
+    //     if (mode) {
+    //         this.lineDrawTime = this.originalLineDrawTime + 500;
+    //         this.lineColor = 0x133749;
+    //     } else {
+    //         this.lineDrawTime = this.originalLineDrawTime;
+    //         this.lineColor = this.originalLineColor;
+    //     }
+    // }
 }

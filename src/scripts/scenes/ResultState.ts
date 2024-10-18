@@ -91,8 +91,11 @@ export class ResultState extends StateBase {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    update(delta: number): void {}
+    update(delta: number): void {
+        this.messageButterflies.forEach((butterfly) => {
+            butterfly.flap(delta);
+        });
+    }
 
     render(): void {}
 
@@ -161,6 +164,7 @@ export class ResultState extends StateBase {
             butterfly.y =
                 marginTop + lineHeight * (i + 1) + butterfly.height / 2;
             butterfly.x = this.manager.app.screen.width / 2 + butterfly.width;
+            butterfly.appear(false);
             this.container.addChild(butterfly);
             this.messageButterflies.push(butterfly);
         }

@@ -28,6 +28,7 @@ export class Butterfly extends BaseCaptureableObject {
         multiplicationRate: number = 1,
     ) {
         super();
+        this.alpha = 0;
         this.color = color;
         if (size === "random") {
             size = Utility.chooseAtRandom([...Const.SIZE_LIST], 1)[0];
@@ -104,6 +105,20 @@ export class Butterfly extends BaseCaptureableObject {
             x: this.x - this.spriteWith / 2,
             y: this.y - this.height / 2,
         };
+    }
+
+    appear(fadeIn: boolean = true): void {
+        if (fadeIn) {
+            const fadeIn = () => {
+                if (this.alpha <= 1) {
+                    this.alpha += 0.07;
+                    requestAnimationFrame(fadeIn);
+                }
+            };
+            fadeIn();
+        } else {
+            this.alpha = 1;
+        }
     }
 
     fly(screenWidth: number, screenHeight: number, delta: number): void {
@@ -196,18 +211,18 @@ export class Butterfly extends BaseCaptureableObject {
         switch (position) {
             case "top":
                 x = Utility.random(left_x, right_x);
-                y = top_y;
+                y = top_y + this.height / 2;
                 break;
             case "bottom":
                 x = Utility.random(left_x, right_x);
-                y = bottom_y;
+                y = bottom_y - this.height / 2;
                 break;
             case "left":
-                x = left_x;
+                x = left_x + this.width / 2;
                 y = Utility.random(top_y, bottom_y);
                 break;
             case "right":
-                x = right_x;
+                x = right_x - this.width / 2;
                 y = Utility.random(top_y, bottom_y);
                 break;
         }
@@ -229,6 +244,9 @@ export class Butterfly extends BaseCaptureableObject {
     }
     stop(): void {
         this.isFlying = false;
+    }
+    reFly(): void {
+        this.isFlying = true;
     }
 }
 

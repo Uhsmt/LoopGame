@@ -31,7 +31,7 @@ export class HelpFlower extends BaseCaptureableObject {
                 break;
             case "gather":
                 this.sprite = PIXI.Sprite.from("flower3");
-                this.message = "Cather!";
+                this.message = "Ghather!";
                 break;
             default:
             case "long":
@@ -82,5 +82,9 @@ export class HelpFlower extends BaseCaptureableObject {
 
     stop(): void {
         this.isRunning = false;
+    }
+
+    getType(): string {
+        return this.type;
     }
 }
