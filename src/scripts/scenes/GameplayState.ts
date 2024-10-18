@@ -201,7 +201,7 @@ export class GameplayState extends StateBase {
             //     ["freeze", "time_plus", "gather", "long"],
             //     1,
             // )[0];
-            const flowerType = "freeze";
+            const flowerType = "time_plus";
 
             const flower = new HelpFlower(
                 flowerType,
@@ -455,7 +455,7 @@ export class GameplayState extends StateBase {
             // effect
             switch (flower.getType()) {
                 case "freeze":
-                    void this.freeze();
+                    void this.freezeEffect();
                     break;
                 case "time_plus":
                     this.elapsedTime -= 5000;
@@ -468,13 +468,13 @@ export class GameplayState extends StateBase {
                     console.log("gather");
                     break;
                 case "long":
-                    void this.longLoop();
+                    void this.longLoopEffect();
                     break;
             }
         });
     }
 
-    private async freeze(): Promise<void> {
+    private async freezeEffect(): Promise<void> {
         this.status = "freeze";
         this.butterflies.forEach((butterfly) => {
             butterfly.stop();
@@ -486,7 +486,7 @@ export class GameplayState extends StateBase {
         });
     }
 
-    private async longLoop(): Promise<void> {
+    private async longLoopEffect(): Promise<void> {
         this.lineDrawer.setLineDrawTime(
             this.lineDrawer.originalLineDrawTime + 500,
         );
