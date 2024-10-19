@@ -57,15 +57,15 @@ export class LineDrawer extends EventEmitter {
 
     private onPointerMove(x: number, y: number): void {
         if (x < Const.MARGIN) {
-            x = Const.MARGIN;
+            x = Const.MARGIN - 1;
         } else if (x > this.app.screen.width - Const.MARGIN) {
-            x = this.app.screen.width - Const.MARGIN;
+            x = this.app.screen.width - Const.MARGIN + 1;
         }
 
         if (y < Const.MARGIN) {
-            y = Const.MARGIN;
+            y = Const.MARGIN - 1;
         } else if (y > this.app.screen.height - Const.MARGIN) {
-            y = this.app.screen.height - Const.MARGIN;
+            y = this.app.screen.height - Const.MARGIN + 1;
         }
 
         if (!this.startPoint) {
@@ -79,7 +79,7 @@ export class LineDrawer extends EventEmitter {
             segment.moveTo(this.startPoint.x, this.startPoint.y);
             segment
                 .lineTo(endPoint.x, endPoint.y)
-                .stroke({ width: 2, color: this.lineColor });
+                .stroke({ width: 2.5, color: this.lineColor });
             this.app.stage.addChild(segment);
             this.segments.push({
                 start: this.startPoint,
@@ -211,15 +211,4 @@ export class LineDrawer extends EventEmitter {
     setLineDrawTime(time: number): void {
         this.lineDrawTime = time;
     }
-
-    // setLongMode(mode: boolean): void {
-    //     this.longMode = mode;
-    //     if (mode) {
-    //         this.lineDrawTime = this.originalLineDrawTime + 500;
-    //         this.lineColor = 0x133749;
-    //     } else {
-    //         this.lineDrawTime = this.originalLineDrawTime;
-    //         this.lineColor = this.originalLineColor;
-    //     }
-    // }
 }

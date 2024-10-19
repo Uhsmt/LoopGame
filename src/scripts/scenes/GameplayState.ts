@@ -34,7 +34,7 @@ export class GameplayState extends StateBase {
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
 
-        this.lineDrawer = new LineDrawer(this.manager.app, 0x000000);
+        this.lineDrawer = new LineDrawer(this.manager.app, 0x730000);
         this.lineDrawer.on(
             "loopAreaCompleted",
             this.handleLoopAreaCompleted.bind(this),
@@ -396,12 +396,12 @@ export class GameplayState extends StateBase {
         this.caputuredButterflies.push(...butterflies);
         this.updateScoreMessage();
 
-        // score加算 全部同じ色の場合は蝶の数×10 それ以外は蝶の数×20
+        // score加算 全部同じ色の場合は蝶の数×10 それ以外は蝶の数×30
         const basePoint =
             butterflies.length *
             (butterflies.every((b) => b.color === butterflies[0].color)
                 ? 10
-                : 20);
+                : 30);
         let point = basePoint;
         let calculationText = "";
         butterflies.forEach((butterfly) => {
