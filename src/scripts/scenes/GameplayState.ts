@@ -22,6 +22,9 @@ export class GameplayState extends StateBase {
     private isFinish = false;
     private gameTimer: number = 60;
     private elapsedTime: number = 0;
+    private freezeElapsedTime: number = -1;
+    private gatherElapsedTime: number = -1;
+    private longLoopElapsedTime: number = -1;
     private stagePoint = 0;
     private status: string = "playing";
     caputuredButterflies: Butterfly[] = [];
@@ -201,7 +204,7 @@ export class GameplayState extends StateBase {
             //     ["freeze", "time_plus", "gather", "long"],
             //     1,
             // )[0];
-            const flowerType = "long";
+            const flowerType = "gather";
 
             const flower = new HelpFlower(
                 flowerType,
@@ -228,13 +231,20 @@ export class GameplayState extends StateBase {
         // ↑ pause中でも動く処理、↓ pause中は動かない処理
 
         this.elapsedTime += delta;
+
+        // sun
         const progress = this.elapsedTime / (this.gameTimer * 1000);
         this.sun.move(
             progress,
             this.manager.app.screen.width,
             this.manager.app.screen.height,
         );
+        // 残り10秒を切ったらblinkさせる
+        if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
+            this.sun.blink();
+        }
 
+        // butterfly flying
         if (this.status !== "freeze") {
             this.butterflies.forEach((butterfly) => {
                 butterfly.fly(
@@ -244,9 +254,25 @@ export class GameplayState extends StateBase {
                 );
             });
         }
-        // 残り10秒を切ったらblinkさせる
-        if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
-            this.sun.blink();
+
+        // effect系処理
+        if (this.freezeElapsedTime >= 0) {
+            this.freezeElapsedTime -= delta;
+            if (this.freezeElapsedTime <= 0) {
+                this.freezeEffect(false);
+            }
+        }
+        if (this.longLoopElapsedTime >= 0) {
+            this.longLoopElapsedTime -= delta;
+            if (this.longLoopElapsedTime <= 0) {
+                this.longLoopEffect(false);
+            }
+        }
+        if (this.gatherElapsedTime >= 0) {
+            this.gatherElapsedTime -= delta;
+            if (this.gatherElapsedTime <= 0) {
+                this.gatherEffect(false);
+            }
         }
 
         if (this.elapsedTime >= this.gameTimer * 1000) {
@@ -364,6 +390,7 @@ export class GameplayState extends StateBase {
             // １匹だけの時は、colorChange
             butterfliesInLoopArea[0].switchColor();
             this.captureFlowers(flowersInLoopArea);
+            // TODO gatherの場合は、gatherPointを設定
         } else if (butterfliesInLoopArea.length === 2) {
             // 2匹の時は、同じ色であればGet
             if (
@@ -455,33 +482,44 @@ export class GameplayState extends StateBase {
             // effect
             switch (flower.getType()) {
                 case "freeze":
-                    void this.freezeEffect();
+                    this.freezeEffect(true);
                     break;
                 case "time_plus":
                     this.TimePlusEffect();
                     break;
                 case "gather":
-                    this.gatherEffect();
+                    this.gatherEffect(true);
                     break;
                 case "long":
-                    void this.longLoopEffect();
+                    this.longLoopEffect(true);
                     break;
             }
         });
     }
 
-    private async freezeEffect(): Promise<void> {
-        this.status = "freeze";
-        this.butterflies.forEach((butterfly) => {
-            butterfly.stop();
-        });
-        await this.wait(5000);
-        this.status = "playing";
-        this.butterflies.forEach((butterfly) => {
-            butterfly.reFly();
-        });
+    /**
+     * 蝶を一時停止させる
+     * @param isActive true: freeze, false: playing
+     */
+    private freezeEffect(isActive: boolean): void {
+        if (isActive) {
+            this.status = "freeze";
+            this.butterflies.forEach((butterfly) => {
+                butterfly.stop();
+            });
+            this.freezeElapsedTime = 5000;
+        } else {
+            this.status = "playing";
+            this.butterflies.forEach((butterfly) => {
+                butterfly.reFly();
+            });
+            this.freezeElapsedTime = -1;
+        }
     }
 
+    /**
+     * 時間を5秒もどす
+     */
     private TimePlusEffect(): void {
         this.elapsedTime -= 5000;
         if (this.elapsedTime < 0) {
@@ -493,19 +531,96 @@ export class GameplayState extends StateBase {
         }
     }
 
-    private async longLoopEffect(): Promise<void> {
-        this.lineDrawer.setLineDrawTime(
-            this.lineDrawer.originalLineDrawTime + 500,
-        );
-        this.lineDrawer.setLineColor(0x0081af);
-        await this.wait(5000);
-        this.lineDrawer.setLineDrawTime(this.lineDrawer.originalLineDrawTime);
-        this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
+    /**
+     * lineDrawerの描画を長くする
+     * @param isActive true: longLoop, false: playing
+     */
+    private longLoopEffect(isActive: boolean): void {
+        if (isActive) {
+            this.lineDrawer.setLineDrawTime(
+                this.lineDrawer.originalLineDrawTime + 500,
+            );
+            this.lineDrawer.setLineColor(0x0081af);
+            this.longLoopElapsedTime = 5000;
+        } else {
+            this.lineDrawer.setLineDrawTime(
+                this.lineDrawer.originalLineDrawTime,
+            );
+            this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
+            this.longLoopElapsedTime = -1;
+        }
     }
 
-    private gatherEffect(): void {
-        console.log("gather");
-        // TODO logic
+    /**
+     * 蝶を集める
+     * @param isActive true: gather, false: playing
+     */
+    private gatherEffect(isActive: boolean): void {
+        const debugCircles: PIXI.Graphics[] = [];
+        if (isActive) {
+            const colorNum = this.stageInfo.butterflyColors.length;
+            const centerPoints: PIXI.Point[] = [];
+            const canvasWidth =
+                this.manager.app.screen.width - Const.MARGIN * 2;
+            const canvasHeight =
+                this.manager.app.screen.height - Const.MARGIN * 2;
+
+            let gatherDistance = 0;
+
+            if (colorNum === 2) {
+                centerPoints.push(
+                    new PIXI.Point(
+                        Const.MARGIN + canvasWidth / 4,
+                        Const.MARGIN + canvasHeight / 2,
+                    ),
+                );
+                centerPoints.push(
+                    new PIXI.Point(
+                        Const.MARGIN + (canvasWidth * 3) / 4,
+                        Const.MARGIN + canvasHeight / 2,
+                    ),
+                );
+                gatherDistance = (0.9 * canvasWidth) / 4;
+            }
+            // TODO 3色以上の場合の処理を追加
+
+            if (DEBUG_MODE) {
+                // centerPointsを中心に円を描画
+                centerPoints.forEach((point) => {
+                    const circle = new PIXI.Graphics().circle(
+                        point.x,
+                        point.y,
+                        gatherDistance,
+                    );
+                    circle.fill(0xde3249);
+                    circle.alpha = 0.5;
+                    debugCircles.push(circle);
+                    this.container.addChild(circle);
+                });
+            }
+
+            this.stageInfo.butterflyColors.forEach((color, index) => {
+                const butterflies = this.butterflies.filter(
+                    (butterfly) => butterfly.color === color,
+                );
+                if (butterflies.length === 0) return;
+                const centerPoint = centerPoints[index];
+                butterflies.forEach((butterfly) => {
+                    butterfly.setGatherPoint(centerPoint, gatherDistance);
+                });
+            });
+
+            this.gatherElapsedTime = 10000;
+        } else {
+            this.butterflies.forEach((butterfly) => {
+                butterfly.deleteGatherPoint();
+            });
+            debugCircles.forEach((circle) => {
+                this.container.removeChild(circle);
+                circle.destroy();
+            });
+            this.gatherElapsedTime = -1;
+        }
     }
 
     private badLoop(): void {
@@ -528,6 +643,8 @@ export class GameplayState extends StateBase {
         const multiplication = isMultiple
             ? Utility.random(2, this.stageInfo.maxMultiplateRate)
             : 1;
+
+        // TODO gatherの場合は、gatherPointを設定
 
         return new Butterfly(
             this.stageInfo.butterflySize,

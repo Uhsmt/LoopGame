@@ -81,16 +81,22 @@ export class LineDrawer extends EventEmitter {
                 .lineTo(endPoint.x, endPoint.y)
                 .stroke({ width: 2.5, color: this.lineColor });
             this.app.stage.addChild(segment);
-            this.segments.push({
+            const segmentObj = {
                 start: this.startPoint,
                 end: endPoint,
                 graphics: segment,
-            });
+            };
+            this.segments.push(segmentObj);
 
             // セグメントを削除
             setTimeout(() => {
                 this.app.stage.removeChild(segment);
-                segment.destroy();
+                // 自分より前のセグメントをすべてdestroyする(lineDrawTime変更対策)
+                const index = this.segments.indexOf(segmentObj);
+                for (let i = 0; i < index; i++) {
+                    this.app.stage.removeChild(this.segments[i].graphics);
+                    this.segments[i].graphics.destroy();
+                }
             }, this.lineDrawTime);
 
             // ループ完成のチェック

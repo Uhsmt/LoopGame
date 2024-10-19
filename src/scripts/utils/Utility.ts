@@ -1,3 +1,5 @@
+import * as PIXI from "pixi.js";
+
 /**
  * 範囲内のランダム整数を返す
  * @param {number} _min
@@ -39,4 +41,8 @@ export function isTrueRandom(_percentage: number): boolean {
 
 export function formatNumberWithCommas(x: number): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+export function getDistance(p1: PIXI.Point, p2: PIXI.Point): number {
+    return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
 }

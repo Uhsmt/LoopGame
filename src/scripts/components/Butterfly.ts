@@ -15,6 +15,10 @@ export class Butterfly extends BaseCaptureableObject {
     private isFlying = true;
     private isFlapping = true;
     readonly multiplicationRate: number = 1;
+    private gatherPoint: PIXI.Point | null = null;
+    private gatherDistance = 10;
+    private isForceToGather = false;
+
     color: number;
     private readonly xTernFrame = Utility.random(120, 150);
     private readonly yTernFrame = Utility.random(120, 150);
@@ -128,35 +132,61 @@ export class Butterfly extends BaseCaptureableObject {
         const top = Const.MARGIN;
         const bottom = screenHeight - Const.MARGIN;
 
-        // 横方向
-        if (this.xDiretion < 0 && this.x <= left + this.spriteWith) {
-            this.xFrame = 0;
-            this.xDiretion = Math.abs(this.xDiretion);
-        } else if (this.xDiretion > 0 && this.x >= right) {
-            this.xFrame = 0;
-            this.xDiretion = -1 * Math.abs(this.xDiretion);
-        } else if (this.xFrame === this.xTernFrame) {
-            this.xFrame = 0;
-            this.xDiretion *= Utility.chooseAtRandom([-1, 1], 1)[0];
+        if (this.isForceToGather && this.gatherPoint) {
+            if (this.x < this.gatherPoint.x) {
+                this.xDiretion = Math.abs(this.xDiretion);
+            } else {
+                this.xDiretion = -1 * Math.abs(this.xDiretion);
+            }
+            if (this.y < this.gatherPoint.y) {
+                this.yDiretion = Math.abs(this.yDiretion);
+            } else {
+                this.yDiretion = -1 * Math.abs(this.yDiretion);
+            }
         } else {
-            this.xFrame += 1;
+            // 横方向
+            if (this.xDiretion < 0 && this.x <= left + this.spriteWith) {
+                this.xFrame = 0;
+                this.xDiretion = Math.abs(this.xDiretion);
+            } else if (this.xDiretion > 0 && this.x >= right) {
+                this.xFrame = 0;
+                this.xDiretion = -1 * Math.abs(this.xDiretion);
+            } else if (this.xFrame === this.xTernFrame) {
+                this.xFrame = 0;
+                this.xDiretion *= Utility.chooseAtRandom([-1, 1], 1)[0];
+            } else {
+                this.xFrame += 1;
+            }
+
+            // 縦方向
+            if (this.yDiretion < top && this.y <= this.sprite.height + top) {
+                this.yFrame = 0;
+                this.yDiretion = Math.abs(this.yDiretion);
+            } else if (this.yDiretion > 0 && this.y >= bottom) {
+                this.yFrame = 0;
+                this.yDiretion = -1 * Math.abs(this.yDiretion);
+            } else if (this.yFrame === this.yTernFrame) {
+                this.yFrame = 0;
+                this.yDiretion *= Utility.chooseAtRandom([-1, 1], 1)[0];
+            } else {
+                this.yFrame += 1;
+            }
         }
 
-        // 縦方向
-        if (this.yDiretion < top && this.y <= this.sprite.height + top) {
-            this.yFrame = 0;
-            this.yDiretion = Math.abs(this.yDiretion);
-        } else if (this.yDiretion > 0 && this.y >= bottom) {
-            this.yFrame = 0;
-            this.yDiretion = -1 * Math.abs(this.yDiretion);
-        } else if (this.yFrame === this.yTernFrame) {
-            this.yFrame = 0;
-            this.yDiretion *= Utility.chooseAtRandom([-1, 1], 1)[0];
-        } else {
-            this.yFrame += 1;
-        }
+        // update position
         this.x += (this.xDiretion * delta) / 16;
         this.y += (this.yDiretion * delta) / 16;
+
+        // thisとgatherPointの距離が一定以下になったらisForeToGatherをfalseにする
+        if (this.gatherPoint) {
+            const thisPoint = new PIXI.Point(this.x, this.y);
+            const distance = Utility.getDistance(thisPoint, this.gatherPoint);
+            if (distance <= 10) {
+                this.isForceToGather = false;
+            } else if (distance >= this.gatherDistance) {
+                this.isForceToGather = true;
+            }
+        }
     }
 
     flap(delta: number): void {
@@ -247,6 +277,17 @@ export class Butterfly extends BaseCaptureableObject {
     }
     reFly(): void {
         this.isFlying = true;
+    }
+
+    setGatherPoint(point: PIXI.Point, distance: number): void {
+        this.gatherPoint = point;
+        this.gatherDistance = distance;
+        this.isForceToGather = true;
+    }
+
+    deleteGatherPoint(): void {
+        this.gatherPoint = null;
+        this.isForceToGather = false;
     }
 }
 
