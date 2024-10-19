@@ -26,7 +26,6 @@ export class GameplayState extends StateBase {
     private gatherElapsedTime: number = -1;
     private longLoopElapsedTime: number = -1;
     private stagePoint = 0;
-    private status: string = "playing";
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
     flowers: HelpFlower[] = [];
@@ -204,7 +203,7 @@ export class GameplayState extends StateBase {
             //     ["freeze", "time_plus", "gather", "long"],
             //     1,
             // )[0];
-            const flowerType = "gather";
+            const flowerType = "freeze";
 
             const flower = new HelpFlower(
                 flowerType,
@@ -245,7 +244,7 @@ export class GameplayState extends StateBase {
         }
 
         // butterfly flying
-        if (this.status !== "freeze") {
+        if ((this.freezeElapsedTime <= 0)) {
             this.butterflies.forEach((butterfly) => {
                 butterfly.fly(
                     this.manager.app.screen.width,
@@ -503,13 +502,11 @@ export class GameplayState extends StateBase {
      */
     private freezeEffect(isActive: boolean): void {
         if (isActive) {
-            this.status = "freeze";
             this.butterflies.forEach((butterfly) => {
                 butterfly.stop();
             });
             this.freezeElapsedTime = 5000;
         } else {
-            this.status = "playing";
             this.butterflies.forEach((butterfly) => {
                 butterfly.reFly();
             });
