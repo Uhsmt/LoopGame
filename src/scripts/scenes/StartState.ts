@@ -159,9 +159,6 @@ export class StartState extends StateBase {
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.isRuleButtonInLoopArea(loopArea)) {
             this.onRuleSelected();
-            this.butterflies.forEach((butterfly) => {
-                butterfly.isHit(loopArea);
-            });
         } else if (this.isStartButtonInLoopArea(loopArea)) {
             void this.onStartGameSelected();
         }

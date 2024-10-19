@@ -34,11 +34,11 @@ https://uhsmt.github.io/LoopGame/
 - [ ] soundセット
 
 ### phase2 お助けオブジェクト
-- [ ] お助けsprite作成
+- [x] お助けsprite作成
 - [ ] あつまれ！
-- [ ] 時間延長
-- [ ] ループ延長
-- [ ] とまれ！
+- [x] 時間延長
+- [x] ループ延長
+- [x] とまれ！
 
 ### phase3 お邪魔オブジェクト
 - [ ] お邪魔sprite作成
