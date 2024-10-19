@@ -13,7 +13,7 @@
         "stageTime": 60,
         "butterflyColorNum": 2,
         "needCount": 8,
-        "stageButterflyCount": 10,
+        "stageButterflyCount": 8,
         "butterflySize": "large",
         "isButterflyColorChange": false
     },
@@ -31,7 +31,7 @@
         "stageTime": 60,
         "butterflyColorNum": 3,
         "needCount": 12,
-        "stageButterflyCount": 15,
+        "stageButterflyCount": 12,
         "butterflySize": "small",
         "isButterflyColorChange": false
     },
@@ -40,7 +40,7 @@
         "stageTime": 60,
         "butterflyColorNum": 3,
         "needCount": 14,
-        "stageButterflyCount": 12,
+        "stageButterflyCount": 14,
         "butterflySize": "random",
         "isButterflyColorChange": false
     },
@@ -64,7 +64,7 @@
         "isButterflyColorChange": true,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.15,
-        "helpObjectNum": 1
+        "helpObjectNum": 2
     },
     {
         "level": 7,
@@ -77,7 +77,7 @@
         "isButterflyColorChange": false,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.15,
-        "helpObjectNum": 1
+        "helpObjectNum": 2
     },
     {
         "level": 8,
@@ -90,7 +90,7 @@
         "isButterflyColorChange": true,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.15,
-        "helpObjectNum": 1
+        "helpObjectNum": 2
     },
     {
         "level": 9,
@@ -103,7 +103,7 @@
         "isButterflyColorChange": false,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.2,
-        "helpObjectNum": 2
+        "helpObjectNum": 3
     },
     {
         "level": 10,
@@ -116,6 +116,6 @@
         "isButterflyColorChange": true,
         "maxMultiplateRate": 3,
         "muptipleButterflyRate": 0.15,
-        "helpObjectNum": 2
+        "helpObjectNum": 4
     }
 ]
