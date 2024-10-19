@@ -17,6 +17,10 @@ export const FONT_ENGLISH_BOLD = "600";
 export const FONT_JAPANESE = "BIZ UDGothic";
 export const FONT_JAPANESE_BOLD = "400";
 
+export const LONG_LOOP_EFFECT_TIME_MS = 4000;
+export const GATHHER_EFFECT_TIME_MS = 10000;
+export const FREEZE_EFFECT_TIME_MS = 3000;
+
 export const imageSrcs = [
     { alias: "title", src: `${BASE_URL}assets/title.png` },
     { alias: "background", src: `${BASE_URL}assets/background.jpg` },

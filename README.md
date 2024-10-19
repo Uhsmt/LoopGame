@@ -16,7 +16,14 @@ https://uhsmt.github.io/LoopGame/
 - [x] 蝶のカラー調整
 - [x] share card
 
-### phase1.5
+### phase2 お助けオブジェクト
+- [x] お助けsprite作成
+- [x] あつまれ！
+- [x] 時間延長
+- [x] ループ延長
+- [x] とまれ！
+
+### phase2.5
 - [ ] 記録保持 
 
 ### Rule
@@ -32,13 +39,6 @@ https://uhsmt.github.io/LoopGame/
  - [ ] 居眠りモーション
  - [ ] 負けモーション
 - [ ] soundセット
-
-### phase2 お助けオブジェクト
-- [x] お助けsprite作成
-- [ ] あつまれ！
-- [x] 時間延長
-- [x] ループ延長
-- [x] とまれ！
 
 ### phase3 お邪魔オブジェクト
 - [ ] お邪魔sprite作成

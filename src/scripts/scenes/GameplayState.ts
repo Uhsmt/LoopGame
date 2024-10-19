@@ -29,9 +29,11 @@ export class GameplayState extends StateBase {
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
     flowers: HelpFlower[] = [];
-    pointerDownHandler: (event: PIXI.FederatedPointerEvent) => void;
     private stageInfo: StageInformation;
     private readonly helpFlowersTiming: number[] = [];
+    pointerDownHandler: (event: PIXI.FederatedPointerEvent) => void;
+    private gatherPointMap: Map<number, PIXI.Point> = new Map();
+    private gatherDistance: number = 0;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -137,18 +139,8 @@ export class GameplayState extends StateBase {
             butterfly.appear();
         });
 
-        // helpオブジェクトを出すタイミングを設定
-        if (this.stageInfo.helpObjectNum > 0) {
-            // gameTimerをhelpObjectNum+1 で等分割（2つだったら1/3, 2/3）
-            for (let i = 1; i <= this.stageInfo.helpObjectNum; i++) {
-                this.helpFlowersTiming.push(
-                    Math.floor(
-                        (this.gameTimer / (this.stageInfo.helpObjectNum + 1)) *
-                            i,
-                    ),
-                );
-            }
-        }
+        // helpオブジェクトの設定
+        this.setupForHelpObject();
 
         // Frame
         this.addFrameGraphic();
@@ -165,6 +157,83 @@ export class GameplayState extends StateBase {
         };
 
         app.stage.addEventListener("pointerdown", this.pointerDownHandler);
+    }
+
+    private setupForHelpObject() {
+        // helpオブジェクトを出すタイミングを設定
+        if (this.stageInfo.helpObjectNum > 0) {
+            // gameTimerをhelpObjectNum+1 で等分割（2つだったら1/3, 2/3）
+            for (let i = 1; i <= this.stageInfo.helpObjectNum; i++) {
+                this.helpFlowersTiming.push(
+                    Math.floor(
+                        (this.gameTimer / (this.stageInfo.helpObjectNum + 1)) *
+                            i,
+                    ),
+                );
+            }
+        }
+
+        // gatherPointMapの初期化
+        const colors = this.stageInfo.butterflyColors;
+        const canvasWidth = this.manager.app.screen.width - Const.MARGIN * 2;
+        const canvasHeight = this.manager.app.screen.height - Const.MARGIN * 2;
+
+        let distanceWidth = 0;
+        let distanceHeight = 0;
+
+        if (colors.length <= 2) {
+            // 2色の場合は、左右に分けて配置
+            colors.forEach((color, index) => {
+                this.gatherPointMap.set(
+                    color,
+                    new PIXI.Point(
+                        Const.MARGIN +
+                            ((canvasWidth * ((index + 1) * 2 - 1)) /
+                                colors.length) *
+                                2,
+                        Const.MARGIN + canvasHeight / 2,
+                    ),
+                );
+            });
+            distanceWidth = (0.95 * canvasWidth) / (colors.length * 2);
+            distanceHeight = (0.95 * canvasHeight) / 2;
+        } else {
+            // まずcolorsを上段、下段に分ける
+            const colorsTop = colors.slice(0, Math.floor(colors.length / 2));
+            const colorsBottom = colors.slice(Math.floor(colors.length / 2));
+
+            // 上段のgatherPointMapを設定
+            colorsTop.forEach((color, index) => {
+                const order = index + 1;
+                this.gatherPointMap.set(
+                    color,
+                    new PIXI.Point(
+                        Const.MARGIN +
+                            (canvasWidth * (order * 2 - 1)) /
+                                (colorsTop.length * 2),
+                        Const.MARGIN + canvasHeight / 4,
+                    ),
+                );
+            });
+
+            // 下段のgatherPointMapを設定
+            colorsBottom.forEach((color, index) => {
+                const order = index + 1;
+                this.gatherPointMap.set(
+                    color,
+                    new PIXI.Point(
+                        Const.MARGIN +
+                            (canvasWidth * (order * 2 - 1)) /
+                                (colorsBottom.length * 2),
+                        Const.MARGIN + (canvasHeight * 3) / 4,
+                    ),
+                );
+            });
+
+            distanceWidth = (0.95 * canvasWidth) / colors.length;
+            distanceHeight = (0.95 * canvasHeight) / 4;
+        }
+        this.gatherDistance = Math.min(distanceWidth, distanceHeight);
     }
 
     async onEnter(): Promise<void> {
@@ -198,12 +267,10 @@ export class GameplayState extends StateBase {
         if (
             this.helpFlowersTiming.includes(Math.floor(this.elapsedTime / 1000))
         ) {
-            // TODO 検証ができたものから有効にする
-            // const flowerType = Utility.chooseAtRandom(
-            //     ["freeze", "time_plus", "gather", "long"],
-            //     1,
-            // )[0];
-            const flowerType = "freeze";
+            const flowerType = Utility.chooseAtRandom(
+                ["freeze", "time_plus", "gather", "long"],
+                1,
+            )[0];
 
             const flower = new HelpFlower(
                 flowerType,
@@ -244,7 +311,7 @@ export class GameplayState extends StateBase {
         }
 
         // butterfly flying
-        if ((this.freezeElapsedTime <= 0)) {
+        if (this.freezeElapsedTime <= 0) {
             this.butterflies.forEach((butterfly) => {
                 butterfly.fly(
                     this.manager.app.screen.width,
@@ -387,9 +454,18 @@ export class GameplayState extends StateBase {
             this.captureFlowers(flowersInLoopArea);
         } else if (butterfliesInLoopArea.length === 1) {
             // １匹だけの時は、colorChange
-            butterfliesInLoopArea[0].switchColor();
+            const butterfly = butterfliesInLoopArea[0];
+            butterfly.switchColor();
             this.captureFlowers(flowersInLoopArea);
-            // TODO gatherの場合は、gatherPointを設定
+            if (this.gatherElapsedTime >= 0) {
+                const point = this.gatherPointMap.get(butterfly.color);
+                if (point) {
+                    butterfliesInLoopArea[0].setGatherPoint(
+                        point,
+                        this.gatherDistance,
+                    );
+                }
+            }
         } else if (butterfliesInLoopArea.length === 2) {
             // 2匹の時は、同じ色であればGet
             if (
@@ -505,7 +581,7 @@ export class GameplayState extends StateBase {
             this.butterflies.forEach((butterfly) => {
                 butterfly.stop();
             });
-            this.freezeElapsedTime = 5000;
+            this.freezeElapsedTime = Const.FREEZE_EFFECT_TIME_MS;
         } else {
             this.butterflies.forEach((butterfly) => {
                 butterfly.reFly();
@@ -538,7 +614,7 @@ export class GameplayState extends StateBase {
                 this.lineDrawer.originalLineDrawTime + 500,
             );
             this.lineDrawer.setLineColor(0x0081af);
-            this.longLoopElapsedTime = 5000;
+            this.longLoopElapsedTime = Const.LONG_LOOP_EFFECT_TIME_MS;
         } else {
             this.lineDrawer.setLineDrawTime(
                 this.lineDrawer.originalLineDrawTime,
@@ -553,68 +629,48 @@ export class GameplayState extends StateBase {
      * @param isActive true: gather, false: playing
      */
     private gatherEffect(isActive: boolean): void {
-        const debugCircles: PIXI.Graphics[] = [];
         if (isActive) {
-            const colorNum = this.stageInfo.butterflyColors.length;
-            const centerPoints: PIXI.Point[] = [];
-            const canvasWidth =
-                this.manager.app.screen.width - Const.MARGIN * 2;
-            const canvasHeight =
-                this.manager.app.screen.height - Const.MARGIN * 2;
-
-            let gatherDistance = 0;
-
-            if (colorNum === 2) {
-                centerPoints.push(
-                    new PIXI.Point(
-                        Const.MARGIN + canvasWidth / 4,
-                        Const.MARGIN + canvasHeight / 2,
-                    ),
-                );
-                centerPoints.push(
-                    new PIXI.Point(
-                        Const.MARGIN + (canvasWidth * 3) / 4,
-                        Const.MARGIN + canvasHeight / 2,
-                    ),
-                );
-                gatherDistance = (0.9 * canvasWidth) / 4;
-            }
-            // TODO 3色以上の場合の処理を追加
-
-            if (DEBUG_MODE) {
-                // centerPointsを中心に円を描画
-                centerPoints.forEach((point) => {
-                    const circle = new PIXI.Graphics().circle(
-                        point.x,
-                        point.y,
-                        gatherDistance,
-                    );
-                    circle.fill(0xde3249);
-                    circle.alpha = 0.5;
-                    debugCircles.push(circle);
-                    this.container.addChild(circle);
-                });
-            }
-
-            this.stageInfo.butterflyColors.forEach((color, index) => {
+            this.stageInfo.butterflyColors.forEach((color) => {
                 const butterflies = this.butterflies.filter(
                     (butterfly) => butterfly.color === color,
                 );
                 if (butterflies.length === 0) return;
-                const centerPoint = centerPoints[index];
-                butterflies.forEach((butterfly) => {
-                    butterfly.setGatherPoint(centerPoint, gatherDistance);
-                });
+                const centerPoint = this.gatherPointMap.get(color);
+                if (centerPoint) {
+                    butterflies.forEach((butterfly) => {
+                        butterfly.setGatherPoint(
+                            centerPoint,
+                            this.gatherDistance,
+                        );
+                        butterfly.xDiretion += 0.1;
+                        butterfly.yDiretion += 0.1;
+                    });
+                }
             });
+            this.gatherElapsedTime = Const.GATHHER_EFFECT_TIME_MS;
 
-            this.gatherElapsedTime = 10000;
+            // デバッグモードの場合は、集まる範囲を表示
+            if (DEBUG_MODE) {
+                const centerPoints = Array.from(this.gatherPointMap.values());
+                centerPoints.forEach((point) => {
+                    const circle = new PIXI.Graphics().circle(
+                        point.x,
+                        point.y,
+                        this.gatherDistance,
+                    );
+                    circle.fill(0xde3249);
+                    circle.alpha = 0.1;
+                    this.container.addChild(circle);
+                    setTimeout(() => {
+                        this.container.removeChild(circle);
+                    }, Const.GATHHER_EFFECT_TIME_MS);
+                });
+            }
         } else {
             this.butterflies.forEach((butterfly) => {
                 butterfly.deleteGatherPoint();
-            });
-            debugCircles.forEach((circle) => {
-                this.container.removeChild(circle);
-                circle.destroy();
+                butterfly.xDiretion -= 0.1;
+                butterfly.yDiretion -= 0.1;
             });
             this.gatherElapsedTime = -1;
         }
@@ -641,13 +697,19 @@ export class GameplayState extends StateBase {
             ? Utility.random(2, this.stageInfo.maxMultiplateRate)
             : 1;
 
-        // TODO gatherの場合は、gatherPointを設定
-
-        return new Butterfly(
+        const newButterfly = new Butterfly(
             this.stageInfo.butterflySize,
             mainColor,
             subColor,
             multiplication,
         );
+        if (this.gatherElapsedTime >= 0) {
+            const point = this.gatherPointMap.get(newButterfly.color);
+            if (point) {
+                newButterfly.setGatherPoint(point, this.gatherDistance);
+            }
+        }
+
+        return newButterfly;
     }
 }

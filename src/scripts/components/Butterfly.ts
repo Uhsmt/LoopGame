@@ -6,8 +6,8 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
 export class Butterfly extends BaseCaptureableObject {
     private ellipse: PIXI.Graphics;
     private sprite: PIXI.Sprite;
-    private xDiretion: number;
-    private yDiretion: number;
+    xDiretion: number;
+    yDiretion: number;
     private xFrame: number;
     private yFrame: number;
     private flappingProgress: number = 0;
