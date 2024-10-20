@@ -649,7 +649,7 @@ export class GameplayState extends StateBase {
             this.gatherElapsedTime = Const.GATHHER_EFFECT_TIME_MS;
 
             // デバッグモードの場合は、集まる範囲を表示
-            if (!DEBUG_MODE) {
+            if (DEBUG_MODE) {
                 // gatherPointMapをforEachで回して、gatherDistanceの円を描画
                 this.gatherPointMap.forEach((point, color) => {
                     const circle = new PIXI.Graphics().circle(
