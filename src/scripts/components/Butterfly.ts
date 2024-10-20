@@ -6,8 +6,8 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
 export class Butterfly extends BaseCaptureableObject {
     private ellipse: PIXI.Graphics;
     private sprite: PIXI.Sprite;
-    xDiretion: number;
-    yDiretion: number;
+    private xDiretion: number;
+    private yDiretion: number;
     private xFrame: number;
     private yFrame: number;
     private flappingProgress: number = 0;
@@ -174,8 +174,14 @@ export class Butterfly extends BaseCaptureableObject {
         }
 
         // update position
-        this.x += (this.xDiretion * delta) / 16;
-        this.y += (this.yDiretion * delta) / 16;
+        let useXDiretion = this.xDiretion;
+        let useYDiretion = this.yDiretion;
+        if (this.isForceToGather) {
+            useXDiretion *= 1.7;
+            useYDiretion *= 1.7;
+        }
+        this.x += (useXDiretion * delta) / 16;
+        this.y += (useYDiretion * delta) / 16;
 
         // thisとgatherPointの距離が一定以下になったらisForeToGatherをfalseにする
         if (this.gatherPoint) {

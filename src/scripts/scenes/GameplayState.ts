@@ -1,3 +1,4 @@
+ 
 // GameplayState.ts
 import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
@@ -62,7 +63,7 @@ export class GameplayState extends StateBase {
 
         // スタートメッセージ
         this.startMessage = new PIXI.BitmapText({
-            text: `Catch ${this.stageInfo.needCount} butterflies!`,
+            text: `Capture ${this.stageInfo.needCount} butterflies!`,
             style: new PIXI.TextStyle({
                 fontFamily: Const.FONT_ENGLISH,
                 fontSize: 24,
@@ -498,12 +499,12 @@ export class GameplayState extends StateBase {
         this.caputuredButterflies.push(...butterflies);
         this.updateScoreMessage();
 
-        // score加算 全部同じ色の場合は蝶の数×10 それ以外は蝶の数×30
+        // score加算 全部同じ色の場合は蝶の数×10 それ以外は蝶の数×20
         const basePoint =
             butterflies.length *
             (butterflies.every((b) => b.color === butterflies[0].color)
                 ? 10
-                : 30);
+                : 20);
         let point = basePoint;
         let calculationText = "";
         butterflies.forEach((butterfly) => {
@@ -642,24 +643,22 @@ export class GameplayState extends StateBase {
                             centerPoint,
                             this.gatherDistance,
                         );
-                        butterfly.xDiretion += 0.1;
-                        butterfly.yDiretion += 0.1;
                     });
                 }
             });
             this.gatherElapsedTime = Const.GATHHER_EFFECT_TIME_MS;
 
             // デバッグモードの場合は、集まる範囲を表示
-            if (DEBUG_MODE) {
-                const centerPoints = Array.from(this.gatherPointMap.values());
-                centerPoints.forEach((point) => {
+            if (!DEBUG_MODE) {
+                // gatherPointMapをforEachで回して、gatherDistanceの円を描画
+                this.gatherPointMap.forEach((point, color) => {
                     const circle = new PIXI.Graphics().circle(
                         point.x,
                         point.y,
                         this.gatherDistance,
                     );
-                    circle.fill(0xde3249);
-                    circle.alpha = 0.1;
+                    circle.fill(color);
+                    circle.alpha = 0.2;
                     this.container.addChild(circle);
                     setTimeout(() => {
                         this.container.removeChild(circle);
@@ -669,8 +668,6 @@ export class GameplayState extends StateBase {
         } else {
             this.butterflies.forEach((butterfly) => {
                 butterfly.deleteGatherPoint();
-                butterfly.xDiretion -= 0.1;
-                butterfly.yDiretion -= 0.1;
             });
             this.gatherElapsedTime = -1;
         }

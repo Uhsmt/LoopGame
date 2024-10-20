@@ -26,30 +26,30 @@ https://uhsmt.github.io/LoopGame/
 ### phase2.5
 - [ ] 記録保持 
 
+### phase3 bonus stage
+ - [ ] bonus butterflyモーション
+ - [ ] bonus入りの分岐とクリア判定
+ - [ ] 専用背景素材
+
 ### Rule
 - [ ] basic rule
 - [ ] paging
 - [ ] 特殊オブジェクト
 
 ### Design
+- [ ] soundセット
 - [ ] メッセージの日本語/英語対応
 - [ ] 猫ちゃんスプライトを作る
  - [ ] ノーマル
  - [ ] 登場モーション
  - [ ] 居眠りモーション
  - [ ] 負けモーション
-- [ ] soundセット
 
 ### phase3 お邪魔オブジェクト
 - [ ] お邪魔sprite作成
 - [ ] 虫除け
 - [ ] 含めるとbadloop
 - [ ] loop不可
-
-### phase4 bonus stage
- - [ ] bonus butterflyモーション
- - [ ] bonus入りの分岐とクリア判定
- - [ ] 専用背景素材
 
 ### phase5 スマホ対応
 

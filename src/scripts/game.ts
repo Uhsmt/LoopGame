@@ -42,7 +42,11 @@ function showMobileMessage(): void {
 /* eslint-enabled */
 window.WebFontConfig = {
     google: {
-        families: ["BIZ+UDGothic:wght@400;700", "Rajdhani:wght@700"],
+        families: [
+            "BIZ+UDGothic:wght@400;700",
+            "Rajdhani:wght@700",
+            "Palette+Mosaic",
+        ],
     },
     active() {
         console.log("font loaded");

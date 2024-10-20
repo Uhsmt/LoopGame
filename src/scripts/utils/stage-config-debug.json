@@ -15,7 +15,7 @@
         "butterflyColorNum": 4,
         "needCount": 10,
         "stageButterflyCount": 15,
-        "butterflySize": "large",
+        "butterflySize": "random",
         "isButterflyColorChange": true,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.2,

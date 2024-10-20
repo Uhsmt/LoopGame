@@ -15,7 +15,8 @@ export class StartState extends StateBase {
     private ruleButton: PIXI.Text;
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
-    private titleSprite: PIXI.Sprite;
+    // private titleSprite: PIXI.Sprite;
+    private title: PIXI.Text;
     debugFlowers: HelpFlower[] = [];
 
     constructor(manager: GameStateManager) {
@@ -35,13 +36,20 @@ export class StartState extends StateBase {
         this.dispButterfly();
 
         // title
-        const titleSprite = new PIXI.Sprite(PIXI.Texture.from("title"));
-        titleSprite.anchor.set(0.5);
-        titleSprite.x = app.screen.width / 2;
-        titleSprite.y = app.screen.height / 3;
-        titleSprite.scale.set(0.8);
-        this.titleSprite = titleSprite;
-        this.container.addChild(titleSprite);
+        this.title = new PIXI.Text({
+            text: "L O O P",
+            style: {
+                fontFamily: Const.FONT_TITLE,
+                fontSize: 80,
+                fill: "#83cbc0",
+                align: "center",
+            },
+        });
+        this.title.anchor.set(0.5);
+        this.title.x = app.screen.width / 2;
+        this.title.y = app.screen.height / 2;
+        this.title.blendMode = "screen";
+        this.container.addChild(this.title);
 
         // ボタン
         this.startButton = this.button(
@@ -218,6 +226,7 @@ export class StartState extends StateBase {
 
     private async onStartGameSelected(): Promise<void> {
         this.butterflies.map((butterfly) => butterfly.stop());
+        this.startButton.style.fill = "#ffd700";
 
         // next background
         const nextBGSprite = new PIXI.Sprite(PIXI.Texture.from("background"));
@@ -226,7 +235,7 @@ export class StartState extends StateBase {
 
         await Promise.all([
             this.fadeOut(this.ruleButton),
-            this.fadeOut(this.titleSprite),
+            this.fadeOut(this.title),
             this.butterflies.map((butterfly) => butterfly.delete()),
             this.wait(300).then(() => {
                 return this.fadeOut(this.startButton);
@@ -243,6 +252,7 @@ export class StartState extends StateBase {
     private onRuleSelected(): void {
         //TODO RULEの実装
         console.log("Rule is here.");
+        this.ruleButton.style.fill = "#ffd700";
         // this.manager.setState(new RulesState(this.manager));
     }
 
