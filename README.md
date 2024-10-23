@@ -23,6 +23,11 @@ https://uhsmt.github.io/LoopGame/
 - [x] ループ延長
 - [x] とまれ！
 
+### Rule
+- [ ] basic rule
+- [ ] paging
+- [ ] 特殊オブジェクト
+
 ### phase2.5
 - [ ] 記録保持 
 
@@ -30,11 +35,6 @@ https://uhsmt.github.io/LoopGame/
  - [ ] bonus butterflyモーション
  - [ ] bonus入りの分岐とクリア判定
  - [ ] 専用背景素材
-
-### Rule
-- [ ] basic rule
-- [ ] paging
-- [ ] 特殊オブジェクト
 
 ### Design
 - [ ] soundセット
@@ -45,7 +45,13 @@ https://uhsmt.github.io/LoopGame/
  - [ ] 居眠りモーション
  - [ ] 負けモーション
 
-### phase3 お邪魔オブジェクト
+### interactive Design
+- [ ] Effect(filter)
+  - [ ] flower
+  - [ ] 捕まえた蝶の数
+  - [ ] トータルスコア
+
+### phase4 お邪魔オブジェクト
 - [ ] お邪魔sprite作成
 - [ ] 虫除け
 - [ ] 含めるとbadloop
