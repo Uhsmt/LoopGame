@@ -69,7 +69,7 @@ export class ResultState extends StateBase {
 
         const messageText = this.stageInfo.isClear
             ? `Level ${this.stageInfo.level + 1}`
-            : "Total score\r " + this.stageInfo.totalScore;
+            : "Your total score\r " + Utility.formatNumberWithCommas(this.stageInfo.totalScore);
         this.nextMessage = new Message(messageText, 40);
         this.nextMessage.anchor.set(0.5);
         this.nextMessage.x = this.manager.app.screen.width / 2;
