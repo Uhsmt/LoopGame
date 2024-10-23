@@ -7,12 +7,17 @@ import { Butterfly } from "../components/Butterfly";
 import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
 import { StateBase } from "./BaseState";
+import { Button } from "../components/Button";
+import { LineDrawer } from "../components/LineDrawer";
 
 export class ResultState extends StateBase {
     private stageInfo: StageInformation;
     private messages: Message[] = [];
     private messageButterflies: Butterfly[] = [];
     private stickySprite: PIXI.Sprite;
+    private backToStartButton!: Button;
+    private nextMessage!: Message;
+    private lineDrawer!: LineDrawer;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -64,13 +69,13 @@ export class ResultState extends StateBase {
 
         const messageText = this.stageInfo.isClear
             ? `Level ${this.stageInfo.level + 1}`
-            : "Game Over";
-        const nextMessage = new Message(messageText, 40);
-        nextMessage.anchor.set(0.5);
-        nextMessage.x = this.manager.app.screen.width / 2;
-        nextMessage.y = this.manager.app.screen.height / 2;
-        this.container.addChild(nextMessage);
-        nextMessage.show();
+            : "Total score\r " + this.stageInfo.totalScore;
+        this.nextMessage = new Message(messageText, 40);
+        this.nextMessage.anchor.set(0.5);
+        this.nextMessage.x = this.manager.app.screen.width / 2;
+        this.nextMessage.y = this.manager.app.screen.height / 2;
+        this.container.addChild(this.nextMessage);
+        this.nextMessage.show();
 
         // 2秒待つ
         await new Promise((resolve) =>
@@ -86,8 +91,20 @@ export class ResultState extends StateBase {
             );
         } else {
             // ゲームオーバーの場合はスタート画面に戻る
-            const startState = new StartState(this.manager);
-            this.manager.setState(startState);
+            this.lineDrawer = new LineDrawer(this.manager.app);
+
+            this.lineDrawer.on(
+                "loopAreaCompleted",
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                this.handleLoopAreaCompleted.bind(this),
+            );
+            this.backToStartButton = new Button(
+                "Back to\rStart",
+                this.manager.app.screen.width / 2,
+                this.manager.app.screen.height * 0.8,
+            );
+
+            this.container.addChild(this.backToStartButton);
         }
     }
 
@@ -102,6 +119,12 @@ export class ResultState extends StateBase {
     onExit(): void {
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
+        if (this.lineDrawer) {
+            // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
+            this.manager.app.ticker.addOnce(() => {
+                this.lineDrawer.cleanup();
+            });
+        }
     }
 
     private async displayStageResult(): Promise<void> {
@@ -197,6 +220,23 @@ export class ResultState extends StateBase {
             }
         }
     }
+
+    // LineDrawerのループエリアが完成したときのハンドラ
+    private async handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
+        if (this.backToStartButton && this.backToStartButton.isHit(loopArea)) {
+            this.backToStartButton.selected();
+
+            await this.wait(300);
+
+            await Promise.all([
+                this.fadeOut(this.backToStartButton),
+                this.fadeOut(this.nextMessage),
+                this.fadeOut(this.stickySprite),
+            ]);
+            const startState = new StartState(this.manager);
+            this.manager.setState(startState);
+        }
+    }
 }
 
 class Message extends PIXI.BitmapText {
@@ -206,6 +246,7 @@ class Message extends PIXI.BitmapText {
             fontFamily: Const.FONT_ENGLISH,
             fontWeight: Const.FONT_ENGLISH_BOLD,
             fontSize: size,
+            align: "center",
             fill: 0x000000,
         });
         this.style = style;
