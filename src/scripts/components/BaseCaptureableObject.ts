@@ -10,6 +10,10 @@ export abstract class BaseCaptureableObject extends PIXI.Container {
     protected abstract getObjectCenter(): { x: number; y: number };
 
     isHit(loopArea: PIXI.Graphics): boolean {
+        if (this.alpha === 0) {
+            return false;
+        }
+
         const points: PIXI.Point[] = this.hitAreaPoints();
 
         // ループエリア内のpointの数がhitsRateを超えていれば、ループエリア内と判定
@@ -24,7 +28,7 @@ export abstract class BaseCaptureableObject extends PIXI.Container {
         return hits / points.length > hitsRate;
     }
 
-    debugGraphics(): PIXI.Graphics {
+    debugGraphics(_alpha: number = 0.8): PIXI.Graphics {
         const points: PIXI.Point[] = this.hitAreaPoints();
         const debugGraphics = new PIXI.Graphics();
         debugGraphics.moveTo(points[0].x, points[0].y);
@@ -32,7 +36,7 @@ export abstract class BaseCaptureableObject extends PIXI.Container {
             debugGraphics.lineTo(point.x, point.y);
         });
         debugGraphics.lineTo(points[0].x, points[0].y);
-        debugGraphics.fill({ color: 0x000000, alpha: 0.8 });
+        debugGraphics.fill({ color: 0x000000, alpha: _alpha });
         return debugGraphics;
     }
 
