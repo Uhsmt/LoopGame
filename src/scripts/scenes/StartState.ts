@@ -16,7 +16,6 @@ export class StartState extends StateBase {
     private ruleButton: Button;
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
-    // private titleSprite: PIXI.Sprite;
     private title: PIXI.Text;
     debugFlowers: HelpFlower[] = [];
 
