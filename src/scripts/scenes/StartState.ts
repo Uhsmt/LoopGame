@@ -8,11 +8,12 @@ import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
+import { Button } from "../components/Button";
 
 export class StartState extends StateBase {
     private lineDrawer: LineDrawer;
-    private startButton: PIXI.Text;
-    private ruleButton: PIXI.Text;
+    private startButton: Button;
+    private ruleButton: Button;
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
     // private titleSprite: PIXI.Sprite;
@@ -52,16 +53,17 @@ export class StartState extends StateBase {
         this.container.addChild(this.title);
 
         // ボタン
-        this.startButton = this.button(
+        this.startButton = new Button(
             "Start",
             app.screen.width / 4 - 50,
             (app.screen.height * 3) / 5,
         );
-        this.ruleButton = this.button(
-            "Rule",
+        this.ruleButton = new Button(
+            "How to\rplay",
             (app.screen.width * 3) / 4 - 50,
             (app.screen.height * 3) / 5,
         );
+
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
 
@@ -144,89 +146,20 @@ export class StartState extends StateBase {
         // 描画はPixiJSがハンドルするのでここでは何もしない
     }
 
-    private button(name: string, _x: number, _y: number): PIXI.Text {
-        const button = new PIXI.Text({
-            text: name,
-            style: {
-                fontFamily: Const.FONT_ENGLISH,
-                fontWeight: Const.FONT_ENGLISH_BOLD,
-                fontSize: 40,
-                fill: "#ffffff",
-                align: "left",
-            },
-        });
-
-        button.interactive = true;
-        button.x = _x;
-        button.y = _y;
-
-        return button;
-    }
-
     // LineDrawerのループエリアが完成したときのハンドラ
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
-        if (this.isRuleButtonInLoopArea(loopArea)) {
+        if (this.ruleButton.isHit(loopArea)) {
+            this.ruleButton.selected();
             this.onRuleSelected();
-        } else if (this.isStartButtonInLoopArea(loopArea)) {
+        }
+        if (this.startButton.isHit(loopArea)) {
+            this.startButton.selected();
             void this.onStartGameSelected();
         }
     }
 
-    private isStartButtonInLoopArea(loopArea: PIXI.Graphics): boolean {
-        const startButtonBounds = this.startButton.getBounds();
-        const loopAreaBounds = loopArea.getBounds();
-
-        const startButtonRect = new PIXI.Rectangle(
-            startButtonBounds.x,
-            startButtonBounds.y,
-            startButtonBounds.width,
-            startButtonBounds.height,
-        );
-        const loopAreaRect = new PIXI.Rectangle(
-            loopAreaBounds.x,
-            loopAreaBounds.y,
-            loopAreaBounds.width,
-            loopAreaBounds.height,
-        );
-
-        return this.checkOverlap(startButtonRect, loopAreaRect);
-    }
-
-    private isRuleButtonInLoopArea(loopArea: PIXI.Graphics): boolean {
-        const ruleButtonBounds = this.ruleButton.getBounds();
-        const loopAreaBounds = loopArea.getBounds();
-
-        const startButtonRect = new PIXI.Rectangle(
-            ruleButtonBounds.x,
-            ruleButtonBounds.y,
-            ruleButtonBounds.width,
-            ruleButtonBounds.height,
-        );
-        const loopAreaRect = new PIXI.Rectangle(
-            loopAreaBounds.x,
-            loopAreaBounds.y,
-            loopAreaBounds.width,
-            loopAreaBounds.height,
-        );
-
-        return this.checkOverlap(startButtonRect, loopAreaRect);
-    }
-
-    private checkOverlap(
-        rect1: PIXI.Rectangle,
-        rect2: PIXI.Rectangle,
-    ): boolean {
-        return (
-            rect1.x < rect2.x + rect2.width &&
-            rect1.x + rect1.width > rect2.x &&
-            rect1.y < rect2.y + rect2.height &&
-            rect1.y + rect1.height > rect2.y
-        );
-    }
-
     private async onStartGameSelected(): Promise<void> {
         this.butterflies.map((butterfly) => butterfly.stop());
-        this.startButton.style.fill = "#ffd700";
 
         // next background
         const nextBGSprite = new PIXI.Sprite(PIXI.Texture.from("background"));
@@ -252,7 +185,6 @@ export class StartState extends StateBase {
     private onRuleSelected(): void {
         //TODO RULEの実装
         console.log("Rule is here.");
-        this.ruleButton.style.fill = "#ffd700";
         // this.manager.setState(new RulesState(this.manager));
     }
 

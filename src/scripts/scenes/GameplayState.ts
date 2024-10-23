@@ -1,4 +1,3 @@
- 
 // GameplayState.ts
 import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
