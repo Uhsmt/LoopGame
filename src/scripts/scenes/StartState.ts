@@ -47,24 +47,28 @@ export class StartState extends StateBase {
         });
         this.title.anchor.set(0.5);
         this.title.x = app.screen.width / 2;
-        this.title.y = app.screen.height / 2;
+        this.title.y = app.screen.height * 0.4;
         this.title.blendMode = "screen";
         this.container.addChild(this.title);
 
         // ボタン
         this.startButton = new Button(
             "Start",
-            app.screen.width / 4 - 50,
-            (app.screen.height * 3) / 5,
+            app.screen.width / 4,
+            app.screen.height * 0.65,
         );
         this.ruleButton = new Button(
             "How to\rplay",
-            (app.screen.width * 3) / 4 - 50,
-            (app.screen.height * 3) / 5,
+            (app.screen.width * 3) / 4,
+            app.screen.height * 0.65,
         );
 
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
+        if (DEBUG_MODE) {
+            this.container.addChild(this.startButton.debugGraphics(0.1));
+            this.container.addChild(this.ruleButton.debugGraphics(0.1));
+        }
 
         // Frame
         this.addFrameGraphic();
@@ -183,8 +187,29 @@ export class StartState extends StateBase {
 
     private onRuleSelected(): void {
         //TODO RULEの実装
+        void this.showButtomMessage(
+            "Sorry! This feature will be available soon.",
+        );
         console.log("Rule is here.");
         // this.manager.setState(new RulesState(this.manager));
+    }
+
+    private async showButtomMessage(message: string): Promise<void> {
+        const bottomMessage = new PIXI.Text({
+            text: message,
+            style: {
+                fontFamily: Const.FONT_ENGLISH,
+                fontSize: 20,
+                fill: "#ffffff",
+                align: "center",
+            },
+        });
+        bottomMessage.anchor.set(0.5);
+        bottomMessage.x = this.manager.app.screen.width / 2;
+        bottomMessage.y = this.manager.app.screen.height * 0.9;
+        this.container.addChild(bottomMessage);
+        await this.wait(2000);
+        await this.fadeOut(bottomMessage);
     }
 
     onExit(): void {
@@ -195,7 +220,6 @@ export class StartState extends StateBase {
             // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
             this.manager.app.ticker.addOnce(() => {
                 this.lineDrawer.cleanup();
-                // this.lineDrawer; // 破棄
             });
         }
     }
