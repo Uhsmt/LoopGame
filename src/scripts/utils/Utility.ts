@@ -46,3 +46,15 @@ export function formatNumberWithCommas(x: number): string {
 export function getDistance(p1: PIXI.Point, p2: PIXI.Point): number {
     return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
 }
+
+/**
+ * 配列をランダムにシャッフルして返却
+ * @param _array
+ */
+export function shuffleArray<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
