@@ -19,12 +19,18 @@ export const FONT_JAPANESE_BOLD = "400";
 
 export const FONT_TITLE = "Palette Mosaic";
 
+export const HELP_FLOWER_TYPES = [
+    "freeze",
+    "time_plus",
+    "gather",
+    "long",
+] as const;
+
 export const LONG_LOOP_EFFECT_TIME_MS = 5000;
 export const GATHHER_EFFECT_TIME_MS = 10000;
 export const FREEZE_EFFECT_TIME_MS = 3000;
 
 export const imageSrcs = [
-    { alias: "title", src: `${BASE_URL}assets/title.png` },
     { alias: "background", src: `${BASE_URL}assets/background.jpg` },
     { alias: "menu_background", src: `${BASE_URL}assets/menu_background.jpeg` },
     { alias: "base", src: `${BASE_URL}assets/base.png` },
@@ -34,13 +40,6 @@ export const imageSrcs = [
     { alias: "butterfly_medium", src: `${BASE_URL}assets/butterfly_medium.png`},
     { alias: "butterfly_small", src: `${BASE_URL}assets/butterfly_small.png` },
     { alias: "leaf", src: `${BASE_URL}assets/leaf.png` },
-    { alias: "leaf1", src: `${BASE_URL}assets/leaf1.png` },
-    { alias: "leaf2", src: `${BASE_URL}assets/leaf2.png` },
-    { alias: "leaf3", src: `${BASE_URL}assets/leaf3.png` },
-    { alias: "leaf4", src: `${BASE_URL}assets/leaf4.png` },
-    { alias: "leaf5", src: `${BASE_URL}assets/leaf5.png` },
-    { alias: "leaf6", src: `${BASE_URL}assets/leaf6.png` },
-    { alias: "leaf7", src: `${BASE_URL}assets/leaf7.png` },
     { alias: "moon", src: `${BASE_URL}assets/moon.png` },
     { alias: "pencil", src: `${BASE_URL}assets/pencil.png` },
     { alias: "sticky", src: `${BASE_URL}assets/sticky.png` },
@@ -51,4 +50,5 @@ export const imageSrcs = [
     { alias: "flower2", src: `${BASE_URL}assets/flower2.png` },
     { alias: "flower3", src: `${BASE_URL}assets/flower3.png` },
     { alias: "flower4", src: `${BASE_URL}assets/flower4.png` },
+    { alias: "notebook", src: `${BASE_URL}assets/notebook.png` },
 ];
