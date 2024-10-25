@@ -90,7 +90,7 @@ export class RuleState extends StateBase {
         );
 
         // notebookをfade in
-        await this.fadeIn(this.notebookSprite, 0.03, 1);
+        await Promise.all([this.fadeIn(this.notebookSprite, 0.03, 1),this.slideY(this.notebookSprite, this.manager.app.screen.height / 2, 2)]);
 
         // ボタンを表示
         this.backButton.alpha = 1;
@@ -102,10 +102,6 @@ export class RuleState extends StateBase {
     }
 
     update(delta: number): void {
-        if (this.notebookSprite.y > this.manager.app.screen.height / 2) {
-            this.notebookSprite.y -= delta * 0.1;
-        }
-
         if (this.butterflies.length > 0) {
             this.butterflies.forEach((butterfly) => {
                 butterfly.flap(delta);
@@ -202,23 +198,26 @@ export class RuleState extends StateBase {
         this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
 
         this.nextButton.selected();
-        await this.resetPageInfo();
         switch (this.page) {
             case 1:
+                await this.resetPageInfo();
                 this.setPageInfoTwo();
                 this.page += 1;
                 break;
             case 2:
+                await this.resetPageInfo();
                 this.setPageInfoThree();
                 this.lineDrawer.setLineColor(0x730000);
                 this.page += 1;
                 break;
             case 3:
+                await this.resetPageInfo();
                 this.setPageInfoFour();
                 this.page += 1;
                 break;
             case 4:
-                await this.backToTopPage();
+                await this.resetPageInfo();
+                await Promise.all([this.backToTopPage(), this.slideY(this.notebookSprite, this.manager.app.screen.height * 0.7, 2)]);
                 break;
         }
         await this.wait(300).then(() => {
@@ -235,20 +234,23 @@ export class RuleState extends StateBase {
         this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
 
         this.backButton.selected();
-        await this.resetPageInfo();
         switch (this.page) {
             case 1:
-                await this.backToTopPage();
+                await this.resetPageInfo();
+                await Promise.all([this.backToTopPage(), this.slideY(this.notebookSprite, this.manager.app.screen.height * 0.7, 2)]);
                 break;
             case 2:
+                await this.resetPageInfo();
                 this.setPageInfoOne();
                 this.page -= 1;
                 break;
             case 3:
+                await this.resetPageInfo();
                 this.setPageInfoTwo();
                 this.page -= 1;
                 break;
             case 4:
+                await this.resetPageInfo();
                 this.setPageInfoThree();
                 this.page -= 1;
                 break;
@@ -261,9 +263,9 @@ export class RuleState extends StateBase {
     // トップページに戻る
     private async backToTopPage(): Promise<void> {
         await Promise.all([
-            this.fadeOut(this.backButton, 0.02, 0),
-            this.fadeOut(this.nextButton, 0.02, 0),
-            this.fadeOut(this.notebookSprite, 0.02, 0),
+            this.fadeOut(this.backButton, 0.04, 0),
+            this.fadeOut(this.nextButton, 0.04, 0),
+            this.fadeOut(this.notebookSprite, 0.04, 0),
         ]);
         this.manager.setState(new StartState(this.manager));
     }
@@ -292,7 +294,7 @@ export class RuleState extends StateBase {
         this.pageInfos.push(titlejp);
 
         const text1 = new PIXI.Text({
-            text: "Draw a loop to capture butterflies.",
+            text: "Draw a loop to capture butterflies",
             style: this.defaultTextStyle,
         });
         text1.x = this.noteLeftX() + Const.MARGIN;
@@ -337,20 +339,36 @@ export class RuleState extends StateBase {
         }
 
         const text2 = new PIXI.Text({
-            text: "Capture neeeded number of\rbutterflies before sunset",
+            text: "More butterflies, more points",
             style: this.defaultTextStyle,
-        });
-        text2.x = this.manager.app.screen.width / 2 + Const.MARGIN * 2;
-        text2.y = text1.y;
+        }); 
+        text2.x = text1.x;
+        text2.y = this.manager.app.screen.height * 0.7;
         this.pageInfos.push(text2);
 
         const text2jp = new PIXI.Text({
-            text: "たいようがしずむまえに \rひつようなかずをつかまえて",
+            text: "おおいほど　高とくてん",
             style: this.defaultTextStyleJP,
         });
         text2jp.x = text2.x;
         text2jp.y = text2.y + text2.height * 1.1;
         this.pageInfos.push(text2jp);
+
+        const text3 = new PIXI.Text({
+            text: "Capture neeeded number of\rbutterflies before sunset",
+            style: this.defaultTextStyle,
+        });
+        text3.x = this.manager.app.screen.width / 2 + Const.MARGIN * 2;
+        text3.y = text1.y;
+        this.pageInfos.push(text3);
+
+        const text3jp = new PIXI.Text({
+            text: "たいようがしずむまえに \rひつようなかずをつかまえて",
+            style: this.defaultTextStyleJP,
+        });
+        text3jp.x = text3.x;
+        text3jp.y = text3.y + text3.height * 1.1;
+        this.pageInfos.push(text3jp);
 
         const sun = new Sun();
         sun.scale.set(0.7);
@@ -358,7 +376,7 @@ export class RuleState extends StateBase {
             this.notebookSprite.x -
             this.notebookSprite.width / 2 +
             this.notebookSprite.width * 0.75;
-        sun.y = text2jp.y + text2jp.height + sun.height / 2 + Const.MARGIN;
+        sun.y = text3jp.y + text3jp.height + sun.height / 2 + Const.MARGIN;
         sun.blink();
         this.pageInfos.push(sun);
 
@@ -385,8 +403,8 @@ export class RuleState extends StateBase {
 
             const delta = ticker.deltaMS;
             const radiusX = 80;
-            const radiusY = 100;
-            const speed = 0.005;
+            const radiusY = 90;
+            const speed = 0.008;
 
             if (isAnimating) {
                 angle += speed * delta;
@@ -770,20 +788,19 @@ export class RuleState extends StateBase {
     private async resetPageInfo(): Promise<void> {
         this.butterflies.forEach((butterfly) => {
             butterfly.stop();
-            butterfly.delete();
+            butterfly.delete(0.05);
         });
         this.butterflies = [];
         this.helpFlowers.forEach((flower) => {
-            flower.delete();
+            flower.delete(0.05);
         });
         this.helpFlowers = [];
         await Promise.all(
             this.pageInfos.map((pageInfo) => {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-                return this.fadeOut(pageInfo, 0.03);
+                return this.fadeOut(pageInfo, 0.05);
             }),
         );
-        await this.wait(500);
     }
 
     private noteLeftX(): number {

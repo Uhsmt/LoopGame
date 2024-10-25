@@ -117,20 +117,6 @@ export class StartState extends StateBase {
         this.container.addChild(...this.debugFlowers);
     }
 
-    private dispButterfly() {
-        Const.COLOR_LIST.forEach((color) => {
-            const size = Utility.chooseAtRandom([...Const.SIZE_LIST], 1)[0];
-            const butterfly = new Butterfly(size, color, color);
-            butterfly.setRandomInitialPoistion(
-                this.manager.app.screen.width,
-                this.manager.app.screen.height,
-            );
-            butterfly.appear(false);
-            this.butterflies.push(butterfly);
-        });
-        this.container.addChild(...this.butterflies);
-    }
-
     update(delta: number): void {
         this.butterflies.forEach((butterfly) => {
             butterfly.flap(delta);
@@ -148,6 +134,32 @@ export class StartState extends StateBase {
 
     render(): void {
         // 描画はPixiJSがハンドルするのでここでは何もしない
+    }
+
+    onExit(): void {
+        this.manager.app.stage.removeChild(this.container);
+        this.container.destroy();
+
+        if (this.lineDrawer) {
+            // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
+            this.manager.app.ticker.addOnce(() => {
+                this.lineDrawer.cleanup();
+            });
+        }
+    }
+
+    private dispButterfly() {
+        Const.COLOR_LIST.forEach((color) => {
+            const size = Utility.chooseAtRandom([...Const.SIZE_LIST], 1)[0];
+            const butterfly = new Butterfly(size, color, color);
+            butterfly.setRandomInitialPoistion(
+                this.manager.app.screen.width,
+                this.manager.app.screen.height,
+            );
+            butterfly.appear(false);
+            this.butterflies.push(butterfly);
+        });
+        this.container.addChild(...this.butterflies);
     }
 
     // LineDrawerのループエリアが完成したときのハンドラ
@@ -171,14 +183,14 @@ export class StartState extends StateBase {
         this.container.addChildAt(nextBGSprite, 0);
 
         await Promise.all([
-            this.fadeOut(this.ruleButton),
-            this.fadeOut(this.title),
+            this.fadeOut(this.ruleButton, 0.05),
+            this.fadeOut(this.title, 0.05),
             this.butterflies.map((butterfly) => butterfly.delete()),
             this.wait(300).then(() => {
-                return this.fadeOut(this.startButton);
+                return this.fadeOut(this.startButton, 0.05);
             }),
             this.wait(300).then(() => {
-                return this.fadeOut(this.backgroundSprite);
+                return this.fadeOut(this.backgroundSprite, 0.05);
             }),
         ]);
 
@@ -189,11 +201,11 @@ export class StartState extends StateBase {
     private async onRuleSelected(): Promise<void> {
         this.butterflies.map((butterfly) => butterfly.stop());
         await Promise.all([
-            this.fadeOut(this.ruleButton, 0.02),
-            this.fadeOut(this.title, 0.02),
+            this.fadeOut(this.startButton, 0.05),
+            this.fadeOut(this.title, 0.05),
             this.butterflies.map((butterfly) => butterfly.delete()),
             this.wait(300).then(() => {
-                return this.fadeOut(this.startButton, 0.02);
+                return this.fadeOut(this.ruleButton, 0.05);
             }),
         ]);
         this.manager.setState(new RuleState(this.manager));
@@ -215,17 +227,5 @@ export class StartState extends StateBase {
         this.container.addChild(bottomMessage);
         await this.wait(2000);
         await this.fadeOut(bottomMessage);
-    }
-
-    onExit(): void {
-        this.manager.app.stage.removeChild(this.container);
-        this.container.destroy();
-
-        if (this.lineDrawer) {
-            // 次のフレームのレンダリングが完了した後にクリーンアップ処理を行う
-            this.manager.app.ticker.addOnce(() => {
-                this.lineDrawer.cleanup();
-            });
-        }
     }
 }
