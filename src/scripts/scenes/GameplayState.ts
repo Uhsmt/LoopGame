@@ -150,7 +150,8 @@ export class GameplayState extends StateBase {
             this.isRunning = !this.isRunning;
             this.lineDrawer.clearAllSegments();
             this.butterflies.forEach((butterfly) => {
-                butterfly.isFlying = this.isRunning;
+                butterfly.isFlying =
+                    this.isRunning && this.freezeElapsedTime <= 0;
             });
             if (!this.isRunning) {
                 this.showActionMessage("Pause", false);
