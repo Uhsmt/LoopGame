@@ -246,7 +246,6 @@ export class GameplayState extends StateBase {
 
         await this.wait(1500);
         this.container.removeChild(this.startMessage);
-        await this.wait(1500);
         this.isRunning = true;
         this.butterflies.forEach((butterfly) => {
             butterfly.isFlapping = true;
@@ -511,6 +510,8 @@ export class GameplayState extends StateBase {
                     this.manager.app.screen.height,
                 );
                 butterfly.appear();
+                butterfly.isFlying =
+                    this.isRunning && this.freezeElapsedTime <= 0;
             }
         }
     }
