@@ -4,11 +4,13 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
 export class Button extends BaseCaptureableObject {
     private buttonText: PIXI.Text;
+    private leafSprite: PIXI.Sprite;
+    isSelected: boolean = false;
     constructor(text: string, x: number, y: number) {
         super();
-        const leafSprite = new PIXI.Sprite(PIXI.Texture.from("leaf"));
-        leafSprite.scale.set(0.5);
-        this.addChild(leafSprite);
+        this.leafSprite = new PIXI.Sprite(PIXI.Texture.from("leaf"));
+        this.leafSprite.scale.set(0.5);
+        this.addChild(this.leafSprite);
 
         this.buttonText = new PIXI.Text({
             text: text,
@@ -22,8 +24,8 @@ export class Button extends BaseCaptureableObject {
         });
         this.addChild(this.buttonText);
         this.buttonText.anchor.set(0.5);
-        this.buttonText.x = (1.1 * leafSprite.width) / 2;
-        this.buttonText.y = leafSprite.height / 2;
+        this.buttonText.x = (1.1 * this.leafSprite.width) / 2;
+        this.buttonText.y = this.leafSprite.height / 2;
 
         this.x = x;
         this.y = y;
@@ -39,6 +41,14 @@ export class Button extends BaseCaptureableObject {
     }
 
     selected() {
-        this.buttonText.style.fill = "#ffea77";
+        this.buttonText.style.fill = 0xffea77;
+        this.leafSprite.tint = 0x7ab400;
+        this.isSelected = true;
+    }
+
+    releaseSelected() {
+        this.buttonText.style.fill = "#ffffff";
+        this.leafSprite.tint = 0xffffff;
+        this.isSelected = false;
     }
 }
