@@ -2,6 +2,7 @@ import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
 import { LineDrawer } from "../components/LineDrawer";
 import { GameplayState } from "./GameplayState";
+import { RuleState } from "./RuleState";
 import * as Utility from "../utils/Utility";
 import { Butterfly } from "../components/Butterfly";
 import * as Const from "../utils/Const";
@@ -153,7 +154,7 @@ export class StartState extends StateBase {
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.ruleButton.isHit(loopArea)) {
             this.ruleButton.selected();
-            this.onRuleSelected();
+            void this.onRuleSelected();
         }
         if (this.startButton.isHit(loopArea)) {
             this.startButton.selected();
@@ -185,13 +186,17 @@ export class StartState extends StateBase {
         this.manager.setState(new GameplayState(this.manager, stageInfo1));
     }
 
-    private onRuleSelected(): void {
-        //TODO RULEの実装
-        void this.showButtomMessage(
-            "Sorry! This feature will be available soon.",
-        );
-        console.log("Rule is here.");
-        // this.manager.setState(new RulesState(this.manager));
+    private async onRuleSelected(): Promise<void> {
+        this.butterflies.map((butterfly) => butterfly.stop());
+        await Promise.all([
+            this.fadeOut(this.ruleButton, 0.02),
+            this.fadeOut(this.title, 0.02),
+            this.butterflies.map((butterfly) => butterfly.delete()),
+            this.wait(300).then(() => {
+                return this.fadeOut(this.startButton, 0.02);
+            }),
+        ]);
+        this.manager.setState(new RuleState(this.manager));
     }
 
     private async showButtomMessage(message: string): Promise<void> {

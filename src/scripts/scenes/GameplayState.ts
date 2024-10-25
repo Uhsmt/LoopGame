@@ -268,7 +268,7 @@ export class GameplayState extends StateBase {
             this.helpFlowersTiming.includes(Math.floor(this.elapsedTime / 1000))
         ) {
             const flowerType = Utility.chooseAtRandom(
-                ["freeze", "time_plus", "gather", "long"],
+                [...Const.HELP_FLOWER_TYPES],
                 1,
             )[0];
 
@@ -466,26 +466,8 @@ export class GameplayState extends StateBase {
                     );
                 }
             }
-        } else if (butterfliesInLoopArea.length === 2) {
-            // 2匹の時は、同じ色であればGet
-            if (
-                butterfliesInLoopArea[0].color ===
-                butterfliesInLoopArea[1].color
-            ) {
-                this.captureButterflies(butterfliesInLoopArea);
-                this.captureFlowers(flowersInLoopArea);
-            } else {
-                this.badLoop();
-            }
-        } else {
-            // 3匹以上の時は、全色同じもしくは全色違いであればGet
-            const colors = butterfliesInLoopArea.map(
-                (butterfly) => butterfly.color,
-            );
-            if (
-                colors.every((val, i, arr) => val === arr[0]) ||
-                new Set(colors).size === colors.length
-            ) {
+        } else if (butterfliesInLoopArea.length >= 2) {
+            if (this.isSuccessLoop(butterfliesInLoopArea)) {
                 this.captureButterflies(butterfliesInLoopArea);
                 this.captureFlowers(flowersInLoopArea);
             } else {

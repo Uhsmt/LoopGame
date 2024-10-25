@@ -69,7 +69,8 @@ export class ResultState extends StateBase {
 
         const messageText = this.stageInfo.isClear
             ? `Level ${this.stageInfo.level + 1}`
-            : "Your total score\r " + Utility.formatNumberWithCommas(this.stageInfo.totalScore);
+            : "Your total score\r " +
+              Utility.formatNumberWithCommas(this.stageInfo.totalScore);
         this.nextMessage = new Message(messageText, 40);
         this.nextMessage.anchor.set(0.5);
         this.nextMessage.x = this.manager.app.screen.width / 2;
@@ -99,7 +100,7 @@ export class ResultState extends StateBase {
                 this.handleLoopAreaCompleted.bind(this),
             );
             this.backToStartButton = new Button(
-                "Back to\rStart",
+                "Back to\rMenu",
                 this.manager.app.screen.width / 2,
                 this.manager.app.screen.height * 0.8,
             );

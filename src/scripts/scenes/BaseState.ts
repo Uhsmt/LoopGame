@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
 import * as Const from "../utils/Const";
+import { Butterfly } from "../components/Butterfly";
 
 export class StateBase {
     protected manager: GameStateManager;
@@ -64,11 +65,46 @@ export class StateBase {
         });
     }
 
+    protected fadeIn(
+        container: PIXI.Container,
+        fadespeed: number = 0.01,
+        alpha: number = 1,
+    ): Promise<void> {
+        return new Promise((resolve) => {
+            const fadeIn = () => {
+                if (container.alpha < alpha) {
+                    container.alpha += fadespeed;
+                    requestAnimationFrame(fadeIn);
+                } else {
+                    resolve();
+                }
+            };
+            fadeIn();
+        });
+    }
+
     protected wait(time: number): Promise<void> {
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
             }, time);
         });
+    }
+
+    protected isSuccessLoop(butterfliesInLoopArea: Butterfly[]): boolean {
+        let result = false;
+        const colors = Array.from(
+            new Set(butterfliesInLoopArea.map((butterfly) => butterfly.color)),
+        );
+        // 色が3種類以上かつ蝶の数と同じ場合、もしくは色が1種類かつ蝶の数が2匹以上の場合はOK
+        if (
+            colors.length >= 3 &&
+            colors.length === butterfliesInLoopArea.length
+        ) {
+            result = true;
+        } else if (colors.length === 1 && butterfliesInLoopArea.length >= 2) {
+            result = true;
+        }
+        return result;
     }
 }

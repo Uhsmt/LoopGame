@@ -24,9 +24,10 @@ https://uhsmt.github.io/LoopGame/
 - [x] とまれ！
 
 ### Rule
-- [ ] basic rule
-- [ ] paging
-- [ ] 特殊オブジェクト
+- [x] basic rule
+- [x] paging
+- [x] 特殊オブジェクト
+- [ ] おじゃまオブジェクト
 
 ### phase2.5
 - [ ] 記録保持 
