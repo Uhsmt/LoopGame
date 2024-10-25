@@ -12,8 +12,8 @@ export class Butterfly extends BaseCaptureableObject {
     private yFrame: number;
     private flappingProgress: number = 0;
     private flappingSpeed = 0.01;
-    private isFlying = true;
-    private isFlapping = true;
+    isFlying = false;
+    isFlapping = false;
     readonly multiplicationRate: number = 1;
     private gatherPoint: PIXI.Point | null = null;
     private gatherDistance = 10;
@@ -130,7 +130,12 @@ export class Butterfly extends BaseCaptureableObject {
         }
     }
 
-    fly(delta: number): void {
+    update(delta: number): void {
+        this.flap(delta);
+        this.fly(delta);
+    }
+
+    private fly(delta: number): void {
         if (!this.isFlying) return;
         const left = Const.MARGIN;
         const right = this.screenSize.x - Const.MARGIN;
@@ -200,7 +205,7 @@ export class Butterfly extends BaseCaptureableObject {
         }
     }
 
-    flap(delta: number): void {
+    private flap(delta: number): void {
         if (!this.isFlapping) return;
 
         // Calculate the scale based on flappingProgress
@@ -220,14 +225,6 @@ export class Butterfly extends BaseCaptureableObject {
         if (this.flappingProgress >= 100) {
             this.flappingProgress = 0;
         }
-    }
-
-    stopFlap() {
-        this.isFlapping = false;
-    }
-
-    stopFly() {
-        this.isFlying = false;
     }
 
     switchColor(): void {
@@ -268,16 +265,6 @@ export class Butterfly extends BaseCaptureableObject {
                 break;
         }
         this.position.set(x, y);
-    }
-
-    stop(): void {
-        this.isFlying = false;
-    }
-    reFly(): void {
-        this.isFlying = true;
-    }
-    reFlap(): void {
-        this.isFlapping = true;
     }
 
     setGatherPoint(point: PIXI.Point, distance: number): void {

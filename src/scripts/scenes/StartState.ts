@@ -119,8 +119,7 @@ export class StartState extends StateBase {
 
     update(delta: number): void {
         this.butterflies.forEach((butterfly) => {
-            butterfly.flap(delta);
-            butterfly.fly(delta);
+            butterfly.update(delta);
         });
         this.debugFlowers.forEach((flower) => {
             flower.spin(delta);
@@ -156,6 +155,8 @@ export class StartState extends StateBase {
                 this.manager.app.screen.height,
             );
             butterfly.appear(false);
+            butterfly.isFlying = true;
+            butterfly.isFlapping = true;
             this.butterflies.push(butterfly);
         });
         this.container.addChild(...this.butterflies);
@@ -174,7 +175,7 @@ export class StartState extends StateBase {
     }
 
     private async onStartGameSelected(): Promise<void> {
-        this.butterflies.map((butterfly) => butterfly.stop());
+        this.butterflies.map((butterfly) => (butterfly.isFlying = false));
 
         // next background
         const nextBGSprite = new PIXI.Sprite(PIXI.Texture.from("background"));
@@ -198,7 +199,7 @@ export class StartState extends StateBase {
     }
 
     private async onRuleSelected(): Promise<void> {
-        this.butterflies.map((butterfly) => butterfly.stop());
+        this.butterflies.map((butterfly) => (butterfly.isFlying = false));
         await Promise.all([
             this.fadeOut(this.startButton, 0.05),
             this.fadeOut(this.title, 0.05),

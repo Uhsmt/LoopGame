@@ -149,6 +149,9 @@ export class GameplayState extends StateBase {
         this.pointerDownHandler = () => {
             this.isRunning = !this.isRunning;
             this.lineDrawer.clearAllSegments();
+            this.butterflies.forEach((butterfly) => {
+                butterfly.isFlying = this.isRunning;
+            });
             if (!this.isRunning) {
                 this.showActionMessage("Pause", false);
             } else {
@@ -241,26 +244,20 @@ export class GameplayState extends StateBase {
         this.displayStartMessage();
         this.displayScoreMessage();
 
-        const deleteMessage = new Promise((resolve) =>
-            setTimeout(() => {
-                this.container.removeChild(this.startMessage);
-                resolve(null);
-            }, 3000),
-        );
-
-        const startGame = new Promise((resolve) =>
-            setTimeout(() => {
-                this.isRunning = true;
-                resolve(null);
-            }, 1500),
-        );
-        await Promise.all([deleteMessage, startGame]);
+        await this.wait(1500);
+        this.container.removeChild(this.startMessage);
+        await this.wait(1500);
+        this.isRunning = true;
+        this.butterflies.forEach((butterfly) => {
+            butterfly.isFlapping = true;
+            butterfly.isFlying = true;
+        });
     }
 
     update(delta: number): void {
-        // 蝶々の羽ばたき
+        // 蝶々
         this.butterflies.forEach((butterfly) => {
-            butterfly.flap(delta);
+            butterfly.update(delta);
         });
 
         // helpオブジェクトを出すタイミングで表示
@@ -308,13 +305,6 @@ export class GameplayState extends StateBase {
         // 残り10秒を切ったらblinkさせる
         if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
             this.sun.blink();
-        }
-
-        // butterfly flying
-        if (this.freezeElapsedTime <= 0) {
-            this.butterflies.forEach((butterfly) => {
-                butterfly.fly(delta);
-            });
         }
 
         // effect系処理
@@ -372,8 +362,8 @@ export class GameplayState extends StateBase {
         this.stageInfo.calcScore();
 
         this.butterflies.forEach((butterfly) => {
-            butterfly.stop();
-            butterfly.stopFlap();
+            butterfly.isFlying = false;
+            butterfly.isFlapping = false;
             butterfly.delete();
         });
 
@@ -501,7 +491,7 @@ export class GameplayState extends StateBase {
 
         butterflies.forEach((butterfly) => {
             this.butterflies = this.butterflies.filter((b) => b !== butterfly);
-            butterfly.stop();
+            butterfly.isFlying = false;
             butterfly.delete();
         });
 
@@ -557,12 +547,12 @@ export class GameplayState extends StateBase {
     private freezeEffect(isActive: boolean): void {
         if (isActive) {
             this.butterflies.forEach((butterfly) => {
-                butterfly.stop();
+                butterfly.isFlying = false;
             });
             this.freezeElapsedTime = Const.FREEZE_EFFECT_TIME_MS;
         } else {
             this.butterflies.forEach((butterfly) => {
-                butterfly.reFly();
+                butterfly.isFlying = true;
             });
             this.freezeElapsedTime = -1;
         }
@@ -687,7 +677,7 @@ export class GameplayState extends StateBase {
                 newButterfly.setGatherPoint(point, this.gatherDistance);
             }
         }
-
+        newButterfly.isFlapping = true;
         return newButterfly;
     }
 }

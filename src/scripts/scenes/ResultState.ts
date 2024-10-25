@@ -111,7 +111,7 @@ export class ResultState extends StateBase {
 
     update(delta: number): void {
         this.messageButterflies.forEach((butterfly) => {
-            butterfly.flap(delta);
+            butterfly.update(delta);
         });
     }
 
@@ -193,6 +193,7 @@ export class ResultState extends StateBase {
             butterfly.y =
                 marginTop + lineHeight * (i + 1) + butterfly.height / 2;
             butterfly.x = this.manager.app.screen.width / 2 + butterfly.width;
+            butterfly.isFlapping = true;
             butterfly.appear(false);
             this.container.addChild(butterfly);
             this.messageButterflies.push(butterfly);

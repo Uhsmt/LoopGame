@@ -111,7 +111,7 @@ export class RuleState extends StateBase {
     update(delta: number): void {
         if (this.butterflies.length > 0) {
             this.butterflies.forEach((butterfly) => {
-                butterfly.flap(delta);
+                butterfly.update(delta);
             });
         }
 
@@ -359,6 +359,7 @@ export class RuleState extends StateBase {
                     text1_butterfly.height * 3.5;
             }
             text1_butterfly.appear(false);
+            text1_butterfly.isFlapping = true;
             this.butterflies.push(text1_butterfly);
         }
 
@@ -474,7 +475,7 @@ export class RuleState extends StateBase {
                     );
 
                     loopedButterflies.forEach((butterfly) => {
-                        butterfly.stopFlap();
+                        butterfly.isFlapping = false;
                     });
 
                     await Promise.all([
@@ -486,7 +487,7 @@ export class RuleState extends StateBase {
                     await this.wait(2000);
                     loopedButterflies.forEach((butterfly) => {
                         butterfly.appear(false);
-                        butterfly.reFlap();
+                        butterfly.isFlapping = true;
                     });
                 }
             } else {
@@ -565,6 +566,7 @@ export class RuleState extends StateBase {
                 text1_butterfly.height +
                 Const.MARGIN;
             text1_butterfly.appear(false);
+            text1_butterfly.isFlapping = true;
             this.butterflies.push(text1_butterfly);
         }
 
@@ -603,6 +605,7 @@ export class RuleState extends StateBase {
                 text2jp.height * 1.1 +
                 text2_butterfly.height +
                 Const.MARGIN;
+            text2_butterfly.isFlapping = true;
             text2_butterfly.appear(false);
             this.butterflies.push(text2_butterfly);
         }
@@ -640,6 +643,7 @@ export class RuleState extends StateBase {
             text3_butterfly.height +
             Const.MARGIN;
         text3_butterfly.appear(false);
+        text3_butterfly.isFlapping = true;
         this.butterflies.push(text3_butterfly);
 
         const text4 = new PIXI.Text({
@@ -735,6 +739,7 @@ export class RuleState extends StateBase {
                 butterfly.height +
                 Const.MARGIN * 2 +
                 butterfly.height * 2 * Math.floor(index / 6);
+            butterfly.isFlapping = true;
             butterfly.appear(false);
         });
 
@@ -837,7 +842,7 @@ export class RuleState extends StateBase {
     //  ページ情報をリセット
     private async resetPageInfo(): Promise<void> {
         this.butterflies.forEach((butterfly) => {
-            butterfly.stop();
+            butterfly.isFlying = false;
             butterfly.delete(0.05);
         });
         this.butterflies = [];
