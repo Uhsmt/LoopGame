@@ -25,13 +25,18 @@ export class Butterfly extends BaseCaptureableObject {
     readonly spriteWith: number;
     readonly hitAreaSize: number;
 
+    readonly screenSize: { x: number; y: number };
+
     constructor(
         size: string,
         color: number,
         subColor: number,
         multiplicationRate: number = 1,
+        screenSize: { x: number; y: number },
     ) {
         super();
+        this.screenSize = screenSize;
+
         this.alpha = 0;
         this.color = color;
         if (size === "random") {
@@ -125,12 +130,12 @@ export class Butterfly extends BaseCaptureableObject {
         }
     }
 
-    fly(screenWidth: number, screenHeight: number, delta: number): void {
+    fly(delta: number): void {
         if (!this.isFlying) return;
         const left = Const.MARGIN;
-        const right = screenWidth - Const.MARGIN;
+        const right = this.screenSize.x - Const.MARGIN;
         const top = Const.MARGIN;
-        const bottom = screenHeight - Const.MARGIN;
+        const bottom = this.screenSize.y - Const.MARGIN;
 
         if (this.isForceToGather && this.gatherPoint) {
             if (this.x < this.gatherPoint.x) {

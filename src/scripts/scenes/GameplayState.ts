@@ -313,11 +313,7 @@ export class GameplayState extends StateBase {
         // butterfly flying
         if (this.freezeElapsedTime <= 0) {
             this.butterflies.forEach((butterfly) => {
-                butterfly.fly(
-                    this.manager.app.screen.width,
-                    this.manager.app.screen.height,
-                    delta,
-                );
+                butterfly.fly(delta);
             });
         }
 
@@ -680,6 +676,10 @@ export class GameplayState extends StateBase {
             mainColor,
             subColor,
             multiplication,
+            {
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            },
         );
         if (this.gatherElapsedTime >= 0) {
             const point = this.gatherPointMap.get(newButterfly.color);

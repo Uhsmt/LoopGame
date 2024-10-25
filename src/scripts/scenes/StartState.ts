@@ -120,11 +120,7 @@ export class StartState extends StateBase {
     update(delta: number): void {
         this.butterflies.forEach((butterfly) => {
             butterfly.flap(delta);
-            butterfly.fly(
-                this.manager.app.screen.width,
-                this.manager.app.screen.height,
-                delta,
-            );
+            butterfly.fly(delta);
         });
         this.debugFlowers.forEach((flower) => {
             flower.spin(delta);
@@ -151,7 +147,10 @@ export class StartState extends StateBase {
     private dispButterfly() {
         Const.COLOR_LIST.forEach((color) => {
             const size = Utility.chooseAtRandom([...Const.SIZE_LIST], 1)[0];
-            const butterfly = new Butterfly(size, color, color);
+            const butterfly = new Butterfly(size, color, color, 1, {
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            });
             butterfly.setRandomInitialPoistion(
                 this.manager.app.screen.width,
                 this.manager.app.screen.height,

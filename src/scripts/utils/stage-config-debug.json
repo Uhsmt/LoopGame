@@ -19,7 +19,8 @@
         "isButterflyColorChange": true,
         "maxMultiplateRate": 2,
         "muptipleButterflyRate": 0.2,
-        "helpObjectNum": 10
+        "helpObjectNum": 10,
+        "hasBonusButterfly": true
     },
     {
         "level": 2,

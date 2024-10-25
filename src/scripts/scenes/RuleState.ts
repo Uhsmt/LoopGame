@@ -332,7 +332,10 @@ export class RuleState extends StateBase {
 
         for (let i = 0; i < 4; i++) {
             const color = i === 3 ? Const.COLOR_LIST[1] : Const.COLOR_LIST[0];
-            const text1_butterfly = new Butterfly("medium", color, color);
+            const text1_butterfly = new Butterfly("medium", color, color, 1, {
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            });
 
             if (i <= 1) {
                 text1_butterfly.x =
@@ -547,6 +550,11 @@ export class RuleState extends StateBase {
                 "medium",
                 Const.COLOR_LIST[2],
                 Const.COLOR_LIST[2],
+                1,
+                {
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                },
             );
             text1_butterfly.x =
                 this.noteLeftX() +
@@ -581,6 +589,11 @@ export class RuleState extends StateBase {
                 "medium",
                 Const.COLOR_LIST[i],
                 Const.COLOR_LIST[i],
+                1,
+                {
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                },
             );
             text2_butterfly.x =
                 this.noteLeftX() +
@@ -614,6 +627,11 @@ export class RuleState extends StateBase {
             "medium",
             Const.COLOR_LIST[0],
             Const.COLOR_LIST[1],
+            1,
+            {
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            },
         );
         text3_butterfly.x = this.manager.app.screen.width * 0.75;
         text3_butterfly.y =
@@ -676,6 +694,11 @@ export class RuleState extends StateBase {
                 "large",
                 Const.COLOR_LIST[0],
                 Const.COLOR_LIST[0],
+                1,
+                {
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                },
             );
             this.butterflies.push(butterfly);
         }
@@ -685,8 +708,14 @@ export class RuleState extends StateBase {
                 Const.COLOR_LIST.filter((_color) => _color !== color),
                 1,
             )[0];
-            const butterfly = new Butterfly("large", color, subColor);
-            const butterfly2 = new Butterfly("large", color, color);
+            const butterfly = new Butterfly("large", color, subColor, 1, {
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            });
+            const butterfly2 = new Butterfly("large", color, color, 1, {
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            });
 
             this.butterflies.push(butterfly);
             this.butterflies.push(butterfly2);

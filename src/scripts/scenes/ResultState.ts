@@ -184,6 +184,11 @@ export class ResultState extends StateBase {
                 "small",
                 this.stageInfo.butterflyColors[i],
                 this.stageInfo.butterflyColors[i],
+                1,
+                {
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                },
             );
             butterfly.y =
                 marginTop + lineHeight * (i + 1) + butterfly.height / 2;

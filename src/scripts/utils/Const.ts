@@ -39,6 +39,8 @@ export const imageSrcs = [
     // prettier-ignore
     { alias: "butterfly_medium", src: `${BASE_URL}assets/butterfly_medium.png`},
     { alias: "butterfly_small", src: `${BASE_URL}assets/butterfly_small.png` },
+    // prettier-ignore
+    { alias: "butterfly_special", src: `${BASE_URL}assets/butterfly_special.png` },
     { alias: "leaf", src: `${BASE_URL}assets/leaf.png` },
     { alias: "moon", src: `${BASE_URL}assets/moon.png` },
     { alias: "pencil", src: `${BASE_URL}assets/pencil.png` },

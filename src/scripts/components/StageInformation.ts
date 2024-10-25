@@ -15,6 +15,7 @@ export class StageInformation {
     muptipleButterflyRate: number = 0;
     maxMultiplateRate: number = 1;
     helpObjectNum: number = 0;
+    hasBonusButterfly: boolean = false;
 
     // scores
     captureCount: number = 0;
@@ -55,6 +56,8 @@ export class StageInformation {
             [...Const.COLOR_LIST],
             config.butterflyColorNum,
         );
+        // levelが5の倍数ならtrue
+        this.hasBonusButterfly = level % 5 === 0 || this.hasBonusButterfly;
     }
 
     calcScore(): void {
