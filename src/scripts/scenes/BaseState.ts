@@ -83,29 +83,32 @@ export class StateBase {
         });
     }
 
-    protected slideY(container: PIXI.Container, reachPointY:number, speed: number): Promise<void> {
+    protected slideY(
+        container: PIXI.Container,
+        reachPointY: number,
+        speed: number,
+    ): Promise<void> {
         const isUp = container.y > reachPointY;
         return new Promise((resolve) => {
             const slideY = () => {
-                if (isUp){
+                if (isUp) {
                     if (container.y > reachPointY) {
                         container.y -= speed;
                         requestAnimationFrame(slideY);
                     } else {
                         resolve();
-                    }    
-                }else{
+                    }
+                } else {
                     if (container.y < reachPointY) {
                         container.y += speed;
                         requestAnimationFrame(slideY);
                     } else {
                         resolve();
-                    }    
+                    }
                 }
             };
             slideY();
         });
-
     }
 
     protected wait(time: number): Promise<void> {

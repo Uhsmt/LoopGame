@@ -90,7 +90,14 @@ export class RuleState extends StateBase {
         );
 
         // notebookをfade in
-        await Promise.all([this.fadeIn(this.notebookSprite, 0.03, 1),this.slideY(this.notebookSprite, this.manager.app.screen.height / 2, 2)]);
+        await Promise.all([
+            this.fadeIn(this.notebookSprite, 0.03, 1),
+            this.slideY(
+                this.notebookSprite,
+                this.manager.app.screen.height / 2,
+                2,
+            ),
+        ]);
 
         // ボタンを表示
         this.backButton.alpha = 1;
@@ -217,7 +224,14 @@ export class RuleState extends StateBase {
                 break;
             case 4:
                 await this.resetPageInfo();
-                await Promise.all([this.backToTopPage(), this.slideY(this.notebookSprite, this.manager.app.screen.height * 0.7, 2)]);
+                await Promise.all([
+                    this.backToTopPage(),
+                    this.slideY(
+                        this.notebookSprite,
+                        this.manager.app.screen.height * 0.7,
+                        2,
+                    ),
+                ]);
                 break;
         }
         await this.wait(300).then(() => {
@@ -237,7 +251,14 @@ export class RuleState extends StateBase {
         switch (this.page) {
             case 1:
                 await this.resetPageInfo();
-                await Promise.all([this.backToTopPage(), this.slideY(this.notebookSprite, this.manager.app.screen.height * 0.7, 2)]);
+                await Promise.all([
+                    this.backToTopPage(),
+                    this.slideY(
+                        this.notebookSprite,
+                        this.manager.app.screen.height * 0.7,
+                        2,
+                    ),
+                ]);
                 break;
             case 2:
                 await this.resetPageInfo();
@@ -341,7 +362,7 @@ export class RuleState extends StateBase {
         const text2 = new PIXI.Text({
             text: "More butterflies, more points",
             style: this.defaultTextStyle,
-        }); 
+        });
         text2.x = text1.x;
         text2.y = this.manager.app.screen.height * 0.7;
         this.pageInfos.push(text2);
