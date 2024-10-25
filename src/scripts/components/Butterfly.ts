@@ -265,24 +265,14 @@ export class Butterfly extends BaseCaptureableObject {
         this.position.set(x, y);
     }
 
-    delete() {
-        // アニメーションで透明度を徐々に減少させる
-        const fadeOut = () => {
-            if (this.alpha > 0) {
-                this.alpha -= 0.02;
-                requestAnimationFrame(fadeOut);
-            } else {
-                this.destroy();
-                this.removeFromParent();
-            }
-        };
-        fadeOut();
-    }
     stop(): void {
         this.isFlying = false;
     }
     reFly(): void {
         this.isFlying = true;
+    }
+    reFlap(): void {
+        this.isFlapping = true;
     }
 
     setGatherPoint(point: PIXI.Point, distance: number): void {
@@ -294,6 +284,10 @@ export class Butterfly extends BaseCaptureableObject {
     deleteGatherPoint(): void {
         this.gatherPoint = null;
         this.isForceToGather = false;
+    }
+
+    getSubColor(): number {
+        return this.ellipse.tint;
     }
 }
 
