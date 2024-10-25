@@ -52,11 +52,11 @@ export abstract class BaseCaptureableObject extends PIXI.Container {
         return points;
     }
 
-    delete() {
+    delete(speed: number = 0.02): void {
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
             if (this.alpha > 0) {
-                this.alpha -= 0.02;
+                this.alpha -= speed;
                 requestAnimationFrame(fadeOut);
             } else {
                 this.destroy();
