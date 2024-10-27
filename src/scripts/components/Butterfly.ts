@@ -5,7 +5,7 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
 export class Butterfly extends BaseCaptureableObject {
     private ellipse: PIXI.Graphics;
-    private sprite: PIXI.Sprite;
+    protected sprite: PIXI.Sprite;
     private xDiretion: number;
     private yDiretion: number;
     private xFrame: number;

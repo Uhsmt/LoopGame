@@ -10,6 +10,9 @@ import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
+import { SpecialButterfly } from "../components/SpecialButterfly";
+import { Moon } from "../components/Moon";
+import { PlanetBase } from "../components/PlanetBase";
 
 export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
@@ -17,7 +20,7 @@ export class GameplayState extends StateBase {
     private actionMessage: PIXI.BitmapText;
     private helpMessage: PIXI.BitmapText;
     private lineDrawer: LineDrawer;
-    private sun: Sun;
+    private sun: PlanetBase;
     private isRunning = true;
     private isFinish = false;
     private gameTimer: number = 60;
@@ -28,45 +31,52 @@ export class GameplayState extends StateBase {
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
+    private isAddBonusButterfly = false;
     flowers: HelpFlower[] = [];
     private stageInfo: StageInformation;
     private readonly helpFlowersTiming: number[] = [];
     pointerDownHandler: (event: PIXI.FederatedPointerEvent) => void;
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
     private gatherDistance: number = 0;
+    private fontColor: number = 0x000000;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
 
-        this.lineDrawer = new LineDrawer(this.manager.app, 0x730000);
+        this.stageInfo = stageInfo;
+
+        this.lineDrawer = new LineDrawer(
+            this.manager.app,
+            this.stageInfo.bonusFlag ? 0xffffff : 0x730000,
+        );
         this.lineDrawer.on(
             "loopAreaCompleted",
             this.handleLoopAreaCompleted.bind(this),
         );
 
-        this.stageInfo = stageInfo;
         const app = this.manager.app;
         this.gameTimer = this.stageInfo.stageTime;
+        this.fontColor = this.stageInfo.bonusFlag ? 0xffffff : 0x000000;
 
         // background
-        const backgroundSprite = new PIXI.Sprite(
-            PIXI.Texture.from("background"),
+        const backgroundSprite = PIXI.Sprite.from(
+            this.stageInfo.bonusFlag ? "background_night" : "background",
         );
         this.adjustBackGroundSprite(backgroundSprite);
         this.container.addChild(backgroundSprite);
 
         // SUN
-        this.sun = new Sun();
+        this.sun = this.stageInfo.bonusFlag ? new Moon() : new Sun();
         this.sun.move(0, app.screen.width, app.screen.height);
         this.container.addChild(this.sun);
 
         // スタートメッセージ
         this.startMessage = new PIXI.BitmapText({
-            text: `Capture ${this.stageInfo.needCount} butterflies!`,
+            text: `Capture ${this.stageInfo.bonusFlag ? "many" : this.stageInfo.needCount} butterflies!`,
             style: new PIXI.TextStyle({
                 fontFamily: Const.FONT_ENGLISH,
                 fontSize: 24,
-                fill: 0x000000,
+                fill: this.fontColor,
                 fontWeight: Const.FONT_ENGLISH_BOLD,
             }),
         });
@@ -79,12 +89,12 @@ export class GameplayState extends StateBase {
 
         // スコアメッセージ
         this.scoreMessage = new PIXI.BitmapText({
-            text: `0 / ${this.stageInfo.needCount}`,
+            text: `0 / ${this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount}`,
             style: new PIXI.TextStyle({
                 fontFamily: Const.FONT_ENGLISH,
                 fontWeight: Const.FONT_ENGLISH_BOLD,
                 fontSize: 24,
-                fill: 0x000000,
+                fill: this.fontColor,
             }),
         });
         this.scoreMessage.x =
@@ -103,7 +113,7 @@ export class GameplayState extends StateBase {
                 fontFamily: Const.FONT_ENGLISH,
                 fontWeight: Const.FONT_ENGLISH_BOLD,
                 fontSize: 24,
-                fill: 0x000000,
+                fill: this.fontColor,
             }),
         });
         this.actionMessage.y = this.manager.app.renderer.height / 2;
@@ -117,7 +127,7 @@ export class GameplayState extends StateBase {
                 fontFamily: Const.FONT_ENGLISH,
                 fontWeight: Const.FONT_ENGLISH_BOLD,
                 fontSize: 24,
-                fill: 0x000000,
+                fill: this.fontColor,
             }),
         });
         this.helpMessage.y =
@@ -147,6 +157,8 @@ export class GameplayState extends StateBase {
 
         // イベントリスナー：クリックしたら一時停止
         this.pointerDownHandler = () => {
+            if (this.isFinish) return;
+
             this.isRunning = !this.isRunning;
             this.lineDrawer.clearAllSegments();
             this.butterflies.forEach((butterfly) => {
@@ -289,6 +301,31 @@ export class GameplayState extends StateBase {
             }
         });
 
+        // 10秒経ったら special butterfly を出現させる
+        if (
+            this.stageInfo.hasBonusButterfly &&
+            this.elapsedTime >= 10000 &&
+            !this.isAddBonusButterfly
+        ) {
+            const specialButterfly = new SpecialButterfly(
+                Utility.chooseAtRandom(this.stageInfo.butterflyColors, 1)[0],
+                {
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                },
+            );
+            specialButterfly.setRandomInitialPoistion(
+                this.manager.app.screen.width,
+                this.manager.app.screen.height,
+            );
+            specialButterfly.appear(false);
+            specialButterfly.isFlying = true;
+            specialButterfly.isFlapping = true;
+            this.butterflies.push(specialButterfly);
+            this.isAddBonusButterfly = true;
+            this.container.addChild(specialButterfly);
+        }
+
         if (!this.isRunning) return;
 
         // ↑ pause中でも動く処理、↓ pause中は動かない処理
@@ -372,9 +409,18 @@ export class GameplayState extends StateBase {
             flower.delete();
         });
 
+        // captureButterfliesの中にSpecialButterflyが含まれているかどうか
+        const isGotBonusButterfly = this.caputuredButterflies.some(
+            (butterfly) => butterfly instanceof SpecialButterfly,
+        );
+
         setTimeout(() => {
             this.manager.setState(
-                new ResultState(this.manager, this.stageInfo),
+                new ResultState(
+                    this.manager,
+                    this.stageInfo,
+                    isGotBonusButterfly,
+                ),
             );
         }, 3000);
     }
@@ -420,7 +466,7 @@ export class GameplayState extends StateBase {
     }
 
     private updateScoreMessage(): void {
-        this.scoreMessage.text = `${this.caputuredButterflies.length} / ${this.stageInfo.needCount}`;
+        this.scoreMessage.text = `${this.caputuredButterflies.length} / ${this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount}`;
     }
 
     // ループエリアが完成したときの処理
@@ -457,7 +503,8 @@ export class GameplayState extends StateBase {
                 this.captureButterflies(butterfliesInLoopArea);
                 this.captureFlowers(flowersInLoopArea);
             } else {
-                this.badLoop();
+                this.stagePoint -= 20;
+                this.showActionMessage("Bad Loop! \r\n -20 point");
             }
         }
     }
@@ -472,6 +519,7 @@ export class GameplayState extends StateBase {
             (butterflies.every((b) => b.color === butterflies[0].color)
                 ? 10
                 : 20);
+
         let point = basePoint;
         let calculationText = "";
         butterflies.forEach((butterfly) => {
@@ -495,11 +543,17 @@ export class GameplayState extends StateBase {
             butterfly.delete();
         });
 
-        if (this.caputuredButterflies.length >= this.stageInfo.needCount) {
+        if (
+            !this.stageInfo.bonusFlag &&
+            this.caputuredButterflies.length >= this.stageInfo.needCount
+        ) {
             this.endGame();
         } else {
             // 捕まえた分だけ新しく蝶々を補充
             for (let i = 0; i < butterflies.length; i++) {
+                // special butterflyの場合は、補充しない
+                if (butterflies[i] instanceof SpecialButterfly) continue;
+
                 const butterfly = this.createButterfly();
                 this.butterflies.push(butterfly);
                 this.container.addChildAt(
@@ -583,7 +637,9 @@ export class GameplayState extends StateBase {
             this.lineDrawer.setLineDrawTime(
                 this.lineDrawer.originalLineDrawTime + 500,
             );
-            this.lineDrawer.setLineColor(0x0081af);
+            this.lineDrawer.setLineColor(
+                this.stageInfo.bonusFlag ? 0xffd700 : 0x0081af,
+            );
             this.longLoopElapsedTime = Const.LONG_LOOP_EFFECT_TIME_MS;
         } else {
             this.lineDrawer.setLineDrawTime(
@@ -640,11 +696,6 @@ export class GameplayState extends StateBase {
             });
             this.gatherElapsedTime = -1;
         }
-    }
-
-    private badLoop(): void {
-        this.stagePoint -= 20;
-        this.showActionMessage("Bad Loop! \r\n -20 point");
     }
 
     private createButterfly(): Butterfly {

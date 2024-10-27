@@ -27,6 +27,7 @@ export class StageInformation {
 
     //status
     isClear: boolean = false;
+    bonusFlag: boolean = false;
 
     constructor() {
         // initial level
@@ -61,12 +62,12 @@ export class StageInformation {
     }
 
     calcScore(): void {
-        if (this.captureCount >= this.needCount) {
+        if (this.captureCount >= this.needCount || this.bonusFlag) {
             this.isClear = true;
         }
 
         this.bonusCount = this.captureCount - this.needCount;
-        if (this.bonusCount < 0) {
+        if (this.bonusCount < 0 || this.bonusFlag) {
             this.bonusCount = 0;
         }
         this.bonusPoint = this.bonusCount * 100;
@@ -75,9 +76,35 @@ export class StageInformation {
     }
 
     next(): void {
-        const nextLevel = this.level + 1;
-        this.setConfig(nextLevel);
+        this.hasBonusButterfly = false; // reset
+        this.setConfig(this.level + 1);
         this.captureCount = 0;
         this.isClear = false;
+        this.bonusFlag = false;
+    }
+
+    bonusStage(): void {
+        this.bonusFlag = true;
+        this.captureCount = 0;
+        this.isClear = false;
+
+        this.stageTime = 60;
+        const colorNum = Utility.random(3, 4);
+
+        this.butterflyColors = Utility.chooseAtRandom(
+            [...Const.COLOR_LIST],
+            colorNum,
+        );
+        this.needCount = -1;
+        this.stageButterflyCount = Utility.random(12, 18);
+        this.butterflySize = Utility.chooseAtRandom(
+            [...Const.SIZE_LIST, "random"],
+            1,
+        )[0];
+        this.isButterflyColorChange = Utility.random(0, 1) === 1;
+        this.muptipleButterflyRate = Utility.random(15, 20) / 100;
+        this.maxMultiplateRate = 3;
+        this.helpObjectNum = Utility.random(4, 8);
+        this.hasBonusButterfly = false;
     }
 }

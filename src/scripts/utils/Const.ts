@@ -33,8 +33,8 @@ export const FREEZE_EFFECT_TIME_MS = 3000;
 export const imageSrcs = [
     { alias: "background", src: `${BASE_URL}assets/background.jpg` },
     { alias: "menu_background", src: `${BASE_URL}assets/menu_background.jpeg` },
-    { alias: "base", src: `${BASE_URL}assets/base.png` },
-    { alias: "bear", src: `${BASE_URL}assets/bear.png` },
+    // prettier-ignore
+    { alias: "background_night", src: `${BASE_URL}assets/background_night.png` },
     { alias: "butterfly_large", src: `${BASE_URL}assets/butterfly_large.png` },
     // prettier-ignore
     { alias: "butterfly_medium", src: `${BASE_URL}assets/butterfly_medium.png`},
@@ -46,6 +46,7 @@ export const imageSrcs = [
     { alias: "pencil", src: `${BASE_URL}assets/pencil.png` },
     { alias: "sticky", src: `${BASE_URL}assets/sticky.png` },
     { alias: "sun", src: `${BASE_URL}assets/sun.png` },
+    { alias: "moon", src: `${BASE_URL}assets/moon.png` },
     { alias: "sunset_spritesheet", src: `${BASE_URL}assets/sunset.json` },
     { alias: "sunset", src: `${BASE_URL}assets/sunset.png` },
     { alias: "flower1", src: `${BASE_URL}assets/flower1.png` },
@@ -53,4 +54,5 @@ export const imageSrcs = [
     { alias: "flower3", src: `${BASE_URL}assets/flower3.png` },
     { alias: "flower4", src: `${BASE_URL}assets/flower4.png` },
     { alias: "notebook", src: `${BASE_URL}assets/notebook.png` },
+    { alias: "stardust", src: `${BASE_URL}assets/stardust_effect.png` },
 ];

@@ -12,7 +12,7 @@
         "level": 1,
         "stageTime": 60,
         "debug": true,
-        "butterflyColorNum": 4,
+        "butterflyColorNum": 5,
         "needCount": 10,
         "stageButterflyCount": 15,
         "butterflySize": "random",

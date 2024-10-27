@@ -10,6 +10,7 @@ import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
 import { Button } from "../components/Button";
+import { SpecialButterfly } from "../components/SpecialButterfly";
 
 export class StartState extends StateBase {
     private lineDrawer: LineDrawer;
@@ -42,14 +43,13 @@ export class StartState extends StateBase {
             style: {
                 fontFamily: Const.FONT_TITLE,
                 fontSize: 80,
-                fill: "#83cbc0",
+                fill: "#e0ffff",
                 align: "center",
             },
         });
         this.title.anchor.set(0.5);
         this.title.x = app.screen.width / 2;
         this.title.y = app.screen.height * 0.4;
-        this.title.blendMode = "screen";
         this.container.addChild(this.title);
 
         // ボタン
@@ -115,6 +115,20 @@ export class StartState extends StateBase {
 
         this.debugFlowers.push(flower1, flower2, flower3, flower4);
         this.container.addChild(...this.debugFlowers);
+
+        const specialButterfly = new SpecialButterfly(Const.COLOR_LIST[0], {
+            x: this.manager.app.screen.width,
+            y: this.manager.app.screen.height,
+        });
+        specialButterfly.setRandomInitialPoistion(
+            this.manager.app.screen.width,
+            this.manager.app.screen.height,
+        );
+        specialButterfly.appear(false);
+        specialButterfly.isFlying = true;
+        specialButterfly.isFlapping = true;
+        this.butterflies.push(specialButterfly);
+        this.container.addChild(specialButterfly);
     }
 
     update(delta: number): void {

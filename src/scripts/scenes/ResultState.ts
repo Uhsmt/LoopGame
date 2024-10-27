@@ -18,11 +18,17 @@ export class ResultState extends StateBase {
     private backToStartButton!: Button;
     private nextMessage!: Message;
     private lineDrawer!: LineDrawer;
+    private isGotBonusButterfly: boolean = false;
 
-    constructor(manager: GameStateManager, stageInfo: StageInformation) {
+    constructor(
+        manager: GameStateManager,
+        stageInfo: StageInformation,
+        isGotBonusButterfly: boolean,
+    ) {
         super(manager);
 
         this.stageInfo = stageInfo;
+        this.isGotBonusButterfly = isGotBonusButterfly;
 
         // background
         const backgroundSprite = new PIXI.Sprite(
@@ -67,10 +73,16 @@ export class ResultState extends StateBase {
         });
         this.messageButterflies = [];
 
-        const messageText = this.stageInfo.isClear
-            ? `Level ${this.stageInfo.level + 1}`
-            : "Your total score\r " +
-              Utility.formatNumberWithCommas(this.stageInfo.totalScore);
+        let messageText = "";
+        if (this.stageInfo.isClear && this.isGotBonusButterfly) {
+            messageText = "Bonus stage!";
+        } else if (this.stageInfo.isClear) {
+            messageText = `Level ${this.stageInfo.level + 1}`;
+        } else {
+            messageText =
+                "Your total score\r " +
+                Utility.formatNumberWithCommas(this.stageInfo.totalScore);
+        }
         this.nextMessage = new Message(messageText, 40);
         this.nextMessage.anchor.set(0.5);
         this.nextMessage.x = this.manager.app.screen.width / 2;
@@ -86,7 +98,11 @@ export class ResultState extends StateBase {
         );
 
         if (this.stageInfo.isClear) {
-            this.stageInfo.next();
+            if (this.isGotBonusButterfly) {
+                this.stageInfo.bonusStage();
+            } else {
+                this.stageInfo.next();
+            }
             this.manager.setState(
                 new GameplayState(this.manager, this.stageInfo),
             );
@@ -129,9 +145,14 @@ export class ResultState extends StateBase {
     }
 
     private async displayStageResult(): Promise<void> {
-        const topMsg = new Message(`Level ${this.stageInfo.level}`, 30);
+        const topMsg = new Message(
+            this.stageInfo.bonusFlag
+                ? "Bonus stage"
+                : `Level ${this.stageInfo.level}`,
+            30,
+        );
         const conditionMsg = new Message(
-            `Need :         × ${this.stageInfo.needCount} `,
+            `Need :         × ${this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount} `,
             20,
         );
         const countMsg = new Message(
@@ -159,7 +180,7 @@ export class ResultState extends StateBase {
         const top_msgs = [topMsg, conditionMsg, countMsg, lineMsg];
         const result_msgs = [
             baseScoreMsg,
-            bonusMsg,
+            ...(this.stageInfo.bonusFlag ? [] : [bonusMsg]),
             stageScoreMsg,
             totalScoreMsg,
         ];
