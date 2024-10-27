@@ -1,7 +1,8 @@
 import * as PIXI from "pixi.js";
+import { PlanetBase } from "./PlanetBase";
 import * as Const from "../utils/Const";
 
-export class Sun extends PIXI.Container {
+export class Sun extends PlanetBase {
     public blinking: boolean;
     private sprite: PIXI.Sprite;
     private blinkSprite: PIXI.AnimatedSprite;
