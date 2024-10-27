@@ -2,7 +2,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
     font:
         14px "Lucida Grande",
         Helvetica,
@@ -13,7 +12,7 @@ body {
 }
 
 #main {
-    margin-top: 50px;
+    margin-top: 10px;
 }
 
 #caption {
@@ -29,13 +28,13 @@ body {
 #mainCanvas,
 details {
     width: 100%;
-    max-width: 900px; /* 必要に応じて調整 */
+    max-width: 850px; /* 必要に応じて調整 */
     text-align: center;
 }
 
 #loading {
-    width: 700px;
-    height: 500px;
+    width: 850px;
+    height: 650px;
     display: flex;
     flex-direction: column;
     justify-content: center;
