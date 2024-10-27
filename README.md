@@ -33,9 +33,15 @@ https://uhsmt.github.io/LoopGame/
 - [ ] 記録保持 
 
 ### phase3 bonus stage
- - [ ] bonus butterflyモーション
- - [ ] bonus入りの分岐とクリア判定
- - [ ] 専用背景素材
+ - [x] bonus butterflyモーション
+ - [x] bonus入りの分岐とクリア判定
+ - [x] 専用背景素材
+ - [ ] ステージ導入エフェクト
+ - [ ] ステージ終わりエフェクト
+
+
+### small bug fix
+- [ ] ループ線に当たったら避ける
 
 ### Design
 - [ ] soundセット
