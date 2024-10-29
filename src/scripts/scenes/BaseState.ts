@@ -53,15 +53,20 @@ export class StateBase {
         alpha: number = 0,
     ): Promise<void> {
         return new Promise((resolve) => {
-            const fadeOut = () => {
+            const ticker = new PIXI.Ticker();
+            ticker.add(() => {
                 if (container.alpha > alpha) {
-                    container.alpha -= fadespeed;
-                    requestAnimationFrame(fadeOut);
+                    container.alpha -= fadespeed * ticker.deltaMS / 16;
+                    if (container.alpha < alpha) {
+                        container.alpha = alpha;
+                    }
                 } else {
+                    ticker.stop();
+                    ticker.destroy();
                     resolve();
                 }
-            };
-            fadeOut();
+            });
+            ticker.start();
         });
     }
 
@@ -71,15 +76,20 @@ export class StateBase {
         alpha: number = 1,
     ): Promise<void> {
         return new Promise((resolve) => {
-            const fadeIn = () => {
+            const ticker = new PIXI.Ticker();
+            ticker.add(() => {
                 if (container.alpha < alpha) {
-                    container.alpha += fadespeed;
-                    requestAnimationFrame(fadeIn);
+                    container.alpha += fadespeed * ticker.deltaMS / 16;
+                    if (container.alpha > alpha) {
+                        container.alpha = alpha;
+                    }
                 } else {
+                    ticker.stop();
+                    ticker.destroy();
                     resolve();
                 }
-            };
-            fadeIn();
+            });
+            ticker.start();
         });
     }
 
