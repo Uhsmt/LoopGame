@@ -43,6 +43,7 @@ export class ResultState extends StateBase {
         stickySprite.scale.set(0.25);
         stickySprite.x = this.manager.app.screen.width / 2;
         stickySprite.y = this.manager.app.screen.height / 2;
+        stickySprite.alpha = 0;
         this.stickySprite = stickySprite;
         this.container.addChild(stickySprite);
 
@@ -145,6 +146,16 @@ export class ResultState extends StateBase {
     }
 
     private async displayStageResult(): Promise<void> {
+        this.stickySprite.y += this.manager.app.screen.height * 0.08;
+        await Promise.all([
+            this.fadeIn(this.stickySprite, 0.05, 1),
+            this.slideY(
+                this.stickySprite,
+                this.manager.app.screen.height / 2,
+                0.15,
+            ),
+        ]);
+
         const topMsg = new Message(
             this.stageInfo.bonusFlag
                 ? "Bonus stage"
