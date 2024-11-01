@@ -269,7 +269,7 @@ export class GameplayState extends StateBase {
     update(delta: number): void {
         // 蝶々
         this.butterflies.forEach((butterfly) => {
-            butterfly.update(delta);
+            butterfly.update(delta, this.lineDrawer.getSegmentPoints());
         });
 
         // helpオブジェクトを出すタイミングで表示

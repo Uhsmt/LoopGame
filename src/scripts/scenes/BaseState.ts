@@ -56,7 +56,7 @@ export class StateBase {
             const ticker = new PIXI.Ticker();
             ticker.add(() => {
                 if (container.alpha > alpha) {
-                    container.alpha -= fadespeed * ticker.deltaMS / 16;
+                    container.alpha -= (fadespeed * ticker.deltaMS) / 16;
                     if (container.alpha < alpha) {
                         container.alpha = alpha;
                     }
@@ -79,7 +79,7 @@ export class StateBase {
             const ticker = new PIXI.Ticker();
             ticker.add(() => {
                 if (container.alpha < alpha) {
-                    container.alpha += fadespeed * ticker.deltaMS / 16;
+                    container.alpha += (fadespeed * ticker.deltaMS) / 16;
                     if (container.alpha > alpha) {
                         container.alpha = alpha;
                     }

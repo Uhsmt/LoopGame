@@ -96,6 +96,7 @@ export class LineDrawer extends EventEmitter {
                 for (let i = 0; i < index; i++) {
                     this.app.stage.removeChild(this.segments[i].graphics);
                     this.segments[i].graphics.destroy();
+                    this.segments.shift();
                 }
             }, this.lineDrawTime);
 
@@ -216,5 +217,14 @@ export class LineDrawer extends EventEmitter {
 
     setLineDrawTime(time: number): void {
         this.lineDrawTime = time;
+    }
+
+    getSegmentPoints(): PIXI.Point[] {
+        const res = [];
+        if (this.startPoint) {
+            res.push(this.startPoint);
+        }
+        res.push(...this.segments.map((segment) => segment.end));
+        return res;
     }
 }
