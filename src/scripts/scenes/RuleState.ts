@@ -161,7 +161,7 @@ export class RuleState extends StateBase {
                 }
             } else if (butterfliesInLoopArea.length > 1) {
                 if (this.isSuccessLoop(butterfliesInLoopArea)) {
-                    message = "Good Loop!";
+                    message = `Get ${butterfliesInLoopArea.length} Butterflies!`;
                     butterfliesInLoopArea.forEach((butterfly) => {
                         butterfly.delete();
                         // this.butterfliesからけす
@@ -509,7 +509,7 @@ export class RuleState extends StateBase {
     // 2ページ目情報をセット
     private setPageInfoTwo(): void {
         const title = new PIXI.Text({
-            text: "Loop Combinations",
+            text: "Combinations",
             style: this.titleTextStyle,
         });
         title.anchor.x = 0.5;
@@ -521,7 +521,7 @@ export class RuleState extends StateBase {
         this.pageInfos.push(title);
 
         const titlejp = new PIXI.Text({
-            text: "ループのくみあわせ",
+            text: "くみあわせ",
             style: this.defaultTextStyleJP,
         });
         titlejp.anchor.x = 0.5;
