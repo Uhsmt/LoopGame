@@ -111,7 +111,7 @@ export class RuleState extends StateBase {
     update(delta: number): void {
         if (this.butterflies.length > 0) {
             this.butterflies.forEach((butterfly) => {
-                butterfly.update(delta);
+                butterfly.update(delta, []);
             });
         }
 

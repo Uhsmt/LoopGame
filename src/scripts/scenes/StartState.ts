@@ -66,10 +66,6 @@ export class StartState extends StateBase {
 
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
-        if (DEBUG_MODE) {
-            this.container.addChild(this.startButton.debugGraphics(0.1));
-            this.container.addChild(this.ruleButton.debugGraphics(0.1));
-        }
 
         // Frame
         this.addFrameGraphic();
@@ -133,7 +129,7 @@ export class StartState extends StateBase {
 
     update(delta: number): void {
         this.butterflies.forEach((butterfly) => {
-            butterfly.update(delta);
+            butterfly.update(delta, this.lineDrawer.getSegmentPoints());
         });
         this.debugFlowers.forEach((flower) => {
             flower.spin(delta);
@@ -181,8 +177,7 @@ export class StartState extends StateBase {
         if (this.ruleButton.isHit(loopArea)) {
             this.ruleButton.selected();
             void this.onRuleSelected();
-        }
-        if (this.startButton.isHit(loopArea)) {
+        } else if (this.startButton.isHit(loopArea)) {
             this.startButton.selected();
             void this.onStartGameSelected();
         }

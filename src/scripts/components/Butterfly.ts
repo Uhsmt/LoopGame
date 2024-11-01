@@ -6,10 +6,11 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
 export class Butterfly extends BaseCaptureableObject {
     private ellipse: PIXI.Graphics;
     protected sprite: PIXI.Sprite;
-    private xDiretion: number;
-    private yDiretion: number;
-    private xFrame: number;
-    private yFrame: number;
+    private xDiretion: number; // x方向の進行距離（1フレームあたり）
+    private yDiretion: number; // y方向の進行距離（1フレームあたり）
+    private xFrame: number; // x方向で同じ方向に進んだ累積フレーム数
+    private yFrame: number; // y方向で同じ方向に進んだ累積フレーム数
+    private isHitLineBeforeFrame: boolean = false; // 前フレームで線に当たっていたか
     private flappingProgress: number = 0;
     private flappingSpeed = 0.01;
     isFlying = false;
@@ -23,7 +24,6 @@ export class Butterfly extends BaseCaptureableObject {
     private readonly xTernFrame = Utility.random(120, 150);
     private readonly yTernFrame = Utility.random(120, 150);
     readonly spriteWith: number;
-    readonly hitAreaSize: number;
 
     readonly screenSize: { x: number; y: number };
 
@@ -50,7 +50,7 @@ export class Butterfly extends BaseCaptureableObject {
                 this.xDiretion = 0.4;
                 this.yDiretion = 0.3;
                 this.flappingSpeed = Utility.random(8, 10) / 1000;
-                this.hitAreaSize = 13;
+                this.hitAreaSize = 14;
                 break;
             case "medium":
                 this.sprite = PIXI.Sprite.from("butterfly_medium");
@@ -59,6 +59,14 @@ export class Butterfly extends BaseCaptureableObject {
                 this.yDiretion = 0.4;
                 this.flappingSpeed = Utility.random(12, 15) / 1000;
                 this.hitAreaSize = 11;
+                break;
+            case "special":
+                this.sprite = PIXI.Sprite.from("butterfly_special");
+                this.sprite.scale.set(0.15);
+                this.xDiretion = 0.6;
+                this.yDiretion = 0.5;
+                this.flappingSpeed = Utility.random(10, 13) / 1000;
+                this.hitAreaSize = 10;
                 break;
             default:
                 this.sprite = PIXI.Sprite.from("butterfly_small");
@@ -109,6 +117,10 @@ export class Butterfly extends BaseCaptureableObject {
         this.pivot.set(this.width / 2, this.height / 2);
     }
 
+    /**
+     * Set the center of the object(Global position)
+     * @returns {x: number, y: number} - The center of the object
+     */
     protected getObjectCenter(): { x: number; y: number } {
         return {
             x: this.x - this.spriteWith / 2,
@@ -130,12 +142,12 @@ export class Butterfly extends BaseCaptureableObject {
         }
     }
 
-    update(delta: number): void {
+    update(delta: number, lineSegments: PIXI.Point[]): void {
         this.flap(delta);
-        this.fly(delta);
+        this.fly(delta, lineSegments);
     }
 
-    private fly(delta: number): void {
+    private fly(delta: number, lineSegments: PIXI.Point[]): void {
         if (!this.isFlying) return;
         const left = Const.MARGIN;
         const right = this.screenSize.x - Const.MARGIN;
@@ -143,44 +155,75 @@ export class Butterfly extends BaseCaptureableObject {
         const bottom = this.screenSize.y - Const.MARGIN;
 
         if (this.isForceToGather && this.gatherPoint) {
+            // gatherPointに向かって飛ぶ
+            // 横方向
             if (this.x < this.gatherPoint.x) {
                 this.xDiretion = Math.abs(this.xDiretion);
             } else {
                 this.xDiretion = -1 * Math.abs(this.xDiretion);
             }
+            // 縦方向
             if (this.y < this.gatherPoint.y) {
                 this.yDiretion = Math.abs(this.yDiretion);
             } else {
                 this.yDiretion = -1 * Math.abs(this.yDiretion);
             }
         } else {
+            // lineSegmentsと距離がhitAreaSize以下の点があればisHitLineをtrueにする
+            const isHitLine = lineSegments.some((segment) => {
+                const center = this.getObjectCenter();
+                const distance = Utility.getDistance(
+                    new PIXI.Point(center.x, center.y),
+                    segment,
+                );
+                return distance <= this.hitAreaSize;
+            });
+
             // 横方向
             if (this.xDiretion < 0 && this.x <= left + this.spriteWith) {
+                // 左端に到達したら右に向かう
                 this.xFrame = 0;
                 this.xDiretion = Math.abs(this.xDiretion);
             } else if (this.xDiretion > 0 && this.x >= right) {
+                // 右端に到達したら左に向かう
                 this.xFrame = 0;
                 this.xDiretion = -1 * Math.abs(this.xDiretion);
+            } else if (isHitLine && !this.isHitLineBeforeFrame) {
+                // 線に当たったら反転
+                this.xFrame = 0;
+                this.xDiretion = -1 * this.xDiretion;
             } else if (this.xFrame === this.xTernFrame) {
+                // 一定フレーム数進んだらランダムに方向変換
                 this.xFrame = 0;
                 this.xDiretion *= Utility.chooseAtRandom([-1, 1], 1)[0];
             } else {
+                // それ以外は進む
                 this.xFrame += 1;
             }
 
             // 縦方向
             if (this.yDiretion < top && this.y <= this.sprite.height + top) {
+                // 上端に到達したら下に向かう
                 this.yFrame = 0;
                 this.yDiretion = Math.abs(this.yDiretion);
             } else if (this.yDiretion > 0 && this.y >= bottom) {
+                // 下端に到達したら上に向かう
                 this.yFrame = 0;
                 this.yDiretion = -1 * Math.abs(this.yDiretion);
+            } else if (isHitLine && !this.isHitLineBeforeFrame) {
+                // 線に当たったら反転
+                this.yFrame = 0;
+                this.yDiretion = -1 * this.yDiretion;
             } else if (this.yFrame === this.yTernFrame) {
+                // 一定フレーム数進んだらランダムに方向変換
                 this.yFrame = 0;
                 this.yDiretion *= Utility.chooseAtRandom([-1, 1], 1)[0];
             } else {
+                // それ以外は進む
                 this.yFrame += 1;
             }
+
+            this.isHitLineBeforeFrame = isHitLine;
         }
 
         // update position
