@@ -100,24 +100,27 @@ export class StateBase {
     ): Promise<void> {
         const isUp = container.y > reachPointY;
         return new Promise((resolve) => {
-            const slideY = () => {
+            const ticker = new PIXI.Ticker();
+            ticker.add(() => {
                 if (isUp) {
                     if (container.y > reachPointY) {
-                        container.y -= speed;
-                        requestAnimationFrame(slideY);
+                        container.y -= speed * ticker.deltaMS;
                     } else {
+                        ticker.stop();
+                        ticker.destroy();
                         resolve();
                     }
                 } else {
                     if (container.y < reachPointY) {
-                        container.y += speed;
-                        requestAnimationFrame(slideY);
+                        container.y += speed * ticker.deltaMS;
                     } else {
+                        ticker.stop();
+                        ticker.destroy();
                         resolve();
                     }
                 }
-            };
-            slideY();
+            });
+            ticker.start();
         });
     }
 

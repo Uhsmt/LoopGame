@@ -95,7 +95,7 @@ export class RuleState extends StateBase {
             this.slideY(
                 this.notebookSprite,
                 this.manager.app.screen.height / 2,
-                2,
+                0.12,
             ),
         ]);
 
@@ -229,7 +229,7 @@ export class RuleState extends StateBase {
                     this.slideY(
                         this.notebookSprite,
                         this.manager.app.screen.height * 0.7,
-                        2,
+                        0.12,
                     ),
                 ]);
                 break;
@@ -256,7 +256,7 @@ export class RuleState extends StateBase {
                     this.slideY(
                         this.notebookSprite,
                         this.manager.app.screen.height * 0.7,
-                        2,
+                        0.12,
                     ),
                 ]);
                 break;
