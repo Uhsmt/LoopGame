@@ -667,7 +667,7 @@ export class GameplayState extends StateBase {
                     );
                     circle.fill(color);
                     circle.alpha = 0.2;
-                    this.container.addChild(circle);
+                    this.container.addChildAt(circle, 1);
                     setTimeout(() => {
                         this.container.removeChild(circle);
                     }, Const.GATHHER_EFFECT_TIME_MS);
