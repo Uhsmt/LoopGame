@@ -166,9 +166,9 @@ export class GameplayState extends StateBase {
                     this.isRunning && this.freezeElapsedTime <= 0;
             });
             if (!this.isRunning) {
-                this.showActionMessage("Pause", false);
+                this.showActionMessage("Pause");
             } else {
-                this.hideActionmessage();
+                this.actionMessage.alpha = 0;
             }
         };
 
@@ -325,6 +325,9 @@ export class GameplayState extends StateBase {
             this.isAddBonusButterfly = true;
             this.container.addChild(specialButterfly);
         }
+        if (this.helpMessage.alpha > 0) {
+            this.helpMessage.alpha -= delta / 2000;
+        }
 
         if (!this.isRunning) return;
 
@@ -365,8 +368,13 @@ export class GameplayState extends StateBase {
         }
 
         if (this.elapsedTime >= this.gameTimer * 1000) {
-            this.showActionMessage("Time up!", false);
+            this.showActionMessage("Time up!");
             this.endGame();
+        }
+
+        // messagingのfade処理
+        if (this.actionMessage.alpha > 0) {
+            this.actionMessage.alpha -= delta / 2000;
         }
     }
 
@@ -425,20 +433,12 @@ export class GameplayState extends StateBase {
         }, 3000);
     }
 
-    private showActionMessage(
-        message: string,
-        isFadeOut: boolean = true,
-    ): void {
+    private showActionMessage(message: string): void {
         this.actionMessage.alpha = 1;
         this.actionMessage.text = message;
         this.actionMessage.x =
             this.manager.app.renderer.width / 2 - this.actionMessage.width / 2;
-
-        if (isFadeOut) {
-            setTimeout(() => {
-                this.hideActionmessage();
-            }, 1500);
-        }
+        // note: fadeoutはupdateで行う
     }
 
     private showHelpMessage(message: string): void {
@@ -446,15 +446,6 @@ export class GameplayState extends StateBase {
         this.helpMessage.text = message;
         this.helpMessage.x =
             this.manager.app.renderer.width / 2 - this.helpMessage.width / 2;
-        setTimeout(() => {
-            this.helpMessage.alpha = 0;
-        }, 1500);
-    }
-
-    private hideActionmessage() {
-        if (this.actionMessage) {
-            this.actionMessage.alpha = 0;
-        }
     }
 
     private updateScoreMessage(): void {
