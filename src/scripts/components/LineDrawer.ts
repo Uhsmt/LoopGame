@@ -11,7 +11,7 @@ export class LineDrawer extends EventEmitter {
         end: PIXI.Point;
         graphics: PIXI.Graphics;
     }[] = [];
-    readonly originalLineDrawTime: number = 1000;
+    readonly originalLineDrawTime: number = 1200;
     readonly originalLineColor: number = 0xffffff;
     private lineDrawTime: number;
     private lineColor: number;
