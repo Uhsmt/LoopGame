@@ -200,15 +200,13 @@ export class GameplayState extends StateBase {
         if (colors.length <= 2) {
             // 2色の場合は、左右に分けて配置
             colors.forEach((color, index) => {
+                const order = index + 1;
+                const posX =
+                    Const.MARGIN +
+                    (canvasWidth * (order * 2 - 1)) / (colors.length * 2);
                 this.gatherPointMap.set(
                     color,
-                    new PIXI.Point(
-                        Const.MARGIN +
-                            ((canvasWidth * ((index + 1) * 2 - 1)) /
-                                colors.length) *
-                                2,
-                        Const.MARGIN + canvasHeight / 2,
-                    ),
+                    new PIXI.Point(posX, Const.MARGIN + canvasHeight / 2),
                 );
             });
             distanceWidth = (0.95 * canvasWidth) / (colors.length * 2);
@@ -221,28 +219,25 @@ export class GameplayState extends StateBase {
             // 上段のgatherPointMapを設定
             colorsTop.forEach((color, index) => {
                 const order = index + 1;
+                const posX =
+                    Const.MARGIN +
+                    (canvasWidth * (order * 2 - 1)) / (colorsTop.length * 2);
+
                 this.gatherPointMap.set(
                     color,
-                    new PIXI.Point(
-                        Const.MARGIN +
-                            (canvasWidth * (order * 2 - 1)) /
-                                (colorsTop.length * 2),
-                        Const.MARGIN + canvasHeight / 4,
-                    ),
+                    new PIXI.Point(posX, Const.MARGIN + canvasHeight / 4),
                 );
             });
 
             // 下段のgatherPointMapを設定
             colorsBottom.forEach((color, index) => {
                 const order = index + 1;
+                const posX =
+                    Const.MARGIN +
+                    (canvasWidth * (order * 2 - 1)) / (colorsBottom.length * 2);
                 this.gatherPointMap.set(
                     color,
-                    new PIXI.Point(
-                        Const.MARGIN +
-                            (canvasWidth * (order * 2 - 1)) /
-                                (colorsBottom.length * 2),
-                        Const.MARGIN + (canvasHeight * 3) / 4,
-                    ),
+                    new PIXI.Point(posX, Const.MARGIN + (canvasHeight * 3) / 4),
                 );
             });
 
