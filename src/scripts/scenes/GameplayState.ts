@@ -254,10 +254,10 @@ export class GameplayState extends StateBase {
 
     async onEnter(): Promise<void> {
         this.isRunning = false;
-        this.displayStartMessage();
-        this.displayScoreMessage();
+        this.startMessage.alpha = 1;
+        this.scoreMessage.alpha = 1;
 
-        await this.wait(1500);
+        await this.wait(1000);
         this.container.removeChild(this.startMessage);
         this.isRunning = true;
         this.butterflies.forEach((butterfly) => {
@@ -423,14 +423,6 @@ export class GameplayState extends StateBase {
                 ),
             );
         }, 3000);
-    }
-
-    private displayStartMessage(): void {
-        this.startMessage.alpha = 1;
-    }
-
-    private displayScoreMessage(): void {
-        this.scoreMessage.alpha = 1;
     }
 
     private showActionMessage(
