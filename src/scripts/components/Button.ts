@@ -30,7 +30,7 @@ export class Button extends BaseCaptureableObject {
         this.x = x;
         this.y = y;
         this.pivot.set(this.width / 2, this.height / 2);
-        this.hitAreaSize = this.leafSprite.height / 2;
+        this.hitAreaSize = this.leafSprite.height * 0.4;
         this.hitRate = 0.3;
     }
 
