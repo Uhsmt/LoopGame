@@ -8,7 +8,10 @@
     "start": "webpack serve --open",
     "build": "cross-env NODE_ENV=production webpack --config webpack.config.cjs",
     "debug": "cross-env NODE_ENV=development DEBUG_MODE=true webpack serve --open --config webpack.config.cjs",
-    "lint:fix": "npx prettier --write . && npx eslint --fix ."
+    "lint:fix": "npx prettier --write . && npx eslint --fix .",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "repository": {
     "type": "git",
@@ -25,17 +28,21 @@
     "@types/pixi.js": "^5.0.0"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^22.7.4",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
+    "@vitest/ui": "^3.2.4",
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
     "eslint": "^9.12.0",
     "eslint-config-prettier": "^9.1.0",
     "html-webpack-plugin": "^5.6.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.3.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.2",
+    "vitest": "^3.2.4",
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.1.0"
