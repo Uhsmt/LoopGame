@@ -6,7 +6,7 @@ vi.mock('pixi.js', () => ({
   Container: vi.fn(),
   Sprite: vi.fn(),
   Texture: vi.fn(),
-  Point: vi.fn(),
+  Point: vi.fn().mockImplementation((x = 0, y = 0) => ({ x, y })),
   Rectangle: vi.fn(),
   Graphics: vi.fn(),
   Text: vi.fn(),
