@@ -35,4 +35,29 @@ export default [
             "@typescript-eslint/no-explicit-any": "error",
         },
     },
+    // Test files - more lenient rules
+    {
+        files: ["tests/**/*.ts", "**/*.test.ts", "**/*.spec.ts"],
+        languageOptions: {
+            parser: tsEsLintParser,
+            parserOptions: {
+                project: "./tsconfig.json",
+            },
+        },
+        rules: {
+            // @typescript-eslint/eslint-pluginに付属のルールを適用
+            ...tsEsLintPlugin.configs["eslint-recommended"].overrides[0].rules,
+            ...tsEsLintPlugin.configs["recommended-type-checked"].rules,
+            // Relax rules for test files
+            "@typescript-eslint/no-explicit-any": "off",
+            "@typescript-eslint/no-unsafe-assignment": "off",
+            "@typescript-eslint/no-unsafe-member-access": "off",
+            "@typescript-eslint/no-unsafe-call": "off",
+            "@typescript-eslint/no-unsafe-argument": "off",
+            "@typescript-eslint/no-unsafe-return": "off",
+            "@typescript-eslint/no-unsafe-function-type": "off",
+            "@typescript-eslint/no-unused-vars": "off",
+            "@typescript-eslint/require-await": "off",
+        },
+    },
 ];
