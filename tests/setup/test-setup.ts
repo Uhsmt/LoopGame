@@ -1,21 +1,8 @@
 import { vi } from 'vitest'
+import { PIXIMock } from './pixi-mock'
 
-// Mock PIXI.js for testing
-vi.mock('pixi.js', () => ({
-  Application: vi.fn(),
-  Container: vi.fn(),
-  Sprite: vi.fn(),
-  Texture: vi.fn(),
-  Point: vi.fn().mockImplementation((x = 0, y = 0) => ({ x, y })),
-  Rectangle: vi.fn(),
-  Graphics: vi.fn(),
-  Text: vi.fn(),
-  TextStyle: vi.fn(),
-  Loader: vi.fn(),
-  utils: {
-    EventEmitter: vi.fn(),
-  },
-}))
+// Mock PIXI.js for testing using our comprehensive mock
+vi.mock('pixi.js', () => PIXIMock)
 
 // Mock canvas and WebGL context
 Object.defineProperty(window, 'HTMLCanvasElement', {

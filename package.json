@@ -11,7 +11,11 @@
     "lint:fix": "npx prettier --write . && npx eslint --fix .",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
   },
   "repository": {
     "type": "git",
@@ -28,6 +32,7 @@
     "@types/pixi.js": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.1",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^22.7.4",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
