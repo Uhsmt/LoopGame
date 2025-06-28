@@ -44,8 +44,10 @@ export abstract class BaseCaptureableObject extends PIXI.Container {
         const center = this.getObjectCenter();
         for (let i = 0; i < 36; i++) {
             const angle = (i * 10 * Math.PI) / 180;
-            const x = center.x + Math.cos(angle) * this.hitAreaSize * this.scale.y;
-            const y = center.y + Math.sin(angle) * this.hitAreaSize * this.scale.y;
+            const x =
+                center.x + Math.cos(angle) * this.hitAreaSize * this.scale.y;
+            const y =
+                center.y + Math.sin(angle) * this.hitAreaSize * this.scale.y;
             points.push(new PIXI.Point(x, y));
         }
         return points;

@@ -1,573 +1,617 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock PIXI.js
-vi.mock('pixi.js', () => ({
-  Point: vi.fn().mockImplementation((x = 0, y = 0) => ({ x, y })),
-  Graphics: vi.fn().mockImplementation(() => ({
-    clear: vi.fn(),
-    destroy: vi.fn(),
-  })),
-}))
+vi.mock("pixi.js", () => ({
+    Point: vi.fn().mockImplementation((x = 0, y = 0) => ({ x, y })),
+    Graphics: vi.fn().mockImplementation(() => ({
+        clear: vi.fn(),
+        destroy: vi.fn(),
+    })),
+}));
 
 // Mock constants for effect durations
-vi.mock('../../src/scripts/utils/Const', () => ({
-  FREEZE_EFFECT_TIME_MS: 3000,
-  LONG_LOOP_EFFECT_TIME_MS: 10000,
-  GATHHER_EFFECT_TIME_MS: 10000,
-}))
+vi.mock("../../src/scripts/utils/Const", () => ({
+    FREEZE_EFFECT_TIME_MS: 3000,
+    LONG_LOOP_EFFECT_TIME_MS: 10000,
+    GATHHER_EFFECT_TIME_MS: 10000,
+}));
 
 // Test implementations for power-up system integration
 class TestButterfly {
-  public x: number
-  public y: number
-  public color: number
-  public isFlying: boolean = true
-  public gatherPoint: any = null
-  public gatherDistance: number = 0
+    public x: number;
+    public y: number;
+    public color: number;
+    public isFlying: boolean = true;
+    public gatherPoint: any = null;
+    public gatherDistance: number = 0;
 
-  constructor(x: number, y: number, color: number = 0xff0000) {
-    this.x = x
-    this.y = y
-    this.color = color
-  }
-
-  setGatherPoint(point: any, distance: number): void {
-    this.gatherPoint = point
-    this.gatherDistance = distance
-  }
-
-  deleteGatherPoint(): void {
-    this.gatherPoint = null
-    this.gatherDistance = 0
-  }
-
-  // Simulate movement toward gather point
-  moveTowardGatherPoint(): void {
-    if (this.gatherPoint) {
-      const dx = this.gatherPoint.x - this.x
-      const dy = this.gatherPoint.y - this.y
-      const distance = Math.sqrt(dx * dx + dy * dy)
-      
-      if (distance > this.gatherDistance) {
-        // Move toward gather point
-        this.x += (dx / distance) * 2 // 2 pixels per frame
-        this.y += (dy / distance) * 2
-      }
+    constructor(x: number, y: number, color: number = 0xff0000) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
     }
-  }
+
+    setGatherPoint(point: any, distance: number): void {
+        this.gatherPoint = point;
+        this.gatherDistance = distance;
+    }
+
+    deleteGatherPoint(): void {
+        this.gatherPoint = null;
+        this.gatherDistance = 0;
+    }
+
+    // Simulate movement toward gather point
+    moveTowardGatherPoint(): void {
+        if (this.gatherPoint) {
+            const dx = this.gatherPoint.x - this.x;
+            const dy = this.gatherPoint.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > this.gatherDistance) {
+                // Move toward gather point
+                this.x += (dx / distance) * 2; // 2 pixels per frame
+                this.y += (dy / distance) * 2;
+            }
+        }
+    }
 }
 
 class TestHelpFlower {
-  public type: string
-  public message: string
-  public x: number
-  public y: number
-  public captured: boolean = false
+    public type: string;
+    public message: string;
+    public x: number;
+    public y: number;
+    public captured: boolean = false;
 
-  constructor(type: string, x: number, y: number, message: string = '') {
-    this.type = type
-    this.x = x
-    this.y = y
-    this.message = message || `${type} effect!`
-  }
+    constructor(type: string, x: number, y: number, message: string = "") {
+        this.type = type;
+        this.x = x;
+        this.y = y;
+        this.message = message || `${type} effect!`;
+    }
 
-  getType(): string {
-    return this.type
-  }
+    getType(): string {
+        return this.type;
+    }
 
-  isHit(loopGraphics: any): boolean {
-    return this.captured
-  }
+    isHit(loopGraphics: any): boolean {
+        return this.captured;
+    }
 
-  setMockCaptured(captured: boolean): void {
-    this.captured = captured
-  }
+    setMockCaptured(captured: boolean): void {
+        this.captured = captured;
+    }
 
-  stop(): void {
-    // Mock stopping flower animation
-  }
+    stop(): void {
+        // Mock stopping flower animation
+    }
 
-  delete(): void {
-    // Mock cleanup
-  }
+    delete(): void {
+        // Mock cleanup
+    }
 }
 
 class TestLineDrawer {
-  public originalLineDrawTime: number = 1200
-  public originalLineColor: number = 0xffffff
-  private lineDrawTime: number = 1200
-  private lineColor: number = 0xffffff
+    public originalLineDrawTime: number = 1200;
+    public originalLineColor: number = 0xffffff;
+    private lineDrawTime: number = 1200;
+    private lineColor: number = 0xffffff;
 
-  setLineDrawTime(time: number): void {
-    this.lineDrawTime = time
-  }
+    setLineDrawTime(time: number): void {
+        this.lineDrawTime = time;
+    }
 
-  setLineColor(color: number): void {
-    this.lineColor = color
-  }
+    setLineColor(color: number): void {
+        this.lineColor = color;
+    }
 
-  getLineDrawTime(): number {
-    return this.lineDrawTime
-  }
+    getLineDrawTime(): number {
+        return this.lineDrawTime;
+    }
 
-  getLineColor(): number {
-    return this.lineColor
-  }
+    getLineColor(): number {
+        return this.lineColor;
+    }
 }
 
 class TestGameTimer {
-  public elapsedTime: number = 0
+    public elapsedTime: number = 0;
 
-  addTime(milliseconds: number): void {
-    this.elapsedTime += milliseconds
-  }
-
-  subtractTime(milliseconds: number): void {
-    this.elapsedTime -= milliseconds
-    if (this.elapsedTime < 0) {
-      this.elapsedTime = 0
+    addTime(milliseconds: number): void {
+        this.elapsedTime += milliseconds;
     }
-  }
+
+    subtractTime(milliseconds: number): void {
+        this.elapsedTime -= milliseconds;
+        if (this.elapsedTime < 0) {
+            this.elapsedTime = 0;
+        }
+    }
 }
 
-describe('Power-Up System Integration Tests', () => {
-  let butterflies: TestButterfly[]
-  let flowers: TestHelpFlower[]
-  let lineDrawer: TestLineDrawer
-  let gameTimer: TestGameTimer
+describe("Power-Up System Integration Tests", () => {
+    let butterflies: TestButterfly[];
+    let flowers: TestHelpFlower[];
+    let lineDrawer: TestLineDrawer;
+    let gameTimer: TestGameTimer;
 
-  beforeEach(() => {
-    vi.clearAllMocks()
-    
-    butterflies = [
-      new TestButterfly(100, 100, 0xff0000), // Red
-      new TestButterfly(200, 200, 0x00ff00), // Green
-      new TestButterfly(300, 300, 0x0000ff), // Blue
-      new TestButterfly(150, 150, 0xff0000), // Another red
-    ]
+    beforeEach(() => {
+        vi.clearAllMocks();
 
-    flowers = []
-    lineDrawer = new TestLineDrawer()
-    gameTimer = new TestGameTimer()
-  })
+        butterflies = [
+            new TestButterfly(100, 100, 0xff0000), // Red
+            new TestButterfly(200, 200, 0x00ff00), // Green
+            new TestButterfly(300, 300, 0x0000ff), // Blue
+            new TestButterfly(150, 150, 0xff0000), // Another red
+        ];
 
-  describe('Freeze Effect Integration', () => {
-    it('should freeze all butterflies when freeze flower is captured', () => {
-      const freezeFlower = new TestHelpFlower('freeze', 150, 150, 'Freeze butterflies!')
-      freezeFlower.setMockCaptured(true)
+        flowers = [];
+        lineDrawer = new TestLineDrawer();
+        gameTimer = new TestGameTimer();
+    });
 
-      // Simulate flower capture
-      const capturedFlowers = [freezeFlower].filter(f => f.isHit(null))
-      
-      // Apply freeze effect
-      capturedFlowers.forEach(flower => {
-        if (flower.getType() === 'freeze') {
-          butterflies.forEach(butterfly => {
-            butterfly.isFlying = false
-          })
-        }
-      })
+    describe("Freeze Effect Integration", () => {
+        it("should freeze all butterflies when freeze flower is captured", () => {
+            const freezeFlower = new TestHelpFlower(
+                "freeze",
+                150,
+                150,
+                "Freeze butterflies!",
+            );
+            freezeFlower.setMockCaptured(true);
 
-      // All butterflies should be frozen
-      butterflies.forEach(butterfly => {
-        expect(butterfly.isFlying).toBe(false)
-      })
-    })
+            // Simulate flower capture
+            const capturedFlowers = [freezeFlower].filter((f) => f.isHit(null));
 
-    it('should unfreeze butterflies after effect duration', () => {
-      // First freeze
-      butterflies.forEach(butterfly => {
-        butterfly.isFlying = false
-      })
+            // Apply freeze effect
+            capturedFlowers.forEach((flower) => {
+                if (flower.getType() === "freeze") {
+                    butterflies.forEach((butterfly) => {
+                        butterfly.isFlying = false;
+                    });
+                }
+            });
 
-      // Simulate effect ending
-      const effectActive = false // Effect expired
-      
-      if (!effectActive) {
-        butterflies.forEach(butterfly => {
-          butterfly.isFlying = true
-        })
-      }
+            // All butterflies should be frozen
+            butterflies.forEach((butterfly) => {
+                expect(butterfly.isFlying).toBe(false);
+            });
+        });
 
-      // All butterflies should be flying again
-      butterflies.forEach(butterfly => {
-        expect(butterfly.isFlying).toBe(true)
-      })
-    })
+        it("should unfreeze butterflies after effect duration", () => {
+            // First freeze
+            butterflies.forEach((butterfly) => {
+                butterfly.isFlying = false;
+            });
 
-    it('should handle freeze effect with mixed butterfly states', () => {
-      // Some butterflies already frozen, some flying
-      butterflies[0].isFlying = false
-      butterflies[1].isFlying = true
-      butterflies[2].isFlying = false
-      butterflies[3].isFlying = true
+            // Simulate effect ending
+            const effectActive = false; // Effect expired
 
-      const freezeFlower = new TestHelpFlower('freeze', 150, 150)
-      freezeFlower.setMockCaptured(true)
-
-      // Apply freeze effect to all
-      butterflies.forEach(butterfly => {
-        butterfly.isFlying = false
-      })
-
-      // All should be frozen regardless of initial state
-      butterflies.forEach(butterfly => {
-        expect(butterfly.isFlying).toBe(false)
-      })
-    })
-  })
-
-  describe('Gather Effect Integration', () => {
-    it('should group butterflies by color at gather points', () => {
-      const gatherFlower = new TestHelpFlower('gather', 150, 150, 'Gather butterflies!')
-      gatherFlower.setMockCaptured(true)
-
-      // Set up gather points for each color
-      const gatherPoints = new Map([
-        [0xff0000, { x: 100, y: 100 }], // Red gather point
-        [0x00ff00, { x: 200, y: 100 }], // Green gather point  
-        [0x0000ff, { x: 300, y: 100 }], // Blue gather point
-      ])
-
-      const gatherDistance = 50
-
-      // Apply gather effect
-      const capturedFlowers = [gatherFlower].filter(f => f.isHit(null))
-      
-      capturedFlowers.forEach(flower => {
-        if (flower.getType() === 'gather') {
-          butterflies.forEach(butterfly => {
-            const gatherPoint = gatherPoints.get(butterfly.color)
-            if (gatherPoint) {
-              butterfly.setGatherPoint(gatherPoint, gatherDistance)
+            if (!effectActive) {
+                butterflies.forEach((butterfly) => {
+                    butterfly.isFlying = true;
+                });
             }
-          })
-        }
-      })
 
-      // Check that butterflies have correct gather points
-      const redButterflies = butterflies.filter(b => b.color === 0xff0000)
-      const greenButterflies = butterflies.filter(b => b.color === 0x00ff00)
-      const blueButterflies = butterflies.filter(b => b.color === 0x0000ff)
+            // All butterflies should be flying again
+            butterflies.forEach((butterfly) => {
+                expect(butterfly.isFlying).toBe(true);
+            });
+        });
 
-      redButterflies.forEach(butterfly => {
-        expect(butterfly.gatherPoint).toEqual({ x: 100, y: 100 })
-        expect(butterfly.gatherDistance).toBe(gatherDistance)
-      })
+        it("should handle freeze effect with mixed butterfly states", () => {
+            // Some butterflies already frozen, some flying
+            butterflies[0].isFlying = false;
+            butterflies[1].isFlying = true;
+            butterflies[2].isFlying = false;
+            butterflies[3].isFlying = true;
 
-      greenButterflies.forEach(butterfly => {
-        expect(butterfly.gatherPoint).toEqual({ x: 200, y: 100 })
-      })
+            const freezeFlower = new TestHelpFlower("freeze", 150, 150);
+            freezeFlower.setMockCaptured(true);
 
-      blueButterflies.forEach(butterfly => {
-        expect(butterfly.gatherPoint).toEqual({ x: 300, y: 100 })
-      })
-    })
+            // Apply freeze effect to all
+            butterflies.forEach((butterfly) => {
+                butterfly.isFlying = false;
+            });
 
-    it('should make butterflies move toward their gather points', () => {
-      const butterfly = new TestButterfly(300, 300, 0xff0000) // Start far from gather point
-      butterfly.setGatherPoint({ x: 100, y: 100 }, 10)
+            // All should be frozen regardless of initial state
+            butterflies.forEach((butterfly) => {
+                expect(butterfly.isFlying).toBe(false);
+            });
+        });
+    });
 
-      const initialX = butterfly.x
-      const initialY = butterfly.y
+    describe("Gather Effect Integration", () => {
+        it("should group butterflies by color at gather points", () => {
+            const gatherFlower = new TestHelpFlower(
+                "gather",
+                150,
+                150,
+                "Gather butterflies!",
+            );
+            gatherFlower.setMockCaptured(true);
 
-      // Simulate several movement frames
-      for (let i = 0; i < 10; i++) {
-        butterfly.moveTowardGatherPoint()
-      }
+            // Set up gather points for each color
+            const gatherPoints = new Map([
+                [0xff0000, { x: 100, y: 100 }], // Red gather point
+                [0x00ff00, { x: 200, y: 100 }], // Green gather point
+                [0x0000ff, { x: 300, y: 100 }], // Blue gather point
+            ]);
 
-      // Butterfly should have moved toward gather point
-      expect(butterfly.x).toBeLessThan(initialX)
-      expect(butterfly.y).toBeLessThan(initialY)
+            const gatherDistance = 50;
 
-      // Should be closer to gather point
-      const finalDistance = Math.sqrt(
-        (butterfly.x - 100) ** 2 + (butterfly.y - 100) ** 2
-      )
-      const initialDistance = Math.sqrt(
-        (initialX - 100) ** 2 + (initialY - 100) ** 2
-      )
-      
-      expect(finalDistance).toBeLessThan(initialDistance)
-    })
+            // Apply gather effect
+            const capturedFlowers = [gatherFlower].filter((f) => f.isHit(null));
 
-    it('should stop gathering when butterflies reach gather distance', () => {
-      const butterfly = new TestButterfly(105, 105, 0xff0000) // Very close to gather point
-      butterfly.setGatherPoint({ x: 100, y: 100 }, 10)
+            capturedFlowers.forEach((flower) => {
+                if (flower.getType() === "gather") {
+                    butterflies.forEach((butterfly) => {
+                        const gatherPoint = gatherPoints.get(butterfly.color);
+                        if (gatherPoint) {
+                            butterfly.setGatherPoint(
+                                gatherPoint,
+                                gatherDistance,
+                            );
+                        }
+                    });
+                }
+            });
 
-      const initialX = butterfly.x
-      const initialY = butterfly.y
+            // Check that butterflies have correct gather points
+            const redButterflies = butterflies.filter(
+                (b) => b.color === 0xff0000,
+            );
+            const greenButterflies = butterflies.filter(
+                (b) => b.color === 0x00ff00,
+            );
+            const blueButterflies = butterflies.filter(
+                (b) => b.color === 0x0000ff,
+            );
 
-      // Simulate movement - should not move much since already within gather distance
-      butterfly.moveTowardGatherPoint()
+            redButterflies.forEach((butterfly) => {
+                expect(butterfly.gatherPoint).toEqual({ x: 100, y: 100 });
+                expect(butterfly.gatherDistance).toBe(gatherDistance);
+            });
 
-      const distance = Math.sqrt(
-        (butterfly.x - 100) ** 2 + (butterfly.y - 100) ** 2
-      )
+            greenButterflies.forEach((butterfly) => {
+                expect(butterfly.gatherPoint).toEqual({ x: 200, y: 100 });
+            });
 
-      expect(distance).toBeLessThanOrEqual(10) // Within gather distance
-    })
-  })
+            blueButterflies.forEach((butterfly) => {
+                expect(butterfly.gatherPoint).toEqual({ x: 300, y: 100 });
+            });
+        });
 
-  describe('Time Plus Effect Integration', () => {
-    it('should subtract time from game timer', () => {
-      gameTimer.elapsedTime = 30000 // 30 seconds elapsed
+        it("should make butterflies move toward their gather points", () => {
+            const butterfly = new TestButterfly(300, 300, 0xff0000); // Start far from gather point
+            butterfly.setGatherPoint({ x: 100, y: 100 }, 10);
 
-      const timePlusFlower = new TestHelpFlower('time_plus', 150, 150, 'Time boost!')
-      timePlusFlower.setMockCaptured(true)
+            const initialX = butterfly.x;
+            const initialY = butterfly.y;
 
-      // Apply time plus effect
-      const capturedFlowers = [timePlusFlower].filter(f => f.isHit(null))
-      
-      capturedFlowers.forEach(flower => {
-        if (flower.getType() === 'time_plus') {
-          gameTimer.subtractTime(5000) // Subtract 5 seconds
-        }
-      })
+            // Simulate several movement frames
+            for (let i = 0; i < 10; i++) {
+                butterfly.moveTowardGatherPoint();
+            }
 
-      expect(gameTimer.elapsedTime).toBe(25000) // Should be 25 seconds now
-    })
+            // Butterfly should have moved toward gather point
+            expect(butterfly.x).toBeLessThan(initialX);
+            expect(butterfly.y).toBeLessThan(initialY);
 
-    it('should not allow negative elapsed time', () => {
-      gameTimer.elapsedTime = 3000 // Only 3 seconds elapsed
+            // Should be closer to gather point
+            const finalDistance = Math.sqrt(
+                (butterfly.x - 100) ** 2 + (butterfly.y - 100) ** 2,
+            );
+            const initialDistance = Math.sqrt(
+                (initialX - 100) ** 2 + (initialY - 100) ** 2,
+            );
 
-      const timePlusFlower = new TestHelpFlower('time_plus', 150, 150)
-      timePlusFlower.setMockCaptured(true)
+            expect(finalDistance).toBeLessThan(initialDistance);
+        });
 
-      // Apply time plus effect (subtracts 5 seconds)
-      gameTimer.subtractTime(5000)
+        it("should stop gathering when butterflies reach gather distance", () => {
+            const butterfly = new TestButterfly(105, 105, 0xff0000); // Very close to gather point
+            butterfly.setGatherPoint({ x: 100, y: 100 }, 10);
 
-      expect(gameTimer.elapsedTime).toBe(0) // Should clamp to 0
-    })
-  })
+            const initialX = butterfly.x;
+            const initialY = butterfly.y;
 
-  describe('Long Loop Effect Integration', () => {
-    it('should extend line drawing time and change color', () => {
-      const longFlower = new TestHelpFlower('long', 150, 150, 'Long loops!')
-      longFlower.setMockCaptured(true)
+            // Simulate movement - should not move much since already within gather distance
+            butterfly.moveTowardGatherPoint();
 
-      const originalTime = lineDrawer.getLineDrawTime()
-      const originalColor = lineDrawer.getLineColor()
+            const distance = Math.sqrt(
+                (butterfly.x - 100) ** 2 + (butterfly.y - 100) ** 2,
+            );
 
-      // Apply long loop effect
-      const capturedFlowers = [longFlower].filter(f => f.isHit(null))
-      
-      capturedFlowers.forEach(flower => {
-        if (flower.getType() === 'long') {
-          lineDrawer.setLineDrawTime(originalTime + 500)
-          lineDrawer.setLineColor(0x0081af) // Change to blue
-        }
-      })
+            expect(distance).toBeLessThanOrEqual(10); // Within gather distance
+        });
+    });
 
-      expect(lineDrawer.getLineDrawTime()).toBe(originalTime + 500)
-      expect(lineDrawer.getLineColor()).toBe(0x0081af)
-      expect(lineDrawer.getLineColor()).not.toBe(originalColor)
-    })
+    describe("Time Plus Effect Integration", () => {
+        it("should subtract time from game timer", () => {
+            gameTimer.elapsedTime = 30000; // 30 seconds elapsed
 
-    it('should reset line drawing properties after effect ends', () => {
-      // First apply the effect
-      lineDrawer.setLineDrawTime(lineDrawer.originalLineDrawTime + 500)
-      lineDrawer.setLineColor(0x0081af)
+            const timePlusFlower = new TestHelpFlower(
+                "time_plus",
+                150,
+                150,
+                "Time boost!",
+            );
+            timePlusFlower.setMockCaptured(true);
 
-      // Then simulate effect ending
-      const effectActive = false // Effect expired
-      
-      if (!effectActive) {
-        lineDrawer.setLineDrawTime(lineDrawer.originalLineDrawTime)
-        lineDrawer.setLineColor(lineDrawer.originalLineColor)
-      }
+            // Apply time plus effect
+            const capturedFlowers = [timePlusFlower].filter((f) =>
+                f.isHit(null),
+            );
 
-      expect(lineDrawer.getLineDrawTime()).toBe(lineDrawer.originalLineDrawTime)
-      expect(lineDrawer.getLineColor()).toBe(lineDrawer.originalLineColor)
-    })
-  })
+            capturedFlowers.forEach((flower) => {
+                if (flower.getType() === "time_plus") {
+                    gameTimer.subtractTime(5000); // Subtract 5 seconds
+                }
+            });
 
-  describe('Multiple Effects Integration', () => {
-    it('should handle multiple different effects simultaneously', () => {
-      const freezeFlower = new TestHelpFlower('freeze', 100, 100)
-      const gatherFlower = new TestHelpFlower('gather', 200, 200)
-      const longFlower = new TestHelpFlower('long', 300, 300)
+            expect(gameTimer.elapsedTime).toBe(25000); // Should be 25 seconds now
+        });
 
-      // Mark all as captured
-      freezeFlower.setMockCaptured(true)
-      gatherFlower.setMockCaptured(true)  
-      longFlower.setMockCaptured(true)
+        it("should not allow negative elapsed time", () => {
+            gameTimer.elapsedTime = 3000; // Only 3 seconds elapsed
 
-      const allFlowers = [freezeFlower, gatherFlower, longFlower]
-      const capturedFlowers = allFlowers.filter(f => f.isHit(null))
+            const timePlusFlower = new TestHelpFlower("time_plus", 150, 150);
+            timePlusFlower.setMockCaptured(true);
 
-      // Apply all effects
-      capturedFlowers.forEach(flower => {
-        switch (flower.getType()) {
-          case 'freeze':
-            butterflies.forEach(b => b.isFlying = false)
-            break
-          case 'gather':
-            butterflies.forEach(b => {
-              b.setGatherPoint({ x: 400, y: 400 }, 50)
-            })
-            break
-          case 'long':
-            lineDrawer.setLineDrawTime(lineDrawer.originalLineDrawTime + 500)
-            lineDrawer.setLineColor(0x0081af)
-            break
-        }
-      })
+            // Apply time plus effect (subtracts 5 seconds)
+            gameTimer.subtractTime(5000);
 
-      // All effects should be active
-      expect(butterflies.every(b => !b.isFlying)).toBe(true) // Frozen
-      expect(butterflies.every(b => b.gatherPoint !== null)).toBe(true) // Gathering
-      expect(lineDrawer.getLineDrawTime()).toBe(1700) // Extended time
-      expect(lineDrawer.getLineColor()).toBe(0x0081af) // Changed color
-    })
+            expect(gameTimer.elapsedTime).toBe(0); // Should clamp to 0
+        });
+    });
 
-    it('should handle same effect type multiple times', () => {
-      const timePlus1 = new TestHelpFlower('time_plus', 100, 100)
-      const timePlus2 = new TestHelpFlower('time_plus', 200, 200)
+    describe("Long Loop Effect Integration", () => {
+        it("should extend line drawing time and change color", () => {
+            const longFlower = new TestHelpFlower(
+                "long",
+                150,
+                150,
+                "Long loops!",
+            );
+            longFlower.setMockCaptured(true);
 
-      timePlus1.setMockCaptured(true)
-      timePlus2.setMockCaptured(true)
+            const originalTime = lineDrawer.getLineDrawTime();
+            const originalColor = lineDrawer.getLineColor();
 
-      gameTimer.elapsedTime = 30000 // 30 seconds
+            // Apply long loop effect
+            const capturedFlowers = [longFlower].filter((f) => f.isHit(null));
 
-      const capturedFlowers = [timePlus1, timePlus2].filter(f => f.isHit(null))
-      
-      // Apply both time plus effects
-      capturedFlowers.forEach(flower => {
-        if (flower.getType() === 'time_plus') {
-          gameTimer.subtractTime(5000) // Each subtracts 5 seconds
-        }
-      })
+            capturedFlowers.forEach((flower) => {
+                if (flower.getType() === "long") {
+                    lineDrawer.setLineDrawTime(originalTime + 500);
+                    lineDrawer.setLineColor(0x0081af); // Change to blue
+                }
+            });
 
-      expect(gameTimer.elapsedTime).toBe(20000) // 30 - 5 - 5 = 20 seconds
-    })
+            expect(lineDrawer.getLineDrawTime()).toBe(originalTime + 500);
+            expect(lineDrawer.getLineColor()).toBe(0x0081af);
+            expect(lineDrawer.getLineColor()).not.toBe(originalColor);
+        });
 
-    it('should handle conflicting effects appropriately', () => {
-      // Test freeze effect overriding gather movement
-      const butterfly = new TestButterfly(300, 300, 0xff0000)
-      
-      // Apply gather effect first
-      butterfly.setGatherPoint({ x: 100, y: 100 }, 50)
-      
-      // Then apply freeze effect
-      butterfly.isFlying = false
+        it("should reset line drawing properties after effect ends", () => {
+            // First apply the effect
+            lineDrawer.setLineDrawTime(lineDrawer.originalLineDrawTime + 500);
+            lineDrawer.setLineColor(0x0081af);
 
-      const initialX = butterfly.x
-      const initialY = butterfly.y
+            // Then simulate effect ending
+            const effectActive = false; // Effect expired
 
-      // Try to move (should be prevented by freeze)
-      if (butterfly.isFlying) {
-        butterfly.moveTowardGatherPoint()
-      }
+            if (!effectActive) {
+                lineDrawer.setLineDrawTime(lineDrawer.originalLineDrawTime);
+                lineDrawer.setLineColor(lineDrawer.originalLineColor);
+            }
 
-      // Position should not have changed due to freeze
-      expect(butterfly.x).toBe(initialX)
-      expect(butterfly.y).toBe(initialY)
-    })
-  })
+            expect(lineDrawer.getLineDrawTime()).toBe(
+                lineDrawer.originalLineDrawTime,
+            );
+            expect(lineDrawer.getLineColor()).toBe(
+                lineDrawer.originalLineColor,
+            );
+        });
+    });
 
-  describe('Effect Timing and Duration', () => {
-    it('should track effect durations correctly', () => {
-      const effectTimers = {
-        freeze: -1,
-        gather: -1,
-        longLoop: -1,
-      }
+    describe("Multiple Effects Integration", () => {
+        it("should handle multiple different effects simultaneously", () => {
+            const freezeFlower = new TestHelpFlower("freeze", 100, 100);
+            const gatherFlower = new TestHelpFlower("gather", 200, 200);
+            const longFlower = new TestHelpFlower("long", 300, 300);
 
-      const FREEZE_DURATION = 3000
-      const GATHER_DURATION = 10000
-      const LONG_LOOP_DURATION = 10000
+            // Mark all as captured
+            freezeFlower.setMockCaptured(true);
+            gatherFlower.setMockCaptured(true);
+            longFlower.setMockCaptured(true);
 
-      // Activate effects
-      effectTimers.freeze = FREEZE_DURATION
-      effectTimers.gather = GATHER_DURATION
-      effectTimers.longLoop = LONG_LOOP_DURATION
+            const allFlowers = [freezeFlower, gatherFlower, longFlower];
+            const capturedFlowers = allFlowers.filter((f) => f.isHit(null));
 
-      // Simulate time passing
-      const deltaTime = 1000 // 1 second
+            // Apply all effects
+            capturedFlowers.forEach((flower) => {
+                switch (flower.getType()) {
+                    case "freeze":
+                        butterflies.forEach((b) => (b.isFlying = false));
+                        break;
+                    case "gather":
+                        butterflies.forEach((b) => {
+                            b.setGatherPoint({ x: 400, y: 400 }, 50);
+                        });
+                        break;
+                    case "long":
+                        lineDrawer.setLineDrawTime(
+                            lineDrawer.originalLineDrawTime + 500,
+                        );
+                        lineDrawer.setLineColor(0x0081af);
+                        break;
+                }
+            });
 
-      Object.keys(effectTimers).forEach(effect => {
-        if (effectTimers[effect as keyof typeof effectTimers] > 0) {
-          effectTimers[effect as keyof typeof effectTimers] -= deltaTime
-        }
-      })
+            // All effects should be active
+            expect(butterflies.every((b) => !b.isFlying)).toBe(true); // Frozen
+            expect(butterflies.every((b) => b.gatherPoint !== null)).toBe(true); // Gathering
+            expect(lineDrawer.getLineDrawTime()).toBe(1700); // Extended time
+            expect(lineDrawer.getLineColor()).toBe(0x0081af); // Changed color
+        });
 
-      expect(effectTimers.freeze).toBe(2000) // 3000 - 1000
-      expect(effectTimers.gather).toBe(9000) // 10000 - 1000
-      expect(effectTimers.longLoop).toBe(9000) // 10000 - 1000
-    })
+        it("should handle same effect type multiple times", () => {
+            const timePlus1 = new TestHelpFlower("time_plus", 100, 100);
+            const timePlus2 = new TestHelpFlower("time_plus", 200, 200);
 
-    it('should deactivate effects when timers expire', () => {
-      let freezeActive = true
-      let freezeTimer = 500 // About to expire
+            timePlus1.setMockCaptured(true);
+            timePlus2.setMockCaptured(true);
 
-      const deltaTime = 1000 // 1 second
+            gameTimer.elapsedTime = 30000; // 30 seconds
 
-      freezeTimer -= deltaTime
+            const capturedFlowers = [timePlus1, timePlus2].filter((f) =>
+                f.isHit(null),
+            );
 
-      if (freezeTimer <= 0) {
-        freezeActive = false
-        freezeTimer = -1
-        
-        // Deactivate freeze effect
-        butterflies.forEach(butterfly => {
-          butterfly.isFlying = true
-        })
-      }
+            // Apply both time plus effects
+            capturedFlowers.forEach((flower) => {
+                if (flower.getType() === "time_plus") {
+                    gameTimer.subtractTime(5000); // Each subtracts 5 seconds
+                }
+            });
 
-      expect(freezeActive).toBe(false)
-      expect(freezeTimer).toBe(-1)
-      expect(butterflies.every(b => b.isFlying)).toBe(true)
-    })
-  })
+            expect(gameTimer.elapsedTime).toBe(20000); // 30 - 5 - 5 = 20 seconds
+        });
 
-  describe('Edge Cases and Error Handling', () => {
-    it('should handle flowers with unknown effect types', () => {
-      const unknownFlower = new TestHelpFlower('unknown', 150, 150)
-      unknownFlower.setMockCaptured(true)
+        it("should handle conflicting effects appropriately", () => {
+            // Test freeze effect overriding gather movement
+            const butterfly = new TestButterfly(300, 300, 0xff0000);
 
-      let errorOccurred = false
+            // Apply gather effect first
+            butterfly.setGatherPoint({ x: 100, y: 100 }, 50);
 
-      try {
-        const capturedFlowers = [unknownFlower].filter(f => f.isHit(null))
-        
-        capturedFlowers.forEach(flower => {
-          switch (flower.getType()) {
-            case 'freeze':
-            case 'gather':
-            case 'time_plus':
-            case 'long':
-              // Known effects
-              break
-            default:
-              // Unknown effect - should handle gracefully
-              console.warn(`Unknown flower type: ${flower.getType()}`)
-          }
-        })
-      } catch (error) {
-        errorOccurred = true
-      }
+            // Then apply freeze effect
+            butterfly.isFlying = false;
 
-      expect(errorOccurred).toBe(false) // Should handle gracefully
-    })
+            const initialX = butterfly.x;
+            const initialY = butterfly.y;
 
-    it('should handle empty butterfly arrays', () => {
-      const emptyButterflies: TestButterfly[] = []
-      const freezeFlower = new TestHelpFlower('freeze', 150, 150)
-      freezeFlower.setMockCaptured(true)
+            // Try to move (should be prevented by freeze)
+            if (butterfly.isFlying) {
+                butterfly.moveTowardGatherPoint();
+            }
 
-      let processedSuccessfully = false
+            // Position should not have changed due to freeze
+            expect(butterfly.x).toBe(initialX);
+            expect(butterfly.y).toBe(initialY);
+        });
+    });
 
-      try {
-        emptyButterflies.forEach(butterfly => {
-          butterfly.isFlying = false
-        })
-        processedSuccessfully = true
-      } catch (error) {
-        processedSuccessfully = false
-      }
+    describe("Effect Timing and Duration", () => {
+        it("should track effect durations correctly", () => {
+            const effectTimers = {
+                freeze: -1,
+                gather: -1,
+                longLoop: -1,
+            };
 
-      expect(processedSuccessfully).toBe(true)
-    })
-  })
-})
+            const FREEZE_DURATION = 3000;
+            const GATHER_DURATION = 10000;
+            const LONG_LOOP_DURATION = 10000;
+
+            // Activate effects
+            effectTimers.freeze = FREEZE_DURATION;
+            effectTimers.gather = GATHER_DURATION;
+            effectTimers.longLoop = LONG_LOOP_DURATION;
+
+            // Simulate time passing
+            const deltaTime = 1000; // 1 second
+
+            Object.keys(effectTimers).forEach((effect) => {
+                if (effectTimers[effect as keyof typeof effectTimers] > 0) {
+                    effectTimers[effect as keyof typeof effectTimers] -=
+                        deltaTime;
+                }
+            });
+
+            expect(effectTimers.freeze).toBe(2000); // 3000 - 1000
+            expect(effectTimers.gather).toBe(9000); // 10000 - 1000
+            expect(effectTimers.longLoop).toBe(9000); // 10000 - 1000
+        });
+
+        it("should deactivate effects when timers expire", () => {
+            let freezeActive = true;
+            let freezeTimer = 500; // About to expire
+
+            const deltaTime = 1000; // 1 second
+
+            freezeTimer -= deltaTime;
+
+            if (freezeTimer <= 0) {
+                freezeActive = false;
+                freezeTimer = -1;
+
+                // Deactivate freeze effect
+                butterflies.forEach((butterfly) => {
+                    butterfly.isFlying = true;
+                });
+            }
+
+            expect(freezeActive).toBe(false);
+            expect(freezeTimer).toBe(-1);
+            expect(butterflies.every((b) => b.isFlying)).toBe(true);
+        });
+    });
+
+    describe("Edge Cases and Error Handling", () => {
+        it("should handle flowers with unknown effect types", () => {
+            const unknownFlower = new TestHelpFlower("unknown", 150, 150);
+            unknownFlower.setMockCaptured(true);
+
+            let errorOccurred = false;
+
+            try {
+                const capturedFlowers = [unknownFlower].filter((f) =>
+                    f.isHit(null),
+                );
+
+                capturedFlowers.forEach((flower) => {
+                    switch (flower.getType()) {
+                        case "freeze":
+                        case "gather":
+                        case "time_plus":
+                        case "long":
+                            // Known effects
+                            break;
+                        default:
+                            // Unknown effect - should handle gracefully
+                            console.warn(
+                                `Unknown flower type: ${flower.getType()}`,
+                            );
+                    }
+                });
+            } catch (error) {
+                errorOccurred = true;
+            }
+
+            expect(errorOccurred).toBe(false); // Should handle gracefully
+        });
+
+        it("should handle empty butterfly arrays", () => {
+            const emptyButterflies: TestButterfly[] = [];
+            const freezeFlower = new TestHelpFlower("freeze", 150, 150);
+            freezeFlower.setMockCaptured(true);
+
+            let processedSuccessfully = false;
+
+            try {
+                emptyButterflies.forEach((butterfly) => {
+                    butterfly.isFlying = false;
+                });
+                processedSuccessfully = true;
+            } catch (error) {
+                processedSuccessfully = false;
+            }
+
+            expect(processedSuccessfully).toBe(true);
+        });
+    });
+});
