@@ -196,7 +196,11 @@ export class ResponsiveCanvas {
         this._canvas.style.height = `${size.height}px`;
 
         // Update PIXI renderer
-        if (this._pixiApp && this._pixiApp.renderer) {
+        if (
+            this._pixiApp &&
+            this._pixiApp.renderer &&
+            typeof this._pixiApp.renderer.resize === "function"
+        ) {
             this._pixiApp.renderer.resize(size.width, size.height);
         }
 
