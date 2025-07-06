@@ -1,8 +1,5 @@
 {
     "extends": "./tsconfig.json",
-    "include": [
-        "src/**/*",
-        "stage.config.json"
-    ],
+    "include": ["src/**/*", "stage.config.json"],
     "exclude": ["node_modules", "tests/**/*", "dist/**/*"]
 }
