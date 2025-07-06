@@ -131,11 +131,38 @@ npm run test:e2e:debug     # Debug E2E tests step-by-step
 
 ## Development Workflow for Claude Code
 
-### MANDATORY: Pre-Commit Testing and Linting
+### Project Development Rules
 
-**IMPORTANT**: Before any commit, Claude Code MUST follow this workflow:
+**MANDATORY RULES**: Claude Code MUST follow these rules when working on this project:
 
-1. **Run Relevant Tests**: Execute tests related to the changed code
+1. **ブランチ運用**: 新しい作業を始める時は、原則ブランチを新しく切って、その上で進めること
+
+    - When starting new work, create a new branch and work on it
+
+2. **TDD実装**: 新しい機能を実装する際はTDDで進める。その際、マッチポンプなテストにならないように注意
+
+    - Implement new features using TDD. Be careful not to create tests that just mirror the implementation
+    - Write tests first when adding new functionality
+    - Update existing tests when modifying behavior
+    - Add integration tests for component interactions
+    - Include E2E tests for user-facing features
+
+3. **Issue/PR管理**: GitHub Issueを進める際は、タスク終了後はPullRequestを作るところまで進める。また、その際PullRequestがマージされた時にIssueも一緒にcloseするように、descriptionに close: #{issue} としておくこと
+
+    - When working on GitHub Issues, create a Pull Request after completing tasks. Include "close: #{issue}" in the PR description to auto-close the issue when merged
+
+4. **多言語対応**: IssueやPullRequestは日本語と英語を併記しておくこと
+    - Write Issues and Pull Requests in both Japanese and English
+
+### MANDATORY: Pre-Commit and Pre-Push Workflow
+
+**IMPORTANT**: Before any commit or push, Claude Code MUST follow this workflow:
+
+#### After Making Changes:
+
+1. **変更後のテスト実行**: 変更を加えた後は必ずテストを実行する
+
+    - After making changes, always run tests
 
     ```bash
     # For component changes
@@ -172,13 +199,18 @@ npm run test:e2e:debug     # Debug E2E tests step-by-step
     git commit -m "Your commit message"
     ```
 
-### Test-Driven Development Guidelines
+#### Before Push:
 
--   **Write tests first** when adding new functionality
--   **Update existing tests** when modifying behavior
--   **Add integration tests** for component interactions
--   **Include E2E tests** for user-facing features
--   **Maintain 100% test pass rate** at all times
+5. **Push前の品質確認**: push前には必ずlintでコードを整えること、testが確実に通ることを確認してからpushすること
+
+    - Before pushing, always run lint to format code and ensure all tests pass
+    - Maintain 100% test pass rate at all times
+
+    ```bash
+    npm run lint:fix
+    npm test  # Must show 100% pass rate
+    git push origin <branch-name>
+    ```
 
 ### When to Run Which Tests
 

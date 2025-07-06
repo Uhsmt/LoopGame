@@ -9,21 +9,27 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2  # リポジトリをチェックアウト
+    - uses: actions/checkout@v4  # リポジトリをチェックアウト
 
     - name: Set up Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: '20.x'  # Node.js のバージョンを指定
+        cache: 'npm'  # npm キャッシュを有効化
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci  # npm ci を使用してより高速でクリーンなインストール
+
+    - name: Run tests
+      run: npm test  # テストを実行してビルド前に問題をチェック
 
     - name: Build
       run: npm run build  # ビルドスクリプトを実行
+      env:
+        NODE_ENV: production
 
     - name: Deploy to gh-pages
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./dist  # dist ディレクトリの内容を gh-pages にデプロイ
