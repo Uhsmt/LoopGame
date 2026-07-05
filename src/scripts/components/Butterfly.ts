@@ -130,13 +130,17 @@ export class Butterfly extends BaseCaptureableObject {
 
     appear(fadeIn: boolean = true): void {
         if (fadeIn) {
-            const fadeIn = () => {
-                if (this.alpha <= 1) {
-                    this.alpha += 0.07;
-                    requestAnimationFrame(fadeIn);
+            const fadeInStep = () => {
+                // 破棄済みならループを止める(リーク防止)
+                if (this.destroyed) {
+                    return;
+                }
+                if (this.alpha < 1) {
+                    this.alpha = Math.min(this.alpha + 0.07, 1);
+                    requestAnimationFrame(fadeInStep);
                 }
             };
-            fadeIn();
+            fadeInStep();
         } else {
             this.alpha = 1;
         }
@@ -202,7 +206,7 @@ export class Butterfly extends BaseCaptureableObject {
             }
 
             // 縦方向
-            if (this.yDiretion < top && this.y <= this.sprite.height + top) {
+            if (this.yDiretion < 0 && this.y <= this.sprite.height + top) {
                 // 上端に到達したら下に向かう
                 this.yFrame = 0;
                 this.yDiretion = Math.abs(this.yDiretion);

@@ -315,4 +315,56 @@ describe("LineDrawer", () => {
             expect((lineDrawer as any).startPoint).toBeNull();
         });
     });
+
+    describe("segment lifetime", () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("should destroy and forget all segments after lineDrawTime", () => {
+            // 交差しない直線を描く(ループ判定を発生させない)
+            const move = (x: number, y: number) =>
+                (lineDrawer as any).onPointerMove(x, y);
+            move(100, 100);
+            move(120, 100);
+            move(140, 100);
+            move(160, 100);
+
+            const segments = [...(lineDrawer as any).segments];
+            expect(segments).toHaveLength(3);
+
+            vi.advanceTimersByTime(lineDrawer.originalLineDrawTime + 100);
+
+            // 寿命切れのセグメントは配列からも消え、Graphicsも破棄される
+            expect((lineDrawer as any).segments).toHaveLength(0);
+            segments.forEach((segment) => {
+                expect(segment.graphics.destroy).toHaveBeenCalled();
+            });
+        });
+
+        it("should not detect a loop against expired (invisible) segments", () => {
+            const move = (x: number, y: number) =>
+                (lineDrawer as any).onPointerMove(x, y);
+            const loopCompleted = vi.fn();
+            lineDrawer.on("loopAreaCompleted", loopCompleted);
+
+            // ストロークA: 縦線
+            move(200, 100);
+            move(200, 200);
+
+            // 寿命切れを待つ(線は画面から消えている)
+            vi.advanceTimersByTime(lineDrawer.originalLineDrawTime + 100);
+
+            // ストロークB: ストロークAの跡地を横切る横線
+            move(150, 150);
+            move(250, 150);
+
+            // 見えない線分と交差してもループ完成にしてはいけない
+            expect(loopCompleted).not.toHaveBeenCalled();
+        });
+    });
 });

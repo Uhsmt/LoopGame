@@ -60,13 +60,16 @@ export class StageInformation {
     private setConfig(level: number): void {
         const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
         let config = configs[level];
+        // 最終ステージを超えたら、超過1レベルごとに必要数+2
+        // (共有configオブジェクトは変更しない)
+        let overflowNeedCount = 0;
         if (config === undefined) {
-            // 最終まで来た場合はとりあえず＋２
-            config = configs[configs.length - 1];
-            config.needCount += 2;
+            const lastLevel = configs.length - 1;
+            config = configs[lastLevel];
+            overflowNeedCount = (level - lastLevel) * 2;
         }
 
-        this.needCount = config.needCount;
+        this.needCount = config.needCount + overflowNeedCount;
         this.stageButterflyCount = config.stageButterflyCount;
         this.butterflySize = config.butterflySize;
         this.isButterflyColorChange = config.isButterflyColorChange;

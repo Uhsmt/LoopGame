@@ -2,7 +2,7 @@ import { GameState } from "./GameState";
 import * as PIXI from "pixi.js";
 
 export class GameStateManager {
-    private currentState!: GameState;
+    private currentState: GameState | null = null;
     public app: PIXI.Application;
 
     constructor(app: PIXI.Application) {
@@ -17,14 +17,17 @@ export class GameStateManager {
             this.currentState.onExit();
         }
         this.currentState = newState;
-        this.currentState.onEnter();
+        // onEnterをasyncで実装している状態もあるため、失敗を握りつぶさない
+        Promise.resolve(this.currentState.onEnter()).catch((error: unknown) => {
+            console.error("Failed to enter state:", error);
+        });
     }
 
     update(delta: number) {
-        this.currentState.update(delta);
+        this.currentState?.update(delta);
     }
 
     render() {
-        this.currentState.render();
+        this.currentState?.render();
     }
 }

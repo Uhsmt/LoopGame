@@ -55,6 +55,13 @@ export class StateBase {
         return new Promise((resolve) => {
             const ticker = new PIXI.Ticker();
             ticker.add(() => {
+                // 対象が破棄されたらtickerを道連れにしない(リーク防止)
+                if (container.destroyed) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                    return;
+                }
                 if (container.alpha > alpha) {
                     container.alpha -= (fadespeed * ticker.deltaMS) / 16;
                     if (container.alpha < alpha) {
@@ -78,6 +85,12 @@ export class StateBase {
         return new Promise((resolve) => {
             const ticker = new PIXI.Ticker();
             ticker.add(() => {
+                if (container.destroyed) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                    return;
+                }
                 if (container.alpha < alpha) {
                     container.alpha += (fadespeed * ticker.deltaMS) / 16;
                     if (container.alpha > alpha) {
@@ -102,6 +115,12 @@ export class StateBase {
         return new Promise((resolve) => {
             const ticker = new PIXI.Ticker();
             ticker.add(() => {
+                if (container.destroyed) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                    return;
+                }
                 if (isUp) {
                     if (container.y > reachPointY) {
                         container.y -= speed * ticker.deltaMS;

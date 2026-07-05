@@ -88,7 +88,17 @@ window.addEventListener("load", async () => {
         touchHandler.init();
     }
 
-    await PIXI.Assets.load(imageSrcs).then(setUp);
+    try {
+        await PIXI.Assets.load(imageSrcs);
+        setUp();
+    } catch (error) {
+        console.error("Failed to load game assets:", error);
+        const loading = document.getElementById("loading");
+        if (loading) {
+            loading.textContent =
+                "Failed to load the game. Please reload the page.";
+        }
+    }
 });
 
 document.addEventListener("DOMContentLoaded", function () {

@@ -138,9 +138,13 @@ export class RuleState extends StateBase {
     // LineDrawerのループエリアが完成したときのハンドラ
     private async handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.backButton.isHit(loopArea)) {
-            void this.selectBackButton();
+            this.selectBackButton().catch((error: unknown) => {
+                console.error("Failed to select back button:", error);
+            });
         } else if (this.nextButton.isHit(loopArea)) {
-            void this.selectNextButton();
+            this.selectNextButton().catch((error: unknown) => {
+                console.error("Failed to select next button:", error);
+            });
         }
         if (this.practiceMode) {
             // loopArea内にいる蝶を取得
