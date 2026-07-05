@@ -3,6 +3,27 @@ import * as Utility from "../utils/Utility";
 import stageConfig from "../utils/stage-config.json";
 import stageDebugConfig from "../utils/stage-config-debug.json";
 
+interface StageConfig {
+    // levelとdebugはJSON上のドキュメント用途で、コードからは参照されない
+    // (実際のステージ番号はsetConfigの引数levelで決まる)
+    level: number;
+    debug?: boolean;
+    butterflyColorNum: number;
+    needCount: number;
+    stageButterflyCount: number;
+    butterflySize: string;
+    isButterflyColorChange: boolean;
+    // 序盤ステージの設定には存在しないキー(存在しない場合は前ステージの値を引き継ぐ)
+    stageTime?: number;
+    multipleButterflyRate?: number;
+    maxMultipleRate?: number;
+    helpObjectNum?: number;
+    hasBonusButterfly?: boolean;
+}
+
+const stageConfigs: StageConfig[] = stageConfig;
+const stageDebugConfigs: StageConfig[] = stageDebugConfig;
+
 export class StageInformation {
     //settings
     level: number = 0;
@@ -37,21 +58,27 @@ export class StageInformation {
     }
 
     private setConfig(level: number): void {
-        let config = DEBUG_MODE ? stageDebugConfig[level] : stageConfig[level];
+        const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
+        let config = configs[level];
         if (config === undefined) {
             // 最終まで来た場合はとりあえず＋２
-            config = DEBUG_MODE
-                ? stageDebugConfig[stageDebugConfig.length - 1]
-                : stageConfig[stageConfig.length - 1];
+            config = configs[configs.length - 1];
             config.needCount += 2;
         }
 
-        Object.keys(config).forEach((key) => {
-            if (key in this) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                (this as any)[key] = config[key as keyof typeof config];
-            }
-        });
+        this.needCount = config.needCount;
+        this.stageButterflyCount = config.stageButterflyCount;
+        this.butterflySize = config.butterflySize;
+        this.isButterflyColorChange = config.isButterflyColorChange;
+        // 設定に無いキーは前ステージの値を引き継ぐ
+        this.stageTime = config.stageTime ?? this.stageTime;
+        this.multipleButterflyRate =
+            config.multipleButterflyRate ?? this.multipleButterflyRate;
+        this.maxMultipleRate = config.maxMultipleRate ?? this.maxMultipleRate;
+        this.helpObjectNum = config.helpObjectNum ?? this.helpObjectNum;
+        this.hasBonusButterfly =
+            config.hasBonusButterfly ?? this.hasBonusButterfly;
+
         this.level = level;
         this.butterflyColors = Utility.chooseAtRandom(
             [...Const.COLOR_LIST],

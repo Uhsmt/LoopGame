@@ -30,6 +30,10 @@ Object.defineProperty(window, "HTMLCanvasElement", {
     })),
 });
 
+// Webpack DefinePlugin globals (see webpack.config.cjs)
+vi.stubGlobal("BASE_URL", "/");
+vi.stubGlobal("DEBUG_MODE", false);
+
 // Global test setup
 beforeEach(() => {
     // Reset all mocks before each test

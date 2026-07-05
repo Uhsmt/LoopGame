@@ -36,7 +36,7 @@ let landscapePrompt: LandscapePrompt | null = null;
     wf.type = "text/javascript";
     wf.async = true;
     const s = document.getElementsByTagName("script")[0];
-    s.parentNode!.insertBefore(wf, s);
+    s.parentNode?.insertBefore(wf, s);
 })();
 /* eslint-enabled */
 window.WebFontConfig = {
@@ -101,21 +101,23 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function setUp() {
-    const appView = app.canvas as HTMLCanvasElement | null;
-    appView!.id = "app";
-    if (appView) {
-        document.getElementById("loading")!.style.display = "none";
+    // app.init()完了後なのでcanvasは必ず存在する
+    app.canvas.id = "app";
 
-        const manager = new GameStateManager(app);
-        const startState = new StartState(manager);
-        manager.setState(startState);
-
-        app.ticker.add(() => {
-            manager.update(app.ticker.deltaMS);
-            manager.render();
-        });
-        // カーソルのスタイルを変更
-        const cursorIcon = `url(\'${BASE_URL}assets/pencil.png\'),auto`;
-        app.renderer.events.cursorStyles.default = cursorIcon;
+    const loading = document.getElementById("loading");
+    if (loading) {
+        loading.style.display = "none";
     }
+
+    const manager = new GameStateManager(app);
+    const startState = new StartState(manager);
+    manager.setState(startState);
+
+    app.ticker.add(() => {
+        manager.update(app.ticker.deltaMS);
+        manager.render();
+    });
+    // カーソルのスタイルを変更
+    const cursorIcon = `url(\'${BASE_URL}assets/pencil.png\'),auto`;
+    app.renderer.events.cursorStyles.default = cursorIcon;
 }
