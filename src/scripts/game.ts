@@ -2,6 +2,10 @@ import * as PIXI from "pixi.js";
 import { imageSrcs } from "./utils/Const";
 import { GameStateManager } from "./scenes/GameStateManager";
 import { StartState } from "./scenes/StartState";
+import { ResponsiveCanvas } from "./utils/ResponsiveCanvas";
+import { TouchHandler } from "./utils/TouchHandler";
+import { LandscapePrompt } from "./utils/LandscapePrompt";
+import { isMobileDevice } from "./utils/MobileDetection";
 
 interface WebFontConfig {
     google: {
@@ -17,15 +21,10 @@ declare global {
 }
 
 const app = new PIXI.Application();
-
-function isMobileDevice(): boolean {
-    const userAgent = navigator.userAgent || navigator.vendor;
-    return /android/i.test(userAgent) || /iPad|iPhone|iPod/.test(userAgent);
-}
-
-function showMobileMessage(): void {
-    alert("Sorry! This game is for PC only. Smartphone ver is coming soon!");
-}
+// Mobile-only helpers; kept referenced so they can be destroyed if teardown is added
+let responsiveCanvas: ResponsiveCanvas | null = null;
+let touchHandler: TouchHandler | null = null;
+let landscapePrompt: LandscapePrompt | null = null;
 
 /* eslint-disable */
 // include the web-font loader script
@@ -54,16 +53,41 @@ window.WebFontConfig = {
 };
 
 window.addEventListener("load", async () => {
-    if (isMobileDevice()) {
-        showMobileMessage();
-        return;
-    }
+    const isMobile = isMobileDevice();
+
+    // Always render at the design resolution; on mobile the canvas is
+    // scaled down visually via CSS by ResponsiveCanvas, so game code can
+    // keep positioning against app.screen (850x650)
     await app.init({
         width: 850,
         height: 650,
         backgroundColor: 0xffd700,
         antialias: true,
     });
+
+    const mainCanvas = document.getElementById("mainCanvas");
+    if (mainCanvas) {
+        mainCanvas.appendChild(app.canvas);
+    }
+
+    if (isMobile) {
+        responsiveCanvas = new ResponsiveCanvas(app, app.canvas, {
+            scaleMode: "fit",
+            targetAspectRatio: 850 / 650,
+            baseWidth: 850,
+            baseHeight: 650,
+        });
+        responsiveCanvas.init();
+
+        landscapePrompt = new LandscapePrompt();
+        landscapePrompt.init();
+
+        touchHandler = new TouchHandler(app.canvas, {
+            enableMouseEmulation: false,
+        });
+        touchHandler.init();
+    }
+
     await PIXI.Assets.load(imageSrcs).then(setUp);
 });
 
@@ -80,7 +104,6 @@ function setUp() {
     const appView = app.canvas as HTMLCanvasElement | null;
     appView!.id = "app";
     if (appView) {
-        document.getElementById("mainCanvas")!.appendChild(appView);
         document.getElementById("loading")!.style.display = "none";
 
         const manager = new GameStateManager(app);

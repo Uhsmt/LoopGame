@@ -6,6 +6,8 @@ export interface CanvasResizeOptions {
     maxHeight: number;
     targetAspectRatio: number; // width/height ratio
     scaleMode: "fit" | "fill" | "stretch";
+    baseWidth: number; // design resolution the stage content is laid out for
+    baseHeight: number;
 }
 
 export interface CanvasResizeResult {
@@ -57,6 +59,8 @@ export class ResponsiveCanvas {
         maxHeight: 1080,
         targetAspectRatio: 16 / 9,
         scaleMode: "fit",
+        baseWidth: 800,
+        baseHeight: 600,
     };
 
     constructor(
@@ -152,12 +156,9 @@ export class ResponsiveCanvas {
         }
 
         // Calculate scale for responsive scaling
-        const baseWidth = 800; // Reference resolution
-        const baseHeight = 600;
-
         if (this.options.scaleMode !== "stretch") {
-            const scaleX = width / baseWidth;
-            const scaleY = height / baseHeight;
+            const scaleX = width / this.options.baseWidth;
+            const scaleY = height / this.options.baseHeight;
             scale = Math.min(scaleX, scaleY);
         }
 
@@ -184,33 +185,17 @@ export class ResponsiveCanvas {
     }
 
     /**
-     * Apply calculated size to canvas and PIXI app
+     * Apply calculated size to the canvas via CSS only.
+     *
+     * The PIXI renderer keeps the game's design resolution (baseWidth x
+     * baseHeight), so game code that positions objects against app.screen
+     * keeps working unchanged. PIXI's event system maps pointer coordinates
+     * through the canvas bounding rect, which compensates for the CSS
+     * scaling automatically. Centering is handled by CSS at the DOM level.
      */
     public applyCanvasSize(size: CanvasResizeResult): void {
-        // Update canvas dimensions
-        this._canvas.width = size.width;
-        this._canvas.height = size.height;
-
-        // Update canvas style for proper display
         this._canvas.style.width = `${size.width}px`;
         this._canvas.style.height = `${size.height}px`;
-
-        // Update PIXI renderer
-        if (
-            this._pixiApp &&
-            this._pixiApp.renderer &&
-            typeof this._pixiApp.renderer.resize === "function"
-        ) {
-            this._pixiApp.renderer.resize(size.width, size.height);
-        }
-
-        // Update PIXI stage scale and position
-        if (this._pixiApp && this._pixiApp.stage) {
-            this._pixiApp.stage.scale.x = size.scale;
-            this._pixiApp.stage.scale.y = size.scale;
-            this._pixiApp.stage.position.x = size.offsetX;
-            this._pixiApp.stage.position.y = size.offsetY;
-        }
     }
 
     /**
