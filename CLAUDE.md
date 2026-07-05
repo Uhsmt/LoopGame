@@ -95,7 +95,12 @@ All game assets are defined in `Const.ts` with BASE_URL prefix for deployment fl
 
 ### Mobile Support
 
-Game detects mobile devices and displays a "PC only" message, as the game is designed for desktop interaction.
+On mobile devices (user-agent detection in `MobileDetection.ts`), the game boots with a responsive canvas instead of the fixed 850x650 desktop size:
+
+-   `ResponsiveCanvas`: fits the canvas to the viewport keeping the 850:650 aspect ratio and scales the PIXI stage accordingly (base resolution 850x650)
+-   `TouchHandler`: handles touch events on the canvas and prevents default scrolling during play
+-   `LandscapePrompt`: recommends landscape orientation
+-   `public/styles/mobile.css`: mobile layout overrides (applied via media query for narrow or short viewports)
 
 ## Testing Framework
 

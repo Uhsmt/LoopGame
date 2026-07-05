@@ -211,7 +211,7 @@ describe("Responsive Canvas", () => {
     });
 
     describe("applyCanvasSize", () => {
-        it("should apply calculated size to canvas", () => {
+        it("should apply calculated size to canvas via CSS only", () => {
             const manager = new ResponsiveCanvas(mockPixiApp, mockCanvas);
             const size = {
                 width: 800,
@@ -223,26 +223,14 @@ describe("Responsive Canvas", () => {
 
             manager.applyCanvasSize(size);
 
-            expect(mockCanvas.width).toBe(800);
-            expect(mockCanvas.height).toBe(600);
+            expect(mockCanvas.style.width).toBe("800px");
+            expect(mockCanvas.style.height).toBe("600px");
         });
 
-        it("should apply size to PIXI renderer", () => {
-            const manager = new ResponsiveCanvas(mockPixiApp, mockCanvas);
-            const size = {
-                width: 800,
-                height: 600,
-                scale: 1,
-                offsetX: 0,
-                offsetY: 0,
-            };
-
-            manager.applyCanvasSize(size);
-
-            expect(mockPixiApp.renderer.resize).toHaveBeenCalledWith(800, 600);
-        });
-
-        it("should apply scale and offset to stage", () => {
+        it("should not touch the PIXI renderer or stage", () => {
+            // The renderer keeps the design resolution so game code that
+            // positions against app.screen keeps working; only the CSS
+            // display size of the canvas changes
             const manager = new ResponsiveCanvas(mockPixiApp, mockCanvas);
             const size = {
                 width: 800,
@@ -254,10 +242,27 @@ describe("Responsive Canvas", () => {
 
             manager.applyCanvasSize(size);
 
-            expect(mockPixiApp.stage.scale.x).toBe(1.5);
-            expect(mockPixiApp.stage.scale.y).toBe(1.5);
-            expect(mockPixiApp.stage.position.x).toBe(100);
-            expect(mockPixiApp.stage.position.y).toBe(50);
+            expect(mockPixiApp.renderer.resize).not.toHaveBeenCalled();
+            expect(mockPixiApp.stage.scale.x).toBe(1);
+            expect(mockPixiApp.stage.scale.y).toBe(1);
+            expect(mockPixiApp.stage.position.x).toBe(0);
+            expect(mockPixiApp.stage.position.y).toBe(0);
+        });
+
+        it("should scale stage content based on configured base resolution", () => {
+            const manager = new ResponsiveCanvas(mockPixiApp, mockCanvas, {
+                baseWidth: 850,
+                baseHeight: 650,
+                targetAspectRatio: 850 / 650,
+                scaleMode: "fit",
+            });
+
+            const size = manager.calculateCanvasSize();
+
+            // Canvas keeps the game aspect ratio, so 850x650 worth of stage
+            // content must exactly fill it: scale * base == canvas size
+            expect(size.scale * 850).toBeCloseTo(size.width, 0);
+            expect(size.scale * 650).toBeCloseTo(size.height, 0);
         });
     });
 

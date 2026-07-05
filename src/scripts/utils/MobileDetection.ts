@@ -10,21 +10,10 @@ export interface MobileDetectionResult {
  * Detect if the current device is a mobile device based on user agent
  */
 export function isMobileDevice(): boolean {
-    const userAgent = navigator.userAgent.toLowerCase();
-
-    const mobileKeywords = [
-        "mobile",
-        "iphone",
-        "ipod",
-        "android",
-        "blackberry",
-        "opera mini",
-        "windows mobile",
-        "windows phone",
-        "iemobile",
-    ];
-
-    return mobileKeywords.some((keyword) => userAgent.includes(keyword));
+    const userAgent = navigator.userAgent;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        userAgent,
+    );
 }
 
 /**
