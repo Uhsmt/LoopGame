@@ -13,7 +13,7 @@ vi.mock("pixi.js", () => ({
 vi.mock("../../src/scripts/utils/Const", () => ({
     FREEZE_EFFECT_TIME_MS: 3000,
     LONG_LOOP_EFFECT_TIME_MS: 10000,
-    GATHHER_EFFECT_TIME_MS: 10000,
+    GATHER_EFFECT_TIME_MS: 10000,
 }));
 
 // Test implementations for power-up system integration

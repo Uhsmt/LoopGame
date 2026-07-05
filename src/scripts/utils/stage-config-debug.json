@@ -17,8 +17,8 @@
         "stageButterflyCount": 15,
         "butterflySize": "random",
         "isButterflyColorChange": true,
-        "maxMultiplateRate": 2,
-        "muptipleButterflyRate": 0.2,
+        "maxMultipleRate": 2,
+        "multipleButterflyRate": 0.2,
         "helpObjectNum": 10,
         "hasBonusButterfly": true
     },
@@ -31,8 +31,8 @@
         "stageButterflyCount": 12,
         "butterflySize": "medium",
         "isButterflyColorChange": true,
-        "maxMultiplateRate": 2,
-        "muptipleButterflyRate": 0.2,
+        "maxMultipleRate": 2,
+        "multipleButterflyRate": 0.2,
         "helpObjectNum": 3
     },
     {
@@ -44,8 +44,8 @@
         "stageButterflyCount": 14,
         "butterflySize": "large",
         "isButterflyColorChange": true,
-        "maxMultiplateRate": 2,
-        "muptipleButterflyRate": 0.2,
+        "maxMultipleRate": 2,
+        "multipleButterflyRate": 0.2,
         "helpObjectNum": 3
     }
 ]
