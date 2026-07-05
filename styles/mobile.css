@@ -1,0 +1,37 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Prevent scrolling */
+}
+
+body {
+    /* Override desktop flexbox centering */
+    display: block;
+    background-color: #000; /* Black background for letterboxing */
+}
+
+#main {
+    /* Override desktop margin */
+    margin-top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#mainCanvas {
+    /* Make the container full screen and center its content (the canvas) */
+    max-width: none;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#caption,
+footer {
+    /* Hide elements not needed on mobile */
+    display: none;
+}
