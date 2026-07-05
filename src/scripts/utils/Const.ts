@@ -27,7 +27,7 @@ export const HELP_FLOWER_TYPES = [
 ] as const;
 
 export const LONG_LOOP_EFFECT_TIME_MS = 5000;
-export const GATHHER_EFFECT_TIME_MS = 10000;
+export const GATHER_EFFECT_TIME_MS = 10000;
 export const FREEZE_EFFECT_TIME_MS = 3000;
 
 export const imageSrcs = [
@@ -46,7 +46,6 @@ export const imageSrcs = [
     { alias: "pencil", src: `${BASE_URL}assets/pencil.png` },
     { alias: "sticky", src: `${BASE_URL}assets/sticky.png` },
     { alias: "sun", src: `${BASE_URL}assets/sun.png` },
-    { alias: "moon", src: `${BASE_URL}assets/moon.png` },
     { alias: "sunset_spritesheet", src: `${BASE_URL}assets/sunset.json` },
     { alias: "sunset", src: `${BASE_URL}assets/sunset.png` },
     { alias: "flower1", src: `${BASE_URL}assets/flower1.png` },

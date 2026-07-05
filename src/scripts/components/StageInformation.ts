@@ -12,8 +12,8 @@ export class StageInformation {
     stageButterflyCount: number = 10;
     butterflySize: string = "random";
     isButterflyColorChange: boolean = false;
-    muptipleButterflyRate: number = 0;
-    maxMultiplateRate: number = 1;
+    multipleButterflyRate: number = 0;
+    maxMultipleRate: number = 1;
     helpObjectNum: number = 0;
     hasBonusButterfly: boolean = false;
 
@@ -102,8 +102,8 @@ export class StageInformation {
             1,
         )[0];
         this.isButterflyColorChange = Utility.random(0, 1) === 1;
-        this.muptipleButterflyRate = Utility.random(15, 20) / 100;
-        this.maxMultiplateRate = 3;
+        this.multipleButterflyRate = Utility.random(15, 20) / 100;
+        this.maxMultipleRate = 3;
         this.helpObjectNum = Utility.random(4, 8);
         this.hasBonusButterfly = false;
     }

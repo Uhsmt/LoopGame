@@ -40,7 +40,7 @@ export class HelpFlower extends BaseCaptureableObject {
                 break;
             case "gather":
                 this.sprite = PIXI.Sprite.from("flower3");
-                this.message = "Ghather!";
+                this.message = "Gather!";
                 this.messageJP = "あつまれ！";
                 this.description = "Gather the butterflies by color";
                 this.descriptionJP = "ちょうちょをあつめる";

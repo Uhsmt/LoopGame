@@ -649,7 +649,7 @@ export class GameplayState extends StateBase {
                     });
                 }
             });
-            this.gatherElapsedTime = Const.GATHHER_EFFECT_TIME_MS;
+            this.gatherElapsedTime = Const.GATHER_EFFECT_TIME_MS;
 
             // デバッグモードの場合は、集まる範囲を表示
             if (DEBUG_MODE) {
@@ -665,7 +665,7 @@ export class GameplayState extends StateBase {
                     this.container.addChildAt(circle, 1);
                     setTimeout(() => {
                         this.container.removeChild(circle);
-                    }, Const.GATHHER_EFFECT_TIME_MS);
+                    }, Const.GATHER_EFFECT_TIME_MS);
                 });
             }
         } else {
@@ -686,10 +686,10 @@ export class GameplayState extends StateBase {
             ? randomColors[1]
             : mainColor;
         const isMultiple = Utility.isTrueRandom(
-            this.stageInfo.muptipleButterflyRate * 100,
+            this.stageInfo.multipleButterflyRate * 100,
         );
         const multiplication = isMultiple
-            ? Utility.random(2, this.stageInfo.maxMultiplateRate)
+            ? Utility.random(2, this.stageInfo.maxMultipleRate)
             : 1;
 
         const newButterfly = new Butterfly(
