@@ -485,9 +485,6 @@ export class GameplayState extends StateBase {
         });
 
         if (butterfliesInLoopArea.length <= 0) {
-            if (flowersInLoopArea.length <= 0) {
-                AudioManager.shared.playSe("se_empty_loop");
-            }
             this.captureFlowers(flowersInLoopArea);
         } else if (butterfliesInLoopArea.length === 1) {
             // １匹だけの時は、colorChange

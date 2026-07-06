@@ -31,10 +31,6 @@ export const GATHER_EFFECT_TIME_MS = 10000;
 export const FREEZE_EFFECT_TIME_MS = 3000;
 
 export const seSrcs = [
-    {
-        alias: "se_empty_loop",
-        src: `${BASE_URL}assets/sounds/se_empty_loop.m4a`,
-    },
     { alias: "se_capture", src: `${BASE_URL}assets/sounds/se_capture.m4a` },
     {
         alias: "se_capture_many",
