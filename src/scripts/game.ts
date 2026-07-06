@@ -135,8 +135,11 @@ function waitForTapToStart(): Promise<void> {
             return;
         }
         gate.classList.remove("hidden");
+        // 注意: タッチでは pointerdown 時点だと「ユーザー操作」として
+        // 認定されず音声を解禁できない(Android Chrome等)。click は
+        // touchend 後に発火し、マウス/タッチ両方で確実に操作認定される
         gate.addEventListener(
-            "pointerdown",
+            "click",
             () => {
                 AudioManager.shared.unlock();
                 gate.classList.add("hidden");
@@ -144,6 +147,12 @@ function waitForTapToStart(): Promise<void> {
             },
             { once: true },
         );
+        // 保険: 解禁に失敗した場合に備えて、以降のクリック/タップでも再試行する
+        const retryUnlock = () => {
+            AudioManager.shared.unlock();
+        };
+        document.addEventListener("click", retryUnlock);
+        document.addEventListener("touchend", retryUnlock);
     });
 }
 
