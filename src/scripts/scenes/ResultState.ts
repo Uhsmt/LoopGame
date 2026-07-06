@@ -10,6 +10,7 @@ import { StateBase } from "./BaseState";
 import { Button } from "../components/Button";
 import { LineDrawer } from "../components/LineDrawer";
 import { AudioManager } from "../utils/AudioManager";
+import { saveResult } from "../utils/ScoreStorage";
 
 export class ResultState extends StateBase {
     private stageInfo: StageInformation;
@@ -18,6 +19,7 @@ export class ResultState extends StateBase {
     private stickySprite: PIXI.Sprite;
     private backToStartButton!: Button;
     private nextMessage!: Message;
+    private recordMessage?: Message;
     private lineDrawer!: LineDrawer;
     private isGotBonusButterfly: boolean = false;
 
@@ -110,6 +112,29 @@ export class ResultState extends StateBase {
             );
         } else {
             // ゲームオーバーの場合はスタート画面に戻る
+
+            // 個人記録(ハイスコア・前回スコア)をlocalStorageに保存し、結果を表示する
+            const { isNewRecord, previousBest } = saveResult(
+                this.stageInfo.totalScore,
+            );
+            if (isNewRecord) {
+                this.recordMessage = new Message("New Record!", 24);
+            } else if (previousBest !== null) {
+                this.recordMessage = new Message(
+                    `Best: ${Utility.formatNumberWithCommas(previousBest)}`,
+                    20,
+                );
+            }
+            if (this.recordMessage) {
+                this.recordMessage.anchor.set(0.5);
+                this.recordMessage.x = this.manager.app.screen.width / 2;
+                this.recordMessage.y =
+                    this.manager.app.screen.height / 2 +
+                    this.manager.app.screen.height * 0.1;
+                this.container.addChild(this.recordMessage);
+                this.recordMessage.show();
+            }
+
             this.lineDrawer = new LineDrawer(this.manager.app);
 
             this.lineDrawer.on(
@@ -274,6 +299,9 @@ export class ResultState extends StateBase {
                 this.fadeOut(this.backToStartButton),
                 this.fadeOut(this.nextMessage),
                 this.fadeOut(this.stickySprite),
+                ...(this.recordMessage
+                    ? [this.fadeOut(this.recordMessage)]
+                    : []),
             ]);
             const startState = new StartState(this.manager);
             this.manager.setState(startState);
