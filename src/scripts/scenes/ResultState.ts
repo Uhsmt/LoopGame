@@ -256,7 +256,7 @@ export class ResultState extends StateBase {
                             rate: Math.pow(2, index / 12),
                         });
                         resolve(null);
-                    }, 400),
+                    }, 500),
                 );
             }
         }
