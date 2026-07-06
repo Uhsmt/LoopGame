@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import * as Const from "./utils/Const";
 import { imageSrcs, seSrcs } from "./utils/Const";
 import { AudioManager } from "./utils/AudioManager";
 import { getMuted, setMuted } from "./utils/SettingsStorage";
@@ -75,10 +76,10 @@ window.addEventListener("load", async () => {
 
     // Always render at the design resolution; on mobile the canvas is
     // scaled down visually via CSS by ResponsiveCanvas, so game code can
-    // keep positioning against app.screen (850x650)
+    // keep positioning against app.screen
     await app.init({
-        width: 850,
-        height: 650,
+        width: Const.GAME_WIDTH,
+        height: Const.GAME_HEIGHT,
         backgroundColor: 0xffd700,
         antialias: true,
     });
@@ -95,9 +96,9 @@ window.addEventListener("load", async () => {
     if (isMobile) {
         responsiveCanvas = new ResponsiveCanvas(app, app.canvas, {
             scaleMode: "fit",
-            targetAspectRatio: 850 / 650,
-            baseWidth: 850,
-            baseHeight: 650,
+            targetAspectRatio: Const.GAME_WIDTH / Const.GAME_HEIGHT,
+            baseWidth: Const.GAME_WIDTH,
+            baseHeight: Const.GAME_HEIGHT,
         });
         responsiveCanvas.init();
 

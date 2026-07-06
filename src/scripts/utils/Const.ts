@@ -26,6 +26,10 @@ export const HELP_FLOWER_TYPES = [
     "long",
 ] as const;
 
+// ゲームの設計解像度(全レイアウトはapp.screen基準なのでここを変えれば全体が追従)
+export const GAME_WIDTH = 1150;
+export const GAME_HEIGHT = 650;
+
 export const LONG_LOOP_EFFECT_TIME_MS = 5000;
 export const GATHER_EFFECT_TIME_MS = 10000;
 export const FREEZE_EFFECT_TIME_MS = 3000;
