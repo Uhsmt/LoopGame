@@ -35,6 +35,11 @@ export const GATHER_EFFECT_TIME_MS = 10000;
 export const FREEZE_EFFECT_TIME_MS = 3000;
 
 export const seSrcs = [
+    { alias: "se_switch", src: `${BASE_URL}assets/sounds/se_switch.m4a` },
+    {
+        alias: "se_applause",
+        src: `${BASE_URL}assets/sounds/se_applause.m4a`,
+    },
     { alias: "se_capture", src: `${BASE_URL}assets/sounds/se_capture.m4a` },
     {
         alias: "se_capture_many",

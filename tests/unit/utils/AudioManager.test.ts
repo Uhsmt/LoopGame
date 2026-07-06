@@ -170,12 +170,10 @@ describe("AudioManager", () => {
             expect(MockAudioElement.instances[1].src).toBe("/bgm/stage.m4a");
         });
 
-        it("should fade in a newly started track", () => {
+        it("should start a new track at full BGM volume (no fade-in)", () => {
             manager.unlock();
             manager.playBgm("/bgm/title.m4a");
             const el = MockAudioElement.instances[0];
-            expect(el.volume).toBe(0);
-            vi.advanceTimersByTime(1000);
             expect(el.volume).toBeCloseTo(manager.bgmVolume, 5);
         });
 

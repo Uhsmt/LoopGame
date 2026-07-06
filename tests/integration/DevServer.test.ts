@@ -42,10 +42,13 @@ describe("Development Server Integration", () => {
                 devServerProcess.stdout?.on("data", (data) => {
                     stdout += data.toString();
 
+                    // 色付き出力(ANSIエスケープ)でも判定できるように除去する
+                    // eslint-disable-next-line no-control-regex
+                    const plain = stdout.replace(/\u001b\[[0-9;]*m/g, "");
                     // Check for successful compilation
                     if (
-                        stdout.includes("webpack") &&
-                        stdout.includes("compiled successfully")
+                        plain.includes("webpack") &&
+                        plain.includes("compiled successfully")
                     ) {
                         compilationComplete = true;
                         clearTimeout(timeout);

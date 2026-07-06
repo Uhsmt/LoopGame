@@ -42,7 +42,7 @@ export class GameplayState extends StateBase {
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
     private gatherDistance: number = 0;
     private fontColor: number = 0x000000;
-    private lastTickSecond: number = -1;
+    private lastTickStep: number = -1;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -266,6 +266,14 @@ export class GameplayState extends StateBase {
     }
 
     async onEnter(): Promise<void> {
+        AudioManager.shared.playBgm(
+            this.stageInfo.bonusFlag
+                ? Const.bgmSrcs.bonus
+                : this.stageInfo.level % 2 === 1
+                  ? Const.bgmSrcs.stage1
+                  : Const.bgmSrcs.stage2,
+        );
+
         const pauseButton = document.getElementById("pauseButton");
         if (pauseButton) {
             pauseButton.classList.remove("hidden");
@@ -279,14 +287,6 @@ export class GameplayState extends StateBase {
         await this.wait(1000);
         this.container.removeChild(this.startMessage);
         this.isRunning = true;
-        // ステージ情報の表示が終わり、プレイが始まるタイミングでBGM開始
-        AudioManager.shared.playBgm(
-            this.stageInfo.bonusFlag
-                ? Const.bgmSrcs.bonus
-                : this.stageInfo.level % 2 === 1
-                  ? Const.bgmSrcs.stage1
-                  : Const.bgmSrcs.stage2,
-        );
         this.butterflies.forEach((butterfly) => {
             butterfly.isFlapping = true;
             butterfly.isFlying = true;
@@ -374,16 +374,19 @@ export class GameplayState extends StateBase {
         // 残り10秒を切ったらblinkさせ、残り5秒はカウントダウン音を鳴らす
         if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
             this.sun.blink();
-            const remainSec = Math.ceil(
-                (this.gameTimer * 1000 - this.elapsedTime) / 1000,
+            const remainHalfStep = Math.ceil(
+                (this.gameTimer * 1000 - this.elapsedTime) / 500,
             );
+            // 残り10秒間、0.5秒ごとにチク(高)・タク(低)を交互に鳴らす
             if (
-                remainSec <= 5 &&
-                remainSec >= 1 &&
-                remainSec !== this.lastTickSecond
+                remainHalfStep <= 20 &&
+                remainHalfStep >= 1 &&
+                remainHalfStep !== this.lastTickStep
             ) {
-                this.lastTickSecond = remainSec;
-                AudioManager.shared.playSe("se_tick");
+                this.lastTickStep = remainHalfStep;
+                AudioManager.shared.playSe("se_tick", {
+                    rate: remainHalfStep % 2 === 0 ? 1.5 : 1.15,
+                });
             }
         }
 
@@ -449,7 +452,6 @@ export class GameplayState extends StateBase {
     private endGame(): void {
         if (this.isFinish) return;
 
-        AudioManager.shared.stopBgm(3000);
         this.isRunning = false;
         this.isFinish = true;
         this.stageInfo.stagePoint = this.stagePoint;
@@ -471,6 +473,11 @@ export class GameplayState extends StateBase {
         const isGotBonusButterfly = this.caputuredButterflies.some(
             (butterfly) => butterfly instanceof SpecialButterfly,
         );
+
+        // リザルト表示(3秒後)の1秒前からBGMをフェードアウトし始める
+        setTimeout(() => {
+            AudioManager.shared.stopBgm(2500);
+        }, 2000);
 
         setTimeout(() => {
             this.manager.setState(
@@ -516,11 +523,13 @@ export class GameplayState extends StateBase {
         });
 
         if (butterfliesInLoopArea.length <= 0) {
+            // 空ループは音を出さない(線を引くだけで頻発してうるさいため)
             this.captureFlowers(flowersInLoopArea);
         } else if (butterfliesInLoopArea.length === 1) {
             // １匹だけの時は、colorChange
             const butterfly = butterfliesInLoopArea[0];
             butterfly.switchColor();
+            AudioManager.shared.playSe("se_switch");
             this.captureFlowers(flowersInLoopArea);
             if (this.gatherElapsedTime >= 0) {
                 const point = this.gatherPointMap.get(butterfly.color);
@@ -609,6 +618,10 @@ export class GameplayState extends StateBase {
     }
 
     private captureFlowers(flowers: HelpFlower[]): void {
+        if (flowers.length > 0) {
+            // アイテムは単体でも取得できるので、取得音はここで鳴らす
+            AudioManager.shared.playSe("se_capture");
+        }
         flowers.forEach((flower) => {
             this.flowers = this.flowers.filter((f) => f !== flower);
             this.showHelpMessage(flower.message);
