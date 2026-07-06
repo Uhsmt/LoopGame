@@ -28,12 +28,12 @@ body {
 #mainCanvas,
 details {
     width: 100%;
-    max-width: 850px; /* 必要に応じて調整 */
+    max-width: 1150px; /* ゲームの設計解像度(Const.GAME_WIDTH)に合わせる */
     text-align: center;
 }
 
 #loading {
-    width: 850px;
+    width: 1150px;
     height: 650px;
     display: flex;
     flex-direction: column;
