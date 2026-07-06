@@ -14,6 +14,7 @@ interface WebFontConfig {
         families: string[];
     };
     active(): void;
+    inactive(): void;
 }
 
 declare global {
@@ -41,18 +42,33 @@ let landscapePrompt: LandscapePrompt | null = null;
     s.parentNode?.insertBefore(wf, s);
 })();
 /* eslint-enabled */
-window.WebFontConfig = {
-    google: {
-        families: [
-            "BIZ+UDGothic:wght@400;700",
-            "Rajdhani:wght@700",
-            "Palette+Mosaic",
-        ],
-    },
-    active() {
-        console.log("font loaded");
-    },
-};
+// フォント読み込み完了を待つPromise。読み込み失敗やCDN不達で
+// ハングしないよう、inactiveと5秒タイムアウトでも解決する (#43)
+const fontsReady = new Promise<void>((resolve) => {
+    const timeout = setTimeout(() => {
+        console.warn("Font loading timed out; using fallback fonts");
+        resolve();
+    }, 5000);
+    window.WebFontConfig = {
+        google: {
+            families: [
+                "BIZ+UDGothic:wght@400;700",
+                "Rajdhani:wght@700",
+                "Palette+Mosaic",
+            ],
+        },
+        active() {
+            clearTimeout(timeout);
+            console.log("font loaded");
+            resolve();
+        },
+        inactive() {
+            clearTimeout(timeout);
+            console.warn("Failed to load web fonts; using fallback fonts");
+            resolve();
+        },
+    };
+});
 
 window.addEventListener("load", async () => {
     const isMobile = isMobileDevice();
@@ -95,7 +111,9 @@ window.addEventListener("load", async () => {
     }
 
     try {
-        await PIXI.Assets.load(imageSrcs);
+        // フォントが届く前にPIXI.Textを生成すると文字が描画されないため、
+        // アセットとWebフォントの両方が揃ってから起動する (#43)
+        await Promise.all([PIXI.Assets.load(imageSrcs), fontsReady]);
         // タイトル画面を裏で起動してからゲートを被せる(操作はゲートが遮る)
         setUp();
         await waitForTapToStart();
