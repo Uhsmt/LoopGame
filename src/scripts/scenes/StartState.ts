@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
+import { AudioManager } from "../utils/AudioManager";
 import { LineDrawer } from "../components/LineDrawer";
 import { GameplayState } from "./GameplayState";
 import { RuleState } from "./RuleState";
@@ -76,6 +77,8 @@ export class StartState extends StateBase {
             console.error("ManagerまたはManagerのappが定義されていません");
             return;
         }
+        AudioManager.shared.playBgm(Const.bgmSrcs.title);
+
         //LineDrawerのイベントハンドラを設定
         this.lineDrawer.on(
             "loopAreaCompleted",
@@ -175,11 +178,13 @@ export class StartState extends StateBase {
     // LineDrawerのループエリアが完成したときのハンドラ
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.ruleButton.isHit(loopArea)) {
+            AudioManager.shared.playSe("se_select");
             this.ruleButton.selected();
             this.onRuleSelected().catch((error: unknown) => {
                 console.error("Failed to open rules:", error);
             });
         } else if (this.startButton.isHit(loopArea)) {
+            AudioManager.shared.playSe("se_select");
             this.startButton.selected();
             this.onStartGameSelected().catch((error: unknown) => {
                 console.error("Failed to start game:", error);

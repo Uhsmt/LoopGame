@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
-import { imageSrcs } from "./utils/Const";
+import { imageSrcs, seSrcs } from "./utils/Const";
+import { AudioManager } from "./utils/AudioManager";
 import { GameStateManager } from "./scenes/GameStateManager";
 import { StartState } from "./scenes/StartState";
 import { ResponsiveCanvas } from "./utils/ResponsiveCanvas";
@@ -64,6 +65,17 @@ window.addEventListener("load", async () => {
         backgroundColor: 0xffd700,
         antialias: true,
     });
+
+    // ブラウザの自動再生制限: 最初の操作でオーディオを解禁する
+    window.addEventListener(
+        "pointerdown",
+        () => {
+            AudioManager.shared.unlock();
+        },
+        { once: true },
+    );
+    // SEの読み込みは起動をブロックしない
+    void AudioManager.shared.loadSe(seSrcs);
 
     const mainCanvas = document.getElementById("mainCanvas");
     if (mainCanvas) {

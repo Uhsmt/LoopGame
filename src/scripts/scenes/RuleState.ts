@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
+import { AudioManager } from "../utils/AudioManager";
 import { LineDrawer } from "../components/LineDrawer";
 import { Sun } from "../components/Sun";
 import { Butterfly } from "../components/Butterfly";
@@ -82,6 +83,7 @@ export class RuleState extends StateBase {
     }
 
     async onEnter(): Promise<void> {
+        AudioManager.shared.playBgm(Const.bgmSrcs.title);
         this.lineDrawer.on(
             "loopAreaCompleted",
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -138,10 +140,12 @@ export class RuleState extends StateBase {
     // LineDrawerのループエリアが完成したときのハンドラ
     private async handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.backButton.isHit(loopArea)) {
+            AudioManager.shared.playSe("se_select");
             this.selectBackButton().catch((error: unknown) => {
                 console.error("Failed to select back button:", error);
             });
         } else if (this.nextButton.isHit(loopArea)) {
+            AudioManager.shared.playSe("se_select");
             this.selectNextButton().catch((error: unknown) => {
                 console.error("Failed to select next button:", error);
             });
