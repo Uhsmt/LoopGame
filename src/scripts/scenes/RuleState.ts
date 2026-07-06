@@ -17,8 +17,7 @@ export class RuleState extends StateBase {
     private backButton: Button;
     private nextButton: Button;
     private page: number = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private pageInfos: any[] = [];
+    private pageInfos: PIXI.Container[] = [];
     private defaultTextStyle: PIXI.TextStyleOptions = {
         fontFamily: Const.FONT_ENGLISH,
         fontSize: 22,
@@ -852,7 +851,6 @@ export class RuleState extends StateBase {
         this.helpFlowers = [];
         await Promise.all(
             this.pageInfos.map((pageInfo) => {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 return this.fadeOut(pageInfo, 0.05);
             }),
         );
