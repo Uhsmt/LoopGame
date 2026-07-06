@@ -59,26 +59,67 @@ describe("StageInformation", () => {
             expect(si.hasBonusButterfly).toBe(false);
         });
 
-        it("should reuse the last config with needCount increased by 2 beyond the final level", () => {
+        it("should keep escalating needCount by 2 beyond the final level", () => {
             const si = new StageInformation();
-            while (si.level < 10) {
+            while (si.level < 11) {
                 si.next();
             }
-            const lastStageValues = {
-                stageButterflyCount: si.stageButterflyCount,
-                butterflySize: si.butterflySize,
-            };
-
-            si.next(); // level 11: beyond the last config entry
             const overflowNeedCount = si.needCount;
-            expect(si.level).toBe(11);
-            expect(si.stageButterflyCount).toBe(
-                lastStageValues.stageButterflyCount,
-            );
-            expect(si.butterflySize).toBe(lastStageValues.butterflySize);
 
             si.next(); // level 12: +2 every overflow level
             expect(si.needCount).toBe(overflowNeedCount + 2);
+        });
+
+        it("should generate varied but valid stage setups beyond the final level", () => {
+            const si = new StageInformation();
+            const setups: string[] = [];
+            while (si.level < 30) {
+                si.next();
+                if (si.level > 10) {
+                    expect(si.butterflyColors.length).toBeGreaterThanOrEqual(2);
+                    expect(si.butterflyColors.length).toBeLessThanOrEqual(5);
+                    expect(si.stageButterflyCount).toBeGreaterThanOrEqual(8);
+                    expect(si.stageButterflyCount).toBeLessThanOrEqual(20);
+                    expect(si.multipleButterflyRate).toBeGreaterThanOrEqual(
+                        0.05,
+                    );
+                    expect(si.multipleButterflyRate).toBeLessThanOrEqual(0.3);
+                    expect(si.maxMultipleRate).toBeGreaterThanOrEqual(2);
+                    expect(si.maxMultipleRate).toBeLessThanOrEqual(3);
+                    expect(si.helpObjectNum).toBeGreaterThanOrEqual(2);
+                    expect(si.helpObjectNum).toBeLessThanOrEqual(6);
+                    setups.push(
+                        [
+                            si.butterflyColors.length,
+                            si.stageButterflyCount,
+                            si.butterflySize,
+                            si.isButterflyColorChange,
+                        ].join("/"),
+                    );
+                }
+            }
+            // 全レベルが同じ構成にならないこと(散らばり)
+            expect(new Set(setups).size).toBeGreaterThanOrEqual(4);
+        });
+
+        it("should generate the same setup for the same level every run", () => {
+            const first = new StageInformation();
+            while (first.level < 13) {
+                first.next();
+            }
+            const second = new StageInformation();
+            while (second.level < 13) {
+                second.next();
+            }
+            expect(second.stageButterflyCount).toBe(first.stageButterflyCount);
+            expect(second.butterflySize).toBe(first.butterflySize);
+            expect(second.isButterflyColorChange).toBe(
+                first.isButterflyColorChange,
+            );
+            expect(second.multipleButterflyRate).toBe(
+                first.multipleButterflyRate,
+            );
+            expect(second.needCount).toBe(first.needCount);
         });
 
         it("should not mutate the shared config across game runs", () => {

@@ -118,6 +118,7 @@ export class ResultState extends StateBase {
                 this.stageInfo.totalScore,
             );
             if (isNewRecord) {
+                AudioManager.shared.playSe("se_applause");
                 this.recordMessage = new Message("New Record!", 24);
             } else if (previousBest !== null) {
                 this.recordMessage = new Message(
@@ -281,7 +282,7 @@ export class ResultState extends StateBase {
                             rate: Math.pow(2, index / 12),
                         });
                         resolve(null);
-                    }, 500),
+                    }, 450),
                 );
             }
         }
