@@ -176,10 +176,14 @@ export class StartState extends StateBase {
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.ruleButton.isHit(loopArea)) {
             this.ruleButton.selected();
-            void this.onRuleSelected();
+            this.onRuleSelected().catch((error: unknown) => {
+                console.error("Failed to open rules:", error);
+            });
         } else if (this.startButton.isHit(loopArea)) {
             this.startButton.selected();
-            void this.onStartGameSelected();
+            this.onStartGameSelected().catch((error: unknown) => {
+                console.error("Failed to start game:", error);
+            });
         }
     }
 

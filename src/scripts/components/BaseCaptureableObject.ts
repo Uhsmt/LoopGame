@@ -3,6 +3,7 @@ import * as PIXI from "pixi.js";
 export abstract class BaseCaptureableObject extends PIXI.Container {
     protected hitAreaSize: number = 10;
     protected hitRate: number = 0.6;
+    private isDeleting: boolean = false;
 
     constructor() {
         super();
@@ -54,14 +55,24 @@ export abstract class BaseCaptureableObject extends PIXI.Container {
     }
 
     delete(speed: number = 0.02): void {
+        // 二重呼び出しでrAFループが多重に走らないようにする
+        if (this.isDeleting) {
+            return;
+        }
+        this.isDeleting = true;
+
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
+            // 外部で既に破棄されていたらループを止める(リーク防止)
+            if (this.destroyed) {
+                return;
+            }
             if (this.alpha > 0) {
                 this.alpha -= speed;
                 requestAnimationFrame(fadeOut);
             } else {
-                this.destroy();
                 this.removeFromParent();
+                this.destroy();
             }
         };
         fadeOut();

@@ -80,6 +80,22 @@ describe("StageInformation", () => {
             si.next(); // level 12: +2 every overflow level
             expect(si.needCount).toBe(overflowNeedCount + 2);
         });
+
+        it("should not mutate the shared config across game runs", () => {
+            // 1周目でレベル上限を超えても、2周目(新インスタンス)の同レベルの
+            // 必要数が変わってはいけない
+            const firstRun = new StageInformation();
+            while (firstRun.level < 11) {
+                firstRun.next();
+            }
+            const firstRunNeedCount = firstRun.needCount;
+
+            const secondRun = new StageInformation();
+            while (secondRun.level < 11) {
+                secondRun.next();
+            }
+            expect(secondRun.needCount).toBe(firstRunNeedCount);
+        });
     });
 
     describe("calcScore", () => {

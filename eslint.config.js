@@ -6,7 +6,7 @@ import tsEsLintParser from "@typescript-eslint/parser";
 
 export default [
     // 無視するファイルを指定（従来の .eslintignore に相当）
-    { ignores: ["dist", "**/*.cjs"] },
+    { ignores: ["dist", "**/*.cjs", ".claude/worktrees"] },
     // eslint:recommendedに相当
     js.configs.recommended,
     // eslint-config-prettierはrulesを持つオブジェクトなので、ここに並べられる

@@ -83,16 +83,18 @@ export class LineDrawer extends EventEmitter {
             };
             this.segments.push(segmentObj);
 
-            // セグメントを削除
+            // 寿命が切れたら自分と自分より前のセグメントをすべて破棄する
+            // (lineDrawTime変更対策 + 見えない線分がループ判定に残らないように)
             setTimeout(() => {
-                this.app.stage.removeChild(segment);
-                // 自分より前のセグメントをすべてdestroyする(lineDrawTime変更対策)
                 const index = this.segments.indexOf(segmentObj);
-                for (let i = 0; i < index; i++) {
-                    this.app.stage.removeChild(this.segments[i].graphics);
-                    this.segments[i].graphics.destroy();
-                    this.segments.shift();
+                if (index === -1) {
+                    // clearAllSegmentsで既に破棄済み
+                    return;
                 }
+                this.segments.splice(0, index + 1).forEach((expired) => {
+                    this.app.stage.removeChild(expired.graphics);
+                    expired.graphics.destroy();
+                });
             }, this.lineDrawTime);
 
             // ループ完成のチェック
@@ -182,6 +184,10 @@ export class LineDrawer extends EventEmitter {
 
         // アニメーションで透明度を徐々に減少させる
         const fadeOut = () => {
+            // 状態遷移などで既に破棄されていたらループを止める(リーク防止)
+            if (fillGraphics.destroyed) {
+                return;
+            }
             if (fillGraphics.alpha > 0) {
                 fillGraphics.alpha -= 0.01;
                 requestAnimationFrame(fadeOut);
