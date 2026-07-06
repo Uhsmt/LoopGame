@@ -129,6 +129,13 @@ describe("AudioManager", () => {
     });
 
     describe("playBgm", () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
         it("should defer BGM until unlock, then start it looping", () => {
             manager.playBgm("/bgm/title.m4a");
             expect(MockAudioElement.instances).toHaveLength(0);
@@ -148,19 +155,36 @@ describe("AudioManager", () => {
             expect(MockAudioElement.instances).toHaveLength(1);
         });
 
-        it("should switch tracks by stopping the previous element", () => {
+        it("should switch tracks by fading out the previous element", () => {
             manager.unlock();
             manager.playBgm("/bgm/title.m4a");
+            vi.advanceTimersByTime(1000);
             manager.playBgm("/bgm/stage.m4a");
             expect(MockAudioElement.instances).toHaveLength(2);
-            expect(MockAudioElement.instances[0].pause).toHaveBeenCalled();
+            // フェード中はまだ止まっていない
+            const prev = MockAudioElement.instances[0];
+            expect(prev.pause).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(1000);
+            expect(prev.pause).toHaveBeenCalled();
+            expect(prev.volume).toBe(0);
             expect(MockAudioElement.instances[1].src).toBe("/bgm/stage.m4a");
         });
 
-        it("should stop BGM and allow the same track to start again later", () => {
+        it("should fade in a newly started track", () => {
             manager.unlock();
             manager.playBgm("/bgm/title.m4a");
+            const el = MockAudioElement.instances[0];
+            expect(el.volume).toBe(0);
+            vi.advanceTimersByTime(1000);
+            expect(el.volume).toBeCloseTo(manager.bgmVolume, 5);
+        });
+
+        it("should stop BGM (with fade) and allow the same track again", () => {
+            manager.unlock();
+            manager.playBgm("/bgm/title.m4a");
+            vi.advanceTimersByTime(1000);
             manager.stopBgm();
+            vi.advanceTimersByTime(1000);
             expect(MockAudioElement.instances[0].pause).toHaveBeenCalled();
 
             manager.playBgm("/bgm/title.m4a");

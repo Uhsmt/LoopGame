@@ -250,13 +250,6 @@ export class GameplayState extends StateBase {
     }
 
     async onEnter(): Promise<void> {
-        AudioManager.shared.playBgm(
-            this.stageInfo.bonusFlag
-                ? Const.bgmSrcs.bonus
-                : this.stageInfo.level % 2 === 1
-                  ? Const.bgmSrcs.stage1
-                  : Const.bgmSrcs.stage2,
-        );
         this.isRunning = false;
         this.startMessage.alpha = 1;
         this.scoreMessage.alpha = 1;
@@ -264,6 +257,14 @@ export class GameplayState extends StateBase {
         await this.wait(1000);
         this.container.removeChild(this.startMessage);
         this.isRunning = true;
+        // ステージ情報の表示が終わり、プレイが始まるタイミングでBGM開始
+        AudioManager.shared.playBgm(
+            this.stageInfo.bonusFlag
+                ? Const.bgmSrcs.bonus
+                : this.stageInfo.level % 2 === 1
+                  ? Const.bgmSrcs.stage1
+                  : Const.bgmSrcs.stage2,
+        );
         this.butterflies.forEach((butterfly) => {
             butterfly.isFlapping = true;
             butterfly.isFlying = true;
@@ -417,6 +418,7 @@ export class GameplayState extends StateBase {
     private endGame(): void {
         if (this.isFinish) return;
 
+        AudioManager.shared.stopBgm();
         this.isRunning = false;
         this.isFinish = true;
         this.stageInfo.stagePoint = this.stagePoint;

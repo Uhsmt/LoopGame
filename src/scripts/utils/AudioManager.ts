@@ -136,8 +136,9 @@ export class AudioManager {
         this.stopBgmElement();
         const el = new Audio(src);
         el.loop = true;
-        el.volume = this.bgmVolume;
+        el.volume = 0;
         this.bgmElement = el;
+        this.fadeElement(el, this.bgmVolume, 800);
         el.play().catch(() => {
             // 自動再生がブロックされた場合は次のunlockで再試行する
             this.pendingBgmSrc = src;
@@ -147,8 +148,34 @@ export class AudioManager {
 
     private stopBgmElement(): void {
         if (this.bgmElement) {
-            this.bgmElement.pause();
+            const el = this.bgmElement;
             this.bgmElement = null;
+            // ブチッと切れないようにフェードアウトしてから停止する
+            this.fadeElement(el, 0, 600, () => {
+                el.pause();
+            });
         }
+    }
+
+    /** HTMLAudioElementの音量を一定時間かけて目標値まで変化させる */
+    private fadeElement(
+        el: HTMLAudioElement,
+        to: number,
+        durationMs: number,
+        onDone?: () => void,
+    ): void {
+        const from = el.volume;
+        const stepMs = 50;
+        const steps = Math.max(1, Math.round(durationMs / stepMs));
+        let step = 0;
+        const timer = setInterval(() => {
+            step++;
+            const t = step / steps;
+            el.volume = Math.min(1, Math.max(0, from + (to - from) * t));
+            if (step >= steps) {
+                clearInterval(timer);
+                onDone?.();
+            }
+        }, stepMs);
     }
 }
