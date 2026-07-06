@@ -516,11 +516,16 @@ export class GameplayState extends StateBase {
         });
 
         if (butterfliesInLoopArea.length <= 0) {
+            if (flowersInLoopArea.length <= 0) {
+                // 空ループ
+                AudioManager.shared.playSe("se_switch");
+            }
             this.captureFlowers(flowersInLoopArea);
         } else if (butterfliesInLoopArea.length === 1) {
             // １匹だけの時は、colorChange
             const butterfly = butterfliesInLoopArea[0];
             butterfly.switchColor();
+            AudioManager.shared.playSe("se_switch");
             this.captureFlowers(flowersInLoopArea);
             if (this.gatherElapsedTime >= 0) {
                 const point = this.gatherPointMap.get(butterfly.color);
@@ -609,6 +614,10 @@ export class GameplayState extends StateBase {
     }
 
     private captureFlowers(flowers: HelpFlower[]): void {
+        if (flowers.length > 0) {
+            // アイテムは単体でも取得できるので、取得音はここで鳴らす
+            AudioManager.shared.playSe("se_capture");
+        }
         flowers.forEach((flower) => {
             this.flowers = this.flowers.filter((f) => f !== flower);
             this.showHelpMessage(flower.message);

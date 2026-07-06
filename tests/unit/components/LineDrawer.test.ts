@@ -70,7 +70,7 @@ describe("LineDrawer", () => {
     describe("Constructor", () => {
         it("should initialize with default color", () => {
             expect(lineDrawer.originalLineColor).toBe(0xffffff);
-            expect(lineDrawer.originalLineDrawTime).toBe(1200);
+            expect(lineDrawer.originalLineDrawTime).toBe(1500);
         });
 
         it("should initialize with custom color", () => {

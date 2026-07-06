@@ -163,11 +163,17 @@ export class RuleState extends StateBase {
             if (butterfliesInLoopArea.length === 1) {
                 const butterfly = butterfliesInLoopArea[0];
                 butterfly.switchColor();
+                AudioManager.shared.playSe("se_switch");
                 if (butterfly.color !== butterfly.getSubColor()) {
                     message = "Switch Color";
                 }
             } else if (butterfliesInLoopArea.length > 1) {
                 if (this.isSuccessLoop(butterfliesInLoopArea)) {
+                    AudioManager.shared.playSe(
+                        butterfliesInLoopArea.length >= 10
+                            ? "se_capture_many"
+                            : "se_capture",
+                    );
                     message = `Get ${butterfliesInLoopArea.length} Butterflies!`;
                     butterfliesInLoopArea.forEach((butterfly) => {
                         butterfly.delete();
@@ -178,6 +184,7 @@ export class RuleState extends StateBase {
                         }
                     });
                 } else {
+                    AudioManager.shared.playSe("se_bad_loop");
                     message = "Bad Loop!";
                 }
             }
@@ -344,12 +351,13 @@ export class RuleState extends StateBase {
                 y: this.manager.app.screen.height,
             });
 
+            // ノート基準で配置(画面幅基準だとワイド画面で本からはみ出す)
             if (i <= 1) {
                 text1_butterfly.x =
-                    this.manager.app.screen.width / 6 + Const.MARGIN * 2;
+                    this.noteLeftX() + this.notebookSprite.width * 0.26;
             } else {
                 text1_butterfly.x =
-                    (this.manager.app.screen.width * 2) / 6 + Const.MARGIN * 2;
+                    this.noteLeftX() + this.notebookSprite.width * 0.44;
             }
 
             if (i % 2 === 0) {
@@ -566,7 +574,7 @@ export class RuleState extends StateBase {
             );
             text1_butterfly.x =
                 this.noteLeftX() +
-                this.manager.app.screen.width * (0.12 + 0.12 * i);
+                this.notebookSprite.width * (0.135 + 0.135 * i);
             text1_butterfly.y =
                 text1jp.y +
                 text1jp.height * 1.1 +
@@ -606,7 +614,7 @@ export class RuleState extends StateBase {
             );
             text2_butterfly.x =
                 this.noteLeftX() +
-                this.manager.app.screen.width * (0.12 + 0.1 * i);
+                this.notebookSprite.width * (0.135 + 0.113 * i);
             text2_butterfly.y =
                 text2jp.y +
                 text2jp.height * 1.1 +
@@ -643,7 +651,7 @@ export class RuleState extends StateBase {
                 y: this.manager.app.screen.height,
             },
         );
-        text3_butterfly.x = this.manager.app.screen.width * 0.75;
+        text3_butterfly.x = this.noteLeftX() + this.notebookSprite.width * 0.78;
         text3_butterfly.y =
             text3jp.y +
             text3jp.height * 1.1 +
