@@ -351,28 +351,20 @@ export class RuleState extends StateBase {
                 y: this.manager.app.screen.height,
             });
 
-            // ノート基準で配置(画面幅基準だとワイド画面で本からはみ出す)
-            if (i <= 1) {
-                text1_butterfly.x =
-                    this.noteLeftX() + this.notebookSprite.width * 0.26;
-            } else {
-                text1_butterfly.x =
-                    this.noteLeftX() + this.notebookSprite.width * 0.44;
-            }
-
-            if (i % 2 === 0) {
-                text1_butterfly.y =
-                    text1jp.y +
-                    text1jp.height +
-                    Const.MARGIN +
-                    text1_butterfly.height * 1.5;
-            } else {
-                text1_butterfly.y =
-                    text1jp.y +
-                    text1jp.height +
-                    Const.MARGIN +
-                    text1_butterfly.height * 3.5;
-            }
+            // 左半ページの中央(width*0.25)を中心に2列で配置し、
+            // 鉛筆デモの円に4匹とも収まるようにする。
+            // Butterflyの当たり判定中心は見た目より(width/2, height/2)ぶん
+            // 左上にあるため、その分を足して補正する
+            text1_butterfly.x =
+                this.noteLeftX() +
+                this.notebookSprite.width * (i <= 1 ? 0.19 : 0.31) +
+                text1_butterfly.width / 2;
+            const demoCenterY =
+                this.manager.app.screen.height / 2 +
+                Const.MARGIN +
+                text1_butterfly.height / 2;
+            text1_butterfly.y =
+                i % 2 === 0 ? demoCenterY - 40 : demoCenterY + 40;
             text1_butterfly.appear(false);
             text1_butterfly.isFlapping = true;
             this.butterflies.push(text1_butterfly);
@@ -420,8 +412,11 @@ export class RuleState extends StateBase {
         sun.blink();
         this.pageInfos.push(sun);
 
+        // 鉛筆の円デモは左半ページ中央を中心に描く(=デモ蝶を囲む)
+        const pencilCircleCenterX =
+            this.noteLeftX() + this.notebookSprite.width * 0.25;
         const pencilIcon = PIXI.Sprite.from("pencil");
-        pencilIcon.x = title.x;
+        pencilIcon.x = pencilCircleCenterX + 80;
         pencilIcon.y = this.manager.app.screen.height / 2 + Const.MARGIN;
         this.pageInfos.push(pencilIcon);
 
@@ -448,7 +443,7 @@ export class RuleState extends StateBase {
 
             if (isAnimating) {
                 angle += speed * delta;
-                const newX = -radiusX + title.x + radiusX * Math.cos(angle);
+                const newX = pencilCircleCenterX + radiusX * Math.cos(angle);
                 const newY =
                     this.manager.app.screen.height / 2 +
                     Const.MARGIN +
@@ -475,7 +470,7 @@ export class RuleState extends StateBase {
 
                     const loopAreaGraphics = new PIXI.Graphics();
                     loopAreaGraphics.ellipse(
-                        newX - radiusX,
+                        pencilCircleCenterX,
                         newY,
                         radiusX,
                         radiusY,

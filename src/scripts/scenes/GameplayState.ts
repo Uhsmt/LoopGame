@@ -516,10 +516,7 @@ export class GameplayState extends StateBase {
         });
 
         if (butterfliesInLoopArea.length <= 0) {
-            if (flowersInLoopArea.length <= 0) {
-                // 空ループ
-                AudioManager.shared.playSe("se_switch");
-            }
+            // 空ループは音を出さない(線を引くだけで頻発してうるさいため)
             this.captureFlowers(flowersInLoopArea);
         } else if (butterfliesInLoopArea.length === 1) {
             // １匹だけの時は、colorChange
