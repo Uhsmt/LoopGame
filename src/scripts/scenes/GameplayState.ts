@@ -36,7 +36,7 @@ export class GameplayState extends StateBase {
     flowers: HelpFlower[] = [];
     private stageInfo: StageInformation;
     private readonly helpFlowersTiming: number[] = [];
-    pointerDownHandler: (event: PIXI.FederatedPointerEvent) => void;
+    private pauseHandler: () => void;
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
     private gatherDistance: number = 0;
     private fontColor: number = 0x000000;
@@ -157,24 +157,30 @@ export class GameplayState extends StateBase {
         // Frame
         this.addFrameGraphic();
 
-        // イベントリスナー：クリックしたら一時停止
-        this.pointerDownHandler = () => {
-            if (this.isFinish) return;
-
-            this.isRunning = !this.isRunning;
-            this.lineDrawer.clearAllSegments();
-            this.butterflies.forEach((butterfly) => {
-                butterfly.isFlying =
-                    this.isRunning && this.freezeElapsedTime <= 0;
-            });
-            if (!this.isRunning) {
-                this.showActionMessage("Pause");
-            } else {
-                this.actionMessage.alpha = 0;
-            }
+        // 一時停止はUI上のボタンで行う(タッチ操作の描画と衝突しないように、
+        // ステージ全体クリックでの一時停止は廃止 #41)
+        this.pauseHandler = () => {
+            this.togglePause();
         };
+    }
 
-        app.stage.addEventListener("pointerdown", this.pointerDownHandler);
+    private togglePause(): void {
+        if (this.isFinish) return;
+
+        this.isRunning = !this.isRunning;
+        this.lineDrawer.clearAllSegments();
+        this.butterflies.forEach((butterfly) => {
+            butterfly.isFlying = this.isRunning && this.freezeElapsedTime <= 0;
+        });
+        const icon = document.querySelector("#pauseButton i");
+        if (icon) {
+            icon.className = this.isRunning ? "fa fa-pause" : "fa fa-play";
+        }
+        if (!this.isRunning) {
+            this.showActionMessage("Pause");
+        } else {
+            this.actionMessage.alpha = 0;
+        }
     }
 
     private setupForHelpObject() {
@@ -250,6 +256,12 @@ export class GameplayState extends StateBase {
     }
 
     async onEnter(): Promise<void> {
+        const pauseButton = document.getElementById("pauseButton");
+        if (pauseButton) {
+            pauseButton.classList.remove("hidden");
+            pauseButton.addEventListener("click", this.pauseHandler);
+        }
+
         this.isRunning = false;
         this.startMessage.alpha = 1;
         this.scoreMessage.alpha = 1;
@@ -397,11 +409,14 @@ export class GameplayState extends StateBase {
     }
 
     onExit(): void {
-        if (this.pointerDownHandler) {
-            this.manager.app.stage.removeEventListener(
-                "pointerdown",
-                this.pointerDownHandler,
-            );
+        const pauseButton = document.getElementById("pauseButton");
+        if (pauseButton) {
+            pauseButton.classList.add("hidden");
+            pauseButton.removeEventListener("click", this.pauseHandler);
+            const icon = pauseButton.querySelector("i");
+            if (icon) {
+                icon.className = "fa fa-pause";
+            }
         }
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();

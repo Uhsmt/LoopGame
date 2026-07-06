@@ -203,6 +203,49 @@ describe("AudioManager", () => {
         });
     });
 
+    describe("muted", () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("should not play SE while muted", async () => {
+            await manager.loadSe([{ alias: "a", src: "/a.m4a" }]);
+            manager.unlock();
+            manager.setMuted(true);
+            manager.playSe("a");
+            expect(MockAudioContext.instances[0].createdSources).toHaveLength(
+                0,
+            );
+        });
+
+        it("should mute and unmute the playing BGM element", () => {
+            manager.unlock();
+            manager.playBgm("/bgm/title.m4a");
+            const el = MockAudioElement.instances[0] as unknown as {
+                muted?: boolean;
+            };
+            manager.setMuted(true);
+            expect(el.muted).toBe(true);
+            manager.setMuted(false);
+            expect(el.muted).toBe(false);
+        });
+
+        it("should start new BGM muted while muted, and unmute later", () => {
+            manager.unlock();
+            manager.setMuted(true);
+            manager.playBgm("/bgm/stage.m4a");
+            const el = MockAudioElement.instances[0] as unknown as {
+                muted?: boolean;
+            };
+            expect(el.muted).toBe(true);
+            manager.setMuted(false);
+            expect(el.muted).toBe(false);
+        });
+    });
+
     describe("unlock", () => {
         it("should resume a suspended context", async () => {
             await manager.loadSe([{ alias: "a", src: "/a.m4a" }]);

@@ -37,6 +37,7 @@ export class AudioManager {
     private currentBgmSrc: string | null = null;
     private pendingBgmSrc: string | null = null;
     private unlocked = false;
+    private muted = false;
 
     private ensureContext(): AudioContext | null {
         if (this.context) {
@@ -78,7 +79,7 @@ export class AudioManager {
     playSe(alias: string, options: { rate?: number } = {}): void {
         const ctx = this.context;
         const buffer = this.buffers.get(alias);
-        if (!ctx || !buffer || ctx.state !== "running") {
+        if (!ctx || !buffer || ctx.state !== "running" || this.muted) {
             return;
         }
         try {
@@ -106,6 +107,18 @@ export class AudioManager {
             return;
         }
         this.startBgmElement(src);
+    }
+
+    /** ミュートを切り替える。BGMは再生位置を保ったまま消音/復帰する */
+    setMuted(muted: boolean): void {
+        this.muted = muted;
+        if (this.bgmElement) {
+            this.bgmElement.muted = muted;
+        }
+    }
+
+    isMuted(): boolean {
+        return this.muted;
     }
 
     stopBgm(fadeMs: number = 600): void {
@@ -137,6 +150,7 @@ export class AudioManager {
         const el = new Audio(src);
         el.loop = true;
         el.volume = 0;
+        el.muted = this.muted;
         this.bgmElement = el;
         this.fadeElement(el, this.bgmVolume, 800);
         el.play().catch(() => {
