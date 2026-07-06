@@ -149,10 +149,10 @@ export class AudioManager {
         this.stopBgmElement();
         const el = new Audio(src);
         el.loop = true;
-        el.volume = 0;
+        // フェードインはせず即時フル音量で開始する(フェードは停止時のみ)
+        el.volume = this.bgmVolume;
         el.muted = this.muted;
         this.bgmElement = el;
-        this.fadeElement(el, this.bgmVolume, 800);
         el.play().catch(() => {
             // 自動再生がブロックされた場合は次のunlockで再試行する
             this.pendingBgmSrc = src;

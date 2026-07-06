@@ -42,7 +42,7 @@ export class GameplayState extends StateBase {
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
     private gatherDistance: number = 0;
     private fontColor: number = 0x000000;
-    private lastTickSecond: number = -1;
+    private lastTickStep: number = -1;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -374,18 +374,18 @@ export class GameplayState extends StateBase {
         // 残り10秒を切ったらblinkさせ、残り5秒はカウントダウン音を鳴らす
         if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
             this.sun.blink();
-            const remainSec = Math.ceil(
-                (this.gameTimer * 1000 - this.elapsedTime) / 1000,
+            const remainHalfStep = Math.ceil(
+                (this.gameTimer * 1000 - this.elapsedTime) / 500,
             );
+            // 残り10秒間、0.5秒ごとにチク(高)・タク(低)を交互に鳴らす
             if (
-                remainSec <= 10 &&
-                remainSec >= 1 &&
-                remainSec !== this.lastTickSecond
+                remainHalfStep <= 20 &&
+                remainHalfStep >= 1 &&
+                remainHalfStep !== this.lastTickStep
             ) {
-                this.lastTickSecond = remainSec;
-                // チック・タックと高低交互に鳴らす
+                this.lastTickStep = remainHalfStep;
                 AudioManager.shared.playSe("se_tick", {
-                    rate: remainSec % 2 === 0 ? 1 : 0.85,
+                    rate: remainHalfStep % 2 === 0 ? 1.5 : 1.15,
                 });
             }
         }
@@ -473,6 +473,11 @@ export class GameplayState extends StateBase {
         const isGotBonusButterfly = this.caputuredButterflies.some(
             (butterfly) => butterfly instanceof SpecialButterfly,
         );
+
+        // リザルト表示(3秒後)の1秒前からBGMをフェードアウトし始める
+        setTimeout(() => {
+            AudioManager.shared.stopBgm(2500);
+        }, 2000);
 
         setTimeout(() => {
             this.manager.setState(
