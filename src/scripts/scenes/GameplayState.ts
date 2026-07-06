@@ -2,6 +2,7 @@
 import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
 import { AudioManager } from "../utils/AudioManager";
+import { isMobileDevice } from "../utils/MobileDetection";
 import { LineDrawer } from "../components/LineDrawer";
 import { Sun } from "../components/Sun";
 import { ResultState } from "./ResultState";
@@ -37,6 +38,7 @@ export class GameplayState extends StateBase {
     private stageInfo: StageInformation;
     private readonly helpFlowersTiming: number[] = [];
     private pauseHandler: () => void;
+    private stagePauseHandler: (() => void) | null = null;
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
     private gatherDistance: number = 0;
     private fontColor: number = 0x000000;
@@ -157,11 +159,19 @@ export class GameplayState extends StateBase {
         // Frame
         this.addFrameGraphic();
 
-        // 一時停止はUI上のボタンで行う(タッチ操作の描画と衝突しないように、
-        // ステージ全体クリックでの一時停止は廃止 #41)
+        // 一時停止ボタン用ハンドラ(全プラットフォーム共通)
         this.pauseHandler = () => {
             this.togglePause();
         };
+
+        // PCはステージクリックでも一時停止できる。タッチ端末では線を引く
+        // 操作と衝突するため無効 (#41)
+        if (!isMobileDevice()) {
+            this.stagePauseHandler = () => {
+                this.togglePause();
+            };
+            app.stage.addEventListener("pointerdown", this.stagePauseHandler);
+        }
     }
 
     private togglePause(): void {
@@ -409,6 +419,12 @@ export class GameplayState extends StateBase {
     }
 
     onExit(): void {
+        if (this.stagePauseHandler) {
+            this.manager.app.stage.removeEventListener(
+                "pointerdown",
+                this.stagePauseHandler,
+            );
+        }
         const pauseButton = document.getElementById("pauseButton");
         if (pauseButton) {
             pauseButton.classList.add("hidden");
