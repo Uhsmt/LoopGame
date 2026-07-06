@@ -179,6 +179,17 @@ describe("AudioManager", () => {
             expect(el.volume).toBeCloseTo(manager.bgmVolume, 5);
         });
 
+        it("should honor a custom fade-out duration on stopBgm", () => {
+            manager.unlock();
+            manager.playBgm("/bgm/stage.m4a");
+            vi.advanceTimersByTime(1000);
+            manager.stopBgm(2000);
+            vi.advanceTimersByTime(1000);
+            expect(MockAudioElement.instances[0].pause).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(1200);
+            expect(MockAudioElement.instances[0].pause).toHaveBeenCalled();
+        });
+
         it("should stop BGM (with fade) and allow the same track again", () => {
             manager.unlock();
             manager.playBgm("/bgm/title.m4a");

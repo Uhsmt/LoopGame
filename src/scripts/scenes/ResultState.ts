@@ -53,6 +53,7 @@ export class ResultState extends StateBase {
     }
 
     async onEnter(): Promise<void> {
+        AudioManager.shared.playBgm(Const.bgmSrcs.title);
         // disp result
         await this.displayStageResult();
 

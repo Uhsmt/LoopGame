@@ -108,10 +108,10 @@ export class AudioManager {
         this.startBgmElement(src);
     }
 
-    stopBgm(): void {
+    stopBgm(fadeMs: number = 600): void {
         this.currentBgmSrc = null;
         this.pendingBgmSrc = null;
-        this.stopBgmElement();
+        this.stopBgmElement(fadeMs);
     }
 
     /**
@@ -146,12 +146,12 @@ export class AudioManager {
         });
     }
 
-    private stopBgmElement(): void {
+    private stopBgmElement(fadeMs: number = 600): void {
         if (this.bgmElement) {
             const el = this.bgmElement;
             this.bgmElement = null;
             // ブチッと切れないようにフェードアウトしてから停止する
-            this.fadeElement(el, 0, 600, () => {
+            this.fadeElement(el, 0, fadeMs, () => {
                 el.pause();
             });
         }
