@@ -418,7 +418,7 @@ export class GameplayState extends StateBase {
     private endGame(): void {
         if (this.isFinish) return;
 
-        AudioManager.shared.stopBgm(1500);
+        AudioManager.shared.stopBgm(3000);
         this.isRunning = false;
         this.isFinish = true;
         this.stageInfo.stagePoint = this.stagePoint;
