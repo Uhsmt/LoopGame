@@ -249,17 +249,14 @@ export class ResultState extends StateBase {
                 msg.show();
             } else {
                 await new Promise((resolve) =>
-                    setTimeout(
-                        () => {
-                            msg.show();
-                            // 行ごとに半音ずつ上げる
-                            AudioManager.shared.playSe("se_score", {
-                                rate: Math.pow(2, index / 12),
-                            });
-                            resolve(null);
-                        },
-                        200 * (index + 1),
-                    ),
+                    setTimeout(() => {
+                        msg.show();
+                        // 行ごとに半音ずつ上げる
+                        AudioManager.shared.playSe("se_score", {
+                            rate: Math.pow(2, index / 12),
+                        });
+                        resolve(null);
+                    }, 400),
                 );
             }
         }
