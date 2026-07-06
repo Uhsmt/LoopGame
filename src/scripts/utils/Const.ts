@@ -30,6 +30,34 @@ export const LONG_LOOP_EFFECT_TIME_MS = 5000;
 export const GATHER_EFFECT_TIME_MS = 10000;
 export const FREEZE_EFFECT_TIME_MS = 3000;
 
+export const seSrcs = [
+    { alias: "se_capture", src: `${BASE_URL}assets/sounds/se_capture.m4a` },
+    {
+        alias: "se_capture_many",
+        src: `${BASE_URL}assets/sounds/se_capture_many.m4a`,
+    },
+    { alias: "se_powerup", src: `${BASE_URL}assets/sounds/se_powerup.m4a` },
+    { alias: "se_score", src: `${BASE_URL}assets/sounds/se_score.m4a` },
+    { alias: "se_bad_loop", src: `${BASE_URL}assets/sounds/se_bad_loop.m4a` },
+    { alias: "se_select", src: `${BASE_URL}assets/sounds/se_select.m4a` },
+    { alias: "se_tick", src: `${BASE_URL}assets/sounds/se_tick.m4a` },
+    {
+        alias: "se_obstacle_appear",
+        src: `${BASE_URL}assets/sounds/se_obstacle_appear.m4a`,
+    },
+    {
+        alias: "se_obstacle_hit",
+        src: `${BASE_URL}assets/sounds/se_obstacle_hit.m4a`,
+    },
+];
+
+export const bgmSrcs = {
+    title: `${BASE_URL}assets/sounds/bgm_title.m4a`,
+    stage1: `${BASE_URL}assets/sounds/bgm_stage1.m4a`,
+    stage2: `${BASE_URL}assets/sounds/bgm_stage2.m4a`,
+    bonus: `${BASE_URL}assets/sounds/bgm_bonus.m4a`,
+};
+
 export const imageSrcs = [
     { alias: "background", src: `${BASE_URL}assets/background.jpg` },
     { alias: "menu_background", src: `${BASE_URL}assets/menu_background.jpeg` },

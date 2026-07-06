@@ -9,6 +9,7 @@ import * as Const from "../utils/Const";
 import { StateBase } from "./BaseState";
 import { Button } from "../components/Button";
 import { LineDrawer } from "../components/LineDrawer";
+import { AudioManager } from "../utils/AudioManager";
 
 export class ResultState extends StateBase {
     private stageInfo: StageInformation;
@@ -248,13 +249,14 @@ export class ResultState extends StateBase {
                 msg.show();
             } else {
                 await new Promise((resolve) =>
-                    setTimeout(
-                        () => {
-                            msg.show();
-                            resolve(null);
-                        },
-                        200 * (index + 1),
-                    ),
+                    setTimeout(() => {
+                        msg.show();
+                        // 行ごとに半音ずつ上げる
+                        AudioManager.shared.playSe("se_score", {
+                            rate: Math.pow(2, index / 12),
+                        });
+                        resolve(null);
+                    }, 500),
                 );
             }
         }
@@ -263,6 +265,7 @@ export class ResultState extends StateBase {
     // LineDrawerのループエリアが完成したときのハンドラ
     private async handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.backToStartButton && this.backToStartButton.isHit(loopArea)) {
+            AudioManager.shared.playSe("se_select");
             this.backToStartButton.selected();
 
             await this.wait(300);

@@ -1,6 +1,7 @@
 // GameplayState.ts
 import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
+import { AudioManager } from "../utils/AudioManager";
 import { LineDrawer } from "../components/LineDrawer";
 import { Sun } from "../components/Sun";
 import { ResultState } from "./ResultState";
@@ -39,6 +40,7 @@ export class GameplayState extends StateBase {
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
     private gatherDistance: number = 0;
     private fontColor: number = 0x000000;
+    private lastTickSecond: number = -1;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -255,6 +257,14 @@ export class GameplayState extends StateBase {
         await this.wait(1000);
         this.container.removeChild(this.startMessage);
         this.isRunning = true;
+        // ステージ情報の表示が終わり、プレイが始まるタイミングでBGM開始
+        AudioManager.shared.playBgm(
+            this.stageInfo.bonusFlag
+                ? Const.bgmSrcs.bonus
+                : this.stageInfo.level % 2 === 1
+                  ? Const.bgmSrcs.stage1
+                  : Const.bgmSrcs.stage2,
+        );
         this.butterflies.forEach((butterfly) => {
             butterfly.isFlapping = true;
             butterfly.isFlying = true;
@@ -287,6 +297,7 @@ export class GameplayState extends StateBase {
                 this.container.children.length - 2,
             );
             this.helpFlowersTiming.shift();
+            AudioManager.shared.playSe("se_powerup");
         }
 
         this.flowers.forEach((flower) => {
@@ -318,6 +329,7 @@ export class GameplayState extends StateBase {
             specialButterfly.isFlapping = true;
             this.butterflies.push(specialButterfly);
             this.isAddBonusButterfly = true;
+            AudioManager.shared.playSe("se_powerup");
             this.container.addChild(specialButterfly);
         }
         if (this.helpMessage.alpha > 0) {
@@ -337,9 +349,20 @@ export class GameplayState extends StateBase {
             this.manager.app.screen.width,
             this.manager.app.screen.height,
         );
-        // 残り10秒を切ったらblinkさせる
+        // 残り10秒を切ったらblinkさせ、残り5秒はカウントダウン音を鳴らす
         if (this.elapsedTime >= this.gameTimer * 1000 - 10000) {
             this.sun.blink();
+            const remainSec = Math.ceil(
+                (this.gameTimer * 1000 - this.elapsedTime) / 1000,
+            );
+            if (
+                remainSec <= 5 &&
+                remainSec >= 1 &&
+                remainSec !== this.lastTickSecond
+            ) {
+                this.lastTickSecond = remainSec;
+                AudioManager.shared.playSe("se_tick");
+            }
         }
 
         // effect系処理
@@ -395,6 +418,7 @@ export class GameplayState extends StateBase {
     private endGame(): void {
         if (this.isFinish) return;
 
+        AudioManager.shared.stopBgm(3000);
         this.isRunning = false;
         this.isFinish = true;
         this.stageInfo.stagePoint = this.stagePoint;
@@ -482,12 +506,16 @@ export class GameplayState extends StateBase {
                 this.captureFlowers(flowersInLoopArea);
             } else {
                 this.stagePoint -= 20;
+                AudioManager.shared.playSe("se_bad_loop");
                 this.showActionMessage("Bad Loop! \r\n -20 point");
             }
         }
     }
 
     private captureButterflies(butterflies: Butterfly[]): void {
+        AudioManager.shared.playSe(
+            butterflies.length >= 10 ? "se_capture_many" : "se_capture",
+        );
         this.caputuredButterflies.push(...butterflies);
         this.updateScoreMessage();
 
