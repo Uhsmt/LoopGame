@@ -266,6 +266,14 @@ export class GameplayState extends StateBase {
     }
 
     async onEnter(): Promise<void> {
+        AudioManager.shared.playBgm(
+            this.stageInfo.bonusFlag
+                ? Const.bgmSrcs.bonus
+                : this.stageInfo.level % 2 === 1
+                  ? Const.bgmSrcs.stage1
+                  : Const.bgmSrcs.stage2,
+        );
+
         const pauseButton = document.getElementById("pauseButton");
         if (pauseButton) {
             pauseButton.classList.remove("hidden");
@@ -279,14 +287,6 @@ export class GameplayState extends StateBase {
         await this.wait(1000);
         this.container.removeChild(this.startMessage);
         this.isRunning = true;
-        // ステージ情報の表示が終わり、プレイが始まるタイミングでBGM開始
-        AudioManager.shared.playBgm(
-            this.stageInfo.bonusFlag
-                ? Const.bgmSrcs.bonus
-                : this.stageInfo.level % 2 === 1
-                  ? Const.bgmSrcs.stage1
-                  : Const.bgmSrcs.stage2,
-        );
         this.butterflies.forEach((butterfly) => {
             butterfly.isFlapping = true;
             butterfly.isFlying = true;
@@ -378,12 +378,15 @@ export class GameplayState extends StateBase {
                 (this.gameTimer * 1000 - this.elapsedTime) / 1000,
             );
             if (
-                remainSec <= 5 &&
+                remainSec <= 10 &&
                 remainSec >= 1 &&
                 remainSec !== this.lastTickSecond
             ) {
                 this.lastTickSecond = remainSec;
-                AudioManager.shared.playSe("se_tick");
+                // チック・タックと高低交互に鳴らす
+                AudioManager.shared.playSe("se_tick", {
+                    rate: remainSec % 2 === 0 ? 1 : 0.85,
+                });
             }
         }
 
@@ -449,7 +452,6 @@ export class GameplayState extends StateBase {
     private endGame(): void {
         if (this.isFinish) return;
 
-        AudioManager.shared.stopBgm(3000);
         this.isRunning = false;
         this.isFinish = true;
         this.stageInfo.stagePoint = this.stagePoint;

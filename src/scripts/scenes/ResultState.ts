@@ -55,6 +55,8 @@ export class ResultState extends StateBase {
     }
 
     async onEnter(): Promise<void> {
+        // リザルトが表示されたタイミングでBGMをゆっくり消す
+        AudioManager.shared.stopBgm(2500);
         // disp result
         await this.displayStageResult();
 
