@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import { imageSrcs, seSrcs } from "./utils/Const";
 import { AudioManager } from "./utils/AudioManager";
+import { getMuted, setMuted } from "./utils/SettingsStorage";
 import { GameStateManager } from "./scenes/GameStateManager";
 import { StartState } from "./scenes/StartState";
 import { ResponsiveCanvas } from "./utils/ResponsiveCanvas";
@@ -66,16 +67,9 @@ window.addEventListener("load", async () => {
         antialias: true,
     });
 
-    // ブラウザの自動再生制限: 最初の操作でオーディオを解禁する
-    window.addEventListener(
-        "pointerdown",
-        () => {
-            AudioManager.shared.unlock();
-        },
-        { once: true },
-    );
     // SEの読み込みは起動をブロックしない
     void AudioManager.shared.loadSe(seSrcs);
+    setupMuteButton();
 
     const mainCanvas = document.getElementById("mainCanvas");
     if (mainCanvas) {
@@ -102,7 +96,9 @@ window.addEventListener("load", async () => {
 
     try {
         await PIXI.Assets.load(imageSrcs);
+        // タイトル画面を裏で起動してからゲートを被せる(操作はゲートが遮る)
         setUp();
+        await waitForTapToStart();
     } catch (error) {
         console.error("Failed to load game assets:", error);
         const loading = document.getElementById("loading");
@@ -121,6 +117,55 @@ document.addEventListener("DOMContentLoaded", function () {
         img.src = baseUrl + img.getAttribute("src");
     });
 });
+
+/**
+ * Click / Tap to Start ゲート。
+ * ユーザー操作を1回保証することで、ブラウザの自動再生制限を確実に解除する
+ * (このゲームはマウス移動だけで遊べるため、これがないと無音のままになり得る)
+ */
+function waitForTapToStart(): Promise<void> {
+    return new Promise((resolve) => {
+        const loading = document.getElementById("loading");
+        if (loading) {
+            loading.style.display = "none";
+        }
+        const gate = document.getElementById("tapToStart");
+        if (!gate) {
+            resolve();
+            return;
+        }
+        gate.classList.remove("hidden");
+        gate.addEventListener(
+            "pointerdown",
+            () => {
+                AudioManager.shared.unlock();
+                gate.classList.add("hidden");
+                resolve();
+            },
+            { once: true },
+        );
+    });
+}
+
+function setupMuteButton(): void {
+    const button = document.getElementById("muteButton");
+    if (!button) {
+        return;
+    }
+    const icon = button.querySelector("i");
+    const apply = (muted: boolean) => {
+        AudioManager.shared.setMuted(muted);
+        if (icon) {
+            icon.className = muted ? "fa fa-volume-off" : "fa fa-volume-up";
+        }
+    };
+    apply(getMuted());
+    button.addEventListener("click", () => {
+        const muted = !AudioManager.shared.isMuted();
+        setMuted(muted);
+        apply(muted);
+    });
+}
 
 function setUp() {
     // app.init()完了後なのでcanvasは必ず存在する
