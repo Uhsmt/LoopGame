@@ -14,6 +14,7 @@ import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
 import { BaseObstacle } from "../components/BaseObstacle";
+import { Bee } from "../components/Bee";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
@@ -32,6 +33,7 @@ export class GameplayState extends StateBase {
     private freezeElapsedTime: number = -1;
     private gatherElapsedTime: number = -1;
     private longLoopElapsedTime: number = -1;
+    private lineShortenElapsedTime: number = -1;
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
@@ -367,6 +369,11 @@ export class GameplayState extends StateBase {
     private createObstacle(type: string): BaseObstacle | null {
         // 各お邪魔オブジェクトの実装時にcaseを追加する
         switch (type) {
+            case "bee":
+                return new Bee({
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                });
             default:
                 return null;
         }
@@ -395,9 +402,12 @@ export class GameplayState extends StateBase {
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private applyObstacleEffect(obstacle: BaseObstacle): void {
         // 各お邪魔オブジェクトの実装時に効果を追加する
+        if (obstacle instanceof Bee) {
+            this.lineShortenEffect(true);
+            this.showHelpMessage("Short loop!");
+        }
     }
 
     async onEnter(): Promise<void> {
@@ -562,6 +572,12 @@ export class GameplayState extends StateBase {
             this.gatherElapsedTime -= delta;
             if (this.gatherElapsedTime <= 0) {
                 this.gatherEffect(false);
+            }
+        }
+        if (this.lineShortenElapsedTime >= 0) {
+            this.lineShortenElapsedTime -= delta;
+            if (this.lineShortenElapsedTime <= 0) {
+                this.lineShortenEffect(false);
             }
         }
 
@@ -855,20 +871,41 @@ export class GameplayState extends StateBase {
      */
     private longLoopEffect(isActive: boolean): void {
         if (isActive) {
-            this.lineDrawer.setLineDrawTime(
-                this.lineDrawer.originalLineDrawTime + 500,
-            );
             this.lineDrawer.setLineColor(
                 this.stageInfo.bonusFlag ? 0xffd700 : 0x0081af,
             );
             this.longLoopElapsedTime = Const.LONG_LOOP_EFFECT_TIME_MS;
         } else {
-            this.lineDrawer.setLineDrawTime(
-                this.lineDrawer.originalLineDrawTime,
-            );
             this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
             this.longLoopElapsedTime = -1;
         }
+        this.applyLineDrawTime();
+    }
+
+    /**
+     * bee(ライン短縮)に触れた時の効果。lineDrawerの描画時間を半分にする
+     * @param isActive true: 発動, false: 解除
+     */
+    private lineShortenEffect(isActive: boolean): void {
+        this.lineShortenElapsedTime = isActive
+            ? Const.LINE_SHORTEN_EFFECT_TIME_MS
+            : -1;
+        this.applyLineDrawTime();
+    }
+
+    /**
+     * longLoop/ライン短縮の効果を一元的にlineDrawerへ反映する
+     * originalLineDrawTimeを基準に、longLoop有効なら+500、ライン短縮有効なら半分(1/2)にする
+     */
+    private applyLineDrawTime(): void {
+        let time = this.lineDrawer.originalLineDrawTime;
+        if (this.longLoopElapsedTime >= 0) {
+            time += 500;
+        }
+        if (this.lineShortenElapsedTime >= 0) {
+            time /= 2;
+        }
+        this.lineDrawer.setLineDrawTime(time);
     }
 
     /**
