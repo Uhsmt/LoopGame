@@ -11,7 +11,11 @@ import { BaseObstacle } from "./BaseObstacle";
  *   蝶と一緒に囲むとループ自体が無効になる(判定自体はGameplayState側で実装)
  */
 export class Catapy extends BaseObstacle {
-    /** 単体で囲まれるとこの回数で消える */
+    /**
+     * 単体で囲まれるとこの回数で消える。
+     * note: この「3回囲むと消える」仕様は隠し要素として、How To Playの
+     * 説明文(description/descriptionJP)にはあえて書いていない
+     */
     static readonly REQUIRED_LOOP_COUNT = 3;
     private loopedCount = 0;
     readonly description: string = "Voids any loop that contains it";
