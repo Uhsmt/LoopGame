@@ -3,6 +3,7 @@ import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
 import { AudioManager } from "../utils/AudioManager";
 import { isMobileDevice } from "../utils/MobileDetection";
+import { SparkleEmitter } from "../components/SparkleEmitter";
 import { LineDrawer } from "../components/LineDrawer";
 import { Sun } from "../components/Sun";
 import { ResultState } from "./ResultState";
@@ -43,6 +44,8 @@ export class GameplayState extends StateBase {
     private gatherDistance: number = 0;
     private fontColor: number = 0x000000;
     private lastTickStep: number = -1;
+    private sparkles!: SparkleEmitter;
+    private trailElapsed: number = 0;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -164,6 +167,10 @@ export class GameplayState extends StateBase {
             this.togglePause();
         };
 
+        // キラキラ用パーティクル(最前面に重ねる)
+        this.sparkles = new SparkleEmitter(this.createStarTexture());
+        this.container.addChild(this.sparkles);
+
         // PCはステージクリックでも一時停止できる。タッチ端末では線を引く
         // 操作と衝突するため無効 (#41)
         if (!isMobileDevice()) {
@@ -171,6 +178,15 @@ export class GameplayState extends StateBase {
                 this.togglePause();
             };
             app.stage.addEventListener("pointerdown", this.stagePauseHandler);
+        }
+    }
+
+    private createStarTexture(): PIXI.Texture {
+        try {
+            return SparkleEmitter.createStarTexture(this.manager.app.renderer);
+        } catch {
+            // テスト等でレンダラーが使えない場合のフォールバック
+            return PIXI.Texture.WHITE;
         }
     }
 
@@ -358,7 +374,24 @@ export class GameplayState extends StateBase {
             this.helpMessage.alpha -= delta / 2000;
         }
 
+        // パーティクルはpause中も動かす(余韻が固まらないように)
+        this.sparkles.update(delta);
+
         if (!this.isRunning) return;
+
+        // ボーナス蝶の軌跡キラキラ
+        this.trailElapsed += delta;
+        if (this.trailElapsed >= 60) {
+            this.trailElapsed = 0;
+            this.butterflies.forEach((butterfly) => {
+                if (butterfly instanceof SpecialButterfly) {
+                    this.sparkles.trail(
+                        butterfly.x - butterfly.width / 2,
+                        butterfly.y - butterfly.height / 2,
+                    );
+                }
+            });
+        }
 
         // ↑ pause中でも動く処理、↓ pause中は動かない処理
 
@@ -422,6 +455,7 @@ export class GameplayState extends StateBase {
     }
 
     onExit(): void {
+        this.sparkles.clear();
         if (this.stagePauseHandler) {
             this.manager.app.stage.removeEventListener(
                 "pointerdown",

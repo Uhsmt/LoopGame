@@ -30,6 +30,15 @@ Object.defineProperty(window, "HTMLCanvasElement", {
     })),
 });
 
+// pixi-filters はWebGL前提なのでテストではスタブする
+vi.mock("pixi-filters", () => ({
+    GlowFilter: class {
+        outerStrength = 0;
+        innerStrength = 0;
+        color = 0xffffff;
+    },
+}));
+
 // Webpack DefinePlugin globals (see webpack.config.cjs)
 vi.stubGlobal("BASE_URL", "/");
 vi.stubGlobal("DEBUG_MODE", false);
