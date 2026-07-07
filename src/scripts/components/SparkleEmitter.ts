@@ -116,6 +116,29 @@ export class SparkleEmitter extends PIXI.Container {
         }
     }
 
+    /**
+     * サンプラーが返す位置に1粒ずつ、舞い落ちるきらきらを撒く。
+     * ループで囲んだ領域全体に降らせる用途など、形状に沿った配置に使う
+     */
+    showerOver(
+        count: number,
+        sample: () => { x: number; y: number },
+        options: BurstOptions = {},
+    ): void {
+        for (let i = 0; i < count; i++) {
+            const p = sample();
+            this.spawn(p.x, p.y, {
+                vx: (Math.random() - 0.5) * 0.03,
+                vy: 0.02 + Math.random() * 0.04,
+                gravity: 0.00012,
+                lifeMs: (options.lifeMs ?? 1500) * (0.6 + Math.random() * 0.4),
+                scale: (options.scale ?? 1) * (0.5 + Math.random() * 0.6),
+                tints: options.tints,
+                baseAlpha: 0.75,
+            });
+        }
+    }
+
     /** 軌跡用に1粒だけこぼす(ボーナス蝶の尾など) */
     trail(x: number, y: number, options: BurstOptions = {}): void {
         this.spawn(

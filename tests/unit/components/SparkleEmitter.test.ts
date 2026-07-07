@@ -96,6 +96,18 @@ describe("SparkleEmitter", () => {
         expect(falling.length).toBeGreaterThan(10);
     });
 
+    it("should shower over sampled positions", () => {
+        let calls = 0;
+        emitter.showerOver(15, () => {
+            calls++;
+            return { x: calls * 10, y: 0 };
+        });
+        expect(calls).toBe(15);
+        expect(emitter.particleCount).toBe(15);
+        const xs = emitter.children.map((c) => (c as { x: number }).x);
+        expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(100);
+    });
+
     it("should enforce the particle cap", () => {
         for (let i = 0; i < 10; i++) {
             emitter.burst(0, 0, 100);

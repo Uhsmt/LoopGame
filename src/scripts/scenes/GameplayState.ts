@@ -181,6 +181,40 @@ export class GameplayState extends StateBase {
         }
     }
 
+    private showerOverLoopArea(
+        butterflies: Butterfly[],
+        loopArea?: PIXI.Graphics,
+    ): void {
+        const fallbackX =
+            butterflies.reduce((sum, b) => sum + b.x - b.width / 2, 0) /
+            butterflies.length;
+        const fallbackY =
+            butterflies.reduce((sum, b) => sum + b.y - b.height / 2, 0) /
+            butterflies.length;
+        try {
+            if (!loopArea) throw new Error("no loop area");
+            const bounds = loopArea.getBounds();
+            // 領域の広さに応じて粒数を増やす(45〜90)
+            const count = Math.min(
+                90,
+                45 + Math.floor((bounds.width * bounds.height) / 8000),
+            );
+            this.sparkles.showerOver(count, () => {
+                // 矩形サンプリング+領域内判定(外れたら中心へフォールバック)
+                for (let i = 0; i < 8; i++) {
+                    const x = bounds.x + Math.random() * bounds.width;
+                    const y = bounds.y + Math.random() * bounds.height;
+                    if (loopArea.containsPoint({ x, y })) {
+                        return { x, y };
+                    }
+                }
+                return { x: fallbackX, y: fallbackY };
+            });
+        } catch {
+            this.sparkles.shower(fallbackX, fallbackY, 45);
+        }
+    }
+
     private createStarTexture(): PIXI.Texture {
         try {
             return SparkleEmitter.createStarTexture(this.manager.app.renderer);
@@ -576,7 +610,7 @@ export class GameplayState extends StateBase {
             }
         } else if (butterfliesInLoopArea.length >= 2) {
             if (this.isSuccessLoop(butterfliesInLoopArea)) {
-                this.captureButterflies(butterfliesInLoopArea);
+                this.captureButterflies(butterfliesInLoopArea, loopArea);
                 this.captureFlowers(flowersInLoopArea);
             } else {
                 this.stagePoint -= 20;
@@ -586,20 +620,17 @@ export class GameplayState extends StateBase {
         }
     }
 
-    private captureButterflies(butterflies: Butterfly[]): void {
+    private captureButterflies(
+        butterflies: Butterfly[],
+        loopArea?: PIXI.Graphics,
+    ): void {
         AudioManager.shared.playSe(
             butterflies.length >= 10 ? "se_capture_many" : "se_capture",
         );
 
-        // 10匹以上の大量捕獲時だけ、淡いきらきらを舞い降らせる
+        // 10匹以上の大量捕獲時だけ、囲んだ領域全体に淡いきらきらを降らせる
         if (butterflies.length >= 10) {
-            const centerX =
-                butterflies.reduce((sum, b) => sum + b.x - b.width / 2, 0) /
-                butterflies.length;
-            const centerY =
-                butterflies.reduce((sum, b) => sum + b.y - b.height / 2, 0) /
-                butterflies.length;
-            this.sparkles.shower(centerX, centerY, 45);
+            this.showerOverLoopArea(butterflies, loopArea);
         }
 
         this.caputuredButterflies.push(...butterflies);
