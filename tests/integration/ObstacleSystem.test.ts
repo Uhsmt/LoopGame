@@ -275,14 +275,21 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
  * GameplayState.handleLoopAreaCompleted内のcatapy(イモムシ)判定ロジックを
  * 再現したテストダブル(実装と同じ分岐であることをテストで担保する)。
  * - 蝶+catapyが同じループ内 -> ループ無効(捕獲・色替え・花取得を一切行わない)
- * - catapy単体(蝶0匹)で囲む -> catapyが消える。花は通常どおり取得できる
+ * - catapy単体(蝶0匹)で囲む -> カウントが進み、3回で消える。花は通常どおり取得できる
  * - catapyがいない -> 既存の蝶/花のロジックそのまま
  */
+const CATAPY_REQUIRED_LOOP_COUNT = 3;
+
 class TestCatapy {
     public removed = false;
+    public loopedCount = 0;
     constructor(public inLoop: boolean) {}
     isHit(_loopArea: unknown): boolean {
         return this.inLoop;
+    }
+    countLoop(): boolean {
+        this.loopedCount += 1;
+        return this.loopedCount >= CATAPY_REQUIRED_LOOP_COUNT;
     }
     delete(): void {
         this.removed = true;
@@ -348,10 +355,13 @@ class TestGameplayLoopHandler {
                 this.showActionMessage("Invalid loop!");
                 return;
             }
-            catapiesInLoop.forEach((catapy) => {
-                this.obstacles = this.obstacles.filter((o) => o !== catapy);
-                catapy.delete();
-            });
+            const defeated = catapiesInLoop.filter((catapy) =>
+                catapy.countLoop(),
+            );
+            this.obstacles = this.obstacles.filter(
+                (obstacle) => !defeated.includes(obstacle),
+            );
+            defeated.forEach((catapy) => catapy.delete());
             this.playSe("se_obstacle_hit");
             this.captureFlowers(flowersInLoopArea);
             return;
@@ -399,7 +409,7 @@ describe("Obstacle System Integration Tests (Catapy / loop invalidation)", () =>
     });
 
     describe("catapy alone (no butterfly) in the loop", () => {
-        it("should remove the catapy and still capture flowers normally", () => {
+        it("should keep the catapy alive with feedback for the first two loops", () => {
             const catapy = new TestCatapy(true);
             const flower = new TestFlower(true);
             handler.obstacles = [catapy];
@@ -407,12 +417,32 @@ describe("Obstacle System Integration Tests (Catapy / loop invalidation)", () =>
             handler.butterflies = [];
 
             handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
 
-            expect(handler.playedSe).toEqual(["se_obstacle_hit"]);
+            // 2回まではカウントだけ進んで消えない(毎回効果音は鳴る)
+            expect(handler.playedSe).toEqual([
+                "se_obstacle_hit",
+                "se_obstacle_hit",
+            ]);
+            expect(catapy.loopedCount).toBe(2);
+            expect(catapy.removed).toBe(false);
+            expect(handler.obstacles).toHaveLength(1);
+            // 花は1回目のループで通常どおり取得できる
+            expect(handler.capturedFlowers).toEqual([flower]);
+        });
+
+        it("should remove the catapy on the third solo loop", () => {
+            const catapy = new TestCatapy(true);
+            handler.obstacles = [catapy];
+            handler.butterflies = [];
+
+            handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
+
+            expect(catapy.loopedCount).toBe(3);
             expect(catapy.removed).toBe(true);
             expect(handler.obstacles).toHaveLength(0);
-            expect(handler.capturedFlowers).toEqual([flower]);
-            expect(handler.flowers).toHaveLength(0);
         });
     });
 

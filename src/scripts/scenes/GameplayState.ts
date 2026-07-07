@@ -735,7 +735,7 @@ export class GameplayState extends StateBase {
 
         // loopArea内にいるcatapyを取得
         const catapiesInLoop = this.obstacles.filter(
-            (obstacle) =>
+            (obstacle): obstacle is Catapy =>
                 obstacle instanceof Catapy && obstacle.isHit(loopArea),
         );
         if (catapiesInLoop.length > 0) {
@@ -745,11 +745,15 @@ export class GameplayState extends StateBase {
                 this.showActionMessage("Invalid loop!");
                 return;
             }
-            // catapy単体で囲むと退場する(花は通常どおり取得できる)
-            this.obstacles = this.obstacles.filter(
-                (obstacle) => !catapiesInLoop.includes(obstacle),
+            // catapy単体で囲むとカウントが進み、3回囲むと消える
+            // (花は通常どおり取得できる)
+            const defeated: BaseObstacle[] = catapiesInLoop.filter((catapy) =>
+                catapy.countLoop(),
             );
-            catapiesInLoop.forEach((catapy) => catapy.delete());
+            this.obstacles = this.obstacles.filter(
+                (obstacle) => !defeated.includes(obstacle),
+            );
+            defeated.forEach((catapy) => catapy.delete());
             AudioManager.shared.playSe("se_obstacle_hit");
             this.captureFlowers(flowersInLoopArea);
             return;

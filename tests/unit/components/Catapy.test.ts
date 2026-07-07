@@ -229,6 +229,24 @@ describe("Catapy", () => {
         });
     });
 
+    describe("countLoop (solo-loop counter)", () => {
+        it("should survive the first two solo loops with a flash reaction", () => {
+            catapy.alpha = 1;
+
+            expect(catapy.countLoop()).toBe(false);
+            // 囲まれた手応えとして一瞬薄くなる
+            expect(catapy.alpha).toBeLessThan(1);
+
+            expect(catapy.countLoop()).toBe(false);
+        });
+
+        it("should report defeat on the third solo loop", () => {
+            catapy.countLoop();
+            catapy.countLoop();
+            expect(catapy.countLoop()).toBe(true);
+        });
+    });
+
     describe("line contact is harmless", () => {
         it("should not start leaving when a line segment overlaps", () => {
             const segments = [{ x: 400, y: 300 }] as never[];
