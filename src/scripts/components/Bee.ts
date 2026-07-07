@@ -12,7 +12,7 @@ export class Bee extends BaseObstacle {
         this.hitAreaSize = 16;
         this.leaveSpeed = 3;
         // 小蝶(0.6)よりずっと速く、長い距離を一気に直進するジグザグ飛行
-        this.moveSpeed = 2.4;
+        this.moveSpeed = 4.8;
         this.turnFrameMin = 120;
         this.turnFrameMax = 240;
         this.pickNewDirection();

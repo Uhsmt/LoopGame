@@ -8,9 +8,9 @@ import { describe, it, expect, beforeEach } from "vitest";
  */
 
 const LONG_LOOP_EFFECT_TIME_MS = 5000;
-const LINE_SHORTEN_EFFECT_TIME_MS = 4000;
-const LINE_SHORTEN_COLOR = 0x808080;
-const AVOID_PENCIL_EFFECT_TIME_MS = 4000;
+const LINE_SHORTEN_EFFECT_TIME_MS = 6000;
+const LINE_SHORTEN_COLOR = 0xff0000;
+const AVOID_PENCIL_EFFECT_TIME_MS = 6000;
 
 class TestLineDrawer {
     public originalLineDrawTime: number = 1500;
@@ -202,18 +202,18 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
         });
 
-        it("should fall back to longLoop-only time and color once line shorten expires first", () => {
+        it("should fall back to shorten-only time and color once longLoop expires first", () => {
             const original = effects.lineDrawer.originalLineDrawTime;
 
             effects.longLoopEffect(true); // 5000ms
-            effects.applyObstacleEffect("bee"); // 4000ms
+            effects.applyObstacleEffect("bee"); // 6000ms
 
-            effects.tick(LINE_SHORTEN_EFFECT_TIME_MS); // line shortenのみ失効
+            effects.tick(LONG_LOOP_EFFECT_TIME_MS); // longLoopのみ失効
 
-            expect(effects.lineShortenElapsedTime).toBe(-1);
-            expect(effects.longLoopElapsedTime).toBeGreaterThan(0);
-            expect(effects.lineDrawer.getLineDrawTime()).toBe(original + 500);
-            expect(effects.lineDrawer.getLineColor()).toBe(0x0081af);
+            expect(effects.longLoopElapsedTime).toBe(-1);
+            expect(effects.lineShortenElapsedTime).toBeGreaterThan(0);
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 2);
+            expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
         });
 
         it("should fall back to original time once both effects expire", () => {
@@ -222,7 +222,7 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             effects.longLoopEffect(true);
             effects.applyObstacleEffect("bee");
 
-            effects.tick(LONG_LOOP_EFFECT_TIME_MS);
+            effects.tick(LINE_SHORTEN_EFFECT_TIME_MS); // 両方の効果時間を超過
 
             expect(effects.lineDrawer.getLineDrawTime()).toBe(original);
         });
@@ -255,15 +255,15 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
         });
 
         it("should not interfere with the independent line shorten timer (bee + spider overlap)", () => {
-            effects.applyObstacleEffect("bee"); // 4000ms line shorten
-            effects.applyObstacleEffect("spider"); // 4000ms avoid pencil
+            effects.applyObstacleEffect("bee"); // 6000ms line shorten
+            effects.applyObstacleEffect("spider"); // 6000ms avoid pencil
 
             effects.tick(1000);
 
-            expect(effects.lineShortenElapsedTime).toBe(3000);
-            expect(effects.avoidPencilElapsedTime).toBe(3000);
+            expect(effects.lineShortenElapsedTime).toBe(5000);
+            expect(effects.avoidPencilElapsedTime).toBe(5000);
 
-            effects.tick(3000);
+            effects.tick(5000);
 
             expect(effects.lineShortenElapsedTime).toBe(-1);
             expect(effects.avoidPencilElapsedTime).toBe(-1);

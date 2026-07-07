@@ -11,8 +11,8 @@ import { BaseObstacle } from "./BaseObstacle";
  */
 export class Catapy extends BaseObstacle {
     constructor(screenSize: { x: number; y: number }) {
-        super(["catapy1", "catapy2"], 0.096, screenSize);
-        this.hitAreaSize = 14;
+        super(["catapy1", "catapy2"], 0.192, screenSize);
+        this.hitAreaSize = 28;
         this.animIntervalMs = 400;
         this.reactsToLine = false;
         // Spider(0.35)よりさらに遅い

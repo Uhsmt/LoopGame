@@ -123,7 +123,7 @@ describe("Bee", () => {
             const startX = bee.x;
             bee.update(16, []);
             const movedDistance = bee.x - startX;
-            expect(movedDistance).toBeCloseTo(2.4, 5);
+            expect(movedDistance).toBeCloseTo(4.8, 5);
             expect(movedDistance).toBeGreaterThan(0.6);
         });
 
