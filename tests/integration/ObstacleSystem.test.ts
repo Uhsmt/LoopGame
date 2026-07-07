@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 const LONG_LOOP_EFFECT_TIME_MS = 5000;
 const LINE_SHORTEN_EFFECT_TIME_MS = 4000;
+const AVOID_PENCIL_EFFECT_TIME_MS = 4000;
 
 class TestLineDrawer {
     public originalLineDrawTime: number = 1500;
@@ -40,8 +41,15 @@ class TestLineDrawer {
 class TestGameplayEffects {
     public longLoopElapsedTime = -1;
     public lineShortenElapsedTime = -1;
+    public avoidPencilElapsedTime = -1;
     public lineDrawer = new TestLineDrawer();
     public helpMessage = "";
+
+    avoidPencilEffect(isActive: boolean): void {
+        this.avoidPencilElapsedTime = isActive
+            ? AVOID_PENCIL_EFFECT_TIME_MS
+            : -1;
+    }
 
     longLoopEffect(isActive: boolean): void {
         if (isActive) {
@@ -72,10 +80,13 @@ class TestGameplayEffects {
         this.lineDrawer.setLineDrawTime(time);
     }
 
-    applyObstacleEffect(obstacleType: "bee"): void {
+    applyObstacleEffect(obstacleType: "bee" | "spider"): void {
         if (obstacleType === "bee") {
             this.lineShortenEffect(true);
             this.helpMessage = "Short loop!";
+        } else if (obstacleType === "spider") {
+            this.avoidPencilEffect(true);
+            this.helpMessage = "Run away!";
         }
     }
 
@@ -91,6 +102,12 @@ class TestGameplayEffects {
             this.lineShortenElapsedTime -= delta;
             if (this.lineShortenElapsedTime <= 0) {
                 this.lineShortenEffect(false);
+            }
+        }
+        if (this.avoidPencilElapsedTime >= 0) {
+            this.avoidPencilElapsedTime -= delta;
+            if (this.avoidPencilElapsedTime <= 0) {
+                this.avoidPencilEffect(false);
             }
         }
     }
@@ -192,6 +209,48 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             effects.tick(LONG_LOOP_EFFECT_TIME_MS);
 
             expect(effects.lineDrawer.getLineDrawTime()).toBe(original);
+        });
+    });
+
+    describe("Spider hit -> avoid pencil effect", () => {
+        it("should start the avoid-pencil timer and show a help message", () => {
+            effects.applyObstacleEffect("spider");
+
+            expect(effects.avoidPencilElapsedTime).toBe(
+                AVOID_PENCIL_EFFECT_TIME_MS,
+            );
+            expect(effects.helpMessage).toBe("Run away!");
+        });
+
+        it("should clear the avoid-pencil timer once the effect duration elapses", () => {
+            effects.applyObstacleEffect("spider");
+
+            effects.tick(AVOID_PENCIL_EFFECT_TIME_MS); // ちょうど時間切れ
+
+            expect(effects.avoidPencilElapsedTime).toBe(-1);
+        });
+
+        it("should keep the avoid-pencil timer running before the duration has elapsed", () => {
+            effects.applyObstacleEffect("spider");
+
+            effects.tick(AVOID_PENCIL_EFFECT_TIME_MS - 1000);
+
+            expect(effects.avoidPencilElapsedTime).toBe(1000);
+        });
+
+        it("should not interfere with the independent line shorten timer (bee + spider overlap)", () => {
+            effects.applyObstacleEffect("bee"); // 4000ms line shorten
+            effects.applyObstacleEffect("spider"); // 4000ms avoid pencil
+
+            effects.tick(1000);
+
+            expect(effects.lineShortenElapsedTime).toBe(3000);
+            expect(effects.avoidPencilElapsedTime).toBe(3000);
+
+            effects.tick(3000);
+
+            expect(effects.lineShortenElapsedTime).toBe(-1);
+            expect(effects.avoidPencilElapsedTime).toBe(-1);
         });
     });
 });

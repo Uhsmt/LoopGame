@@ -48,6 +48,7 @@ vi.mock("../../../src/scripts/utils/Utility", () => ({
 vi.mock("../../../src/scripts/utils/Const", () => ({
     SIZE_LIST: ["small", "medium", "large"],
     MARGIN: 50,
+    AVOID_PENCIL_RADIUS: 200,
 }));
 
 // Mock BaseCaptureableObject
@@ -272,7 +273,18 @@ describe("Butterfly", () => {
             butterfly.update(delta, lineSegments as any);
 
             expect(flapSpy).toHaveBeenCalledWith(delta);
-            expect(flySpy).toHaveBeenCalledWith(delta, lineSegments);
+            expect(flySpy).toHaveBeenCalledWith(delta, lineSegments, null);
+        });
+
+        it("should pass avoidPoint through to fly()", () => {
+            const flySpy = vi
+                .spyOn(butterfly as any, "fly")
+                .mockImplementation(() => {});
+
+            const avoidPoint = new MockPoint(100, 100);
+            butterfly.update(16, [], avoidPoint as any);
+
+            expect(flySpy).toHaveBeenCalledWith(16, [], avoidPoint);
         });
     });
 
@@ -347,6 +359,122 @@ describe("Butterfly", () => {
 
             // Direction might change (could be same if random returns 1)
             expect((butterfly as any).xFrame).toBe(0); // Frame counter should reset
+        });
+    });
+
+    describe("fly() avoid-pencil mode (avoidPoint)", () => {
+        beforeEach(() => {
+            butterfly.isFlying = true;
+            butterfly.x = 400;
+            butterfly.y = 300;
+        });
+
+        it("should move away from a nearby avoidPoint", async () => {
+            const UtilityMock = vi.mocked(
+                await import("../../../src/scripts/utils/Utility"),
+            );
+            UtilityMock.getDistance.mockReturnValue(50); // AVOID_PENCIL_RADIUS(200)以内
+
+            // avoidPointは蝶(400,300)の右下
+            const avoidPoint = new MockPoint(500, 400);
+
+            (butterfly as any).fly(16, [], avoidPoint);
+
+            // avoidPointから遠ざかる(左上)方向に符号が設定される
+            expect((butterfly as any).xDiretion).toBeLessThan(0);
+            expect((butterfly as any).yDiretion).toBeLessThan(0);
+        });
+
+        it("should move 1.7x faster than normal speed while avoiding", async () => {
+            const UtilityMock = vi.mocked(
+                await import("../../../src/scripts/utils/Utility"),
+            );
+            UtilityMock.getDistance.mockReturnValue(50);
+
+            const avoidPoint = new MockPoint(0, 0);
+            const baseXDiretion = Math.abs((butterfly as any).xDiretion);
+
+            (butterfly as any).fly(16, [], avoidPoint);
+
+            // avoidPoint(0,0)より右下にいるので正方向へ、速度は1.7倍
+            expect(butterfly.x).toBeCloseTo(400 + baseXDiretion * 1.7, 5);
+        });
+
+        it("should prioritize avoiding over the gather point when both apply", async () => {
+            const UtilityMock = vi.mocked(
+                await import("../../../src/scripts/utils/Utility"),
+            );
+            UtilityMock.getDistance.mockReturnValue(50); // avoidPointの半径内
+
+            // gatherPointとavoidPointを同じ点(蝶の右下)に設定する
+            const point = new MockPoint(500, 400);
+            butterfly.setGatherPoint(point as any, 50);
+
+            (butterfly as any).fly(16, [], point);
+
+            // gather優先なら近づく(正)方向になるはずだが、avoid優先のため遠ざかる(負)方向になる
+            expect((butterfly as any).xDiretion).toBeLessThan(0);
+            expect((butterfly as any).yDiretion).toBeLessThan(0);
+        });
+
+        it("should ignore an avoidPoint outside AVOID_PENCIL_RADIUS (normal flight)", async () => {
+            const UtilityMock = vi.mocked(
+                await import("../../../src/scripts/utils/Utility"),
+            );
+            UtilityMock.getDistance.mockReturnValue(300); // AVOID_PENCIL_RADIUS(200)より遠い
+            // xFrame/yFrameのランダム方向転換分岐(モックの都合でNaN化する)を避ける
+            (butterfly as any).xFrame = 0;
+            (butterfly as any).yFrame = 0;
+
+            const avoidPoint = new MockPoint(1000, 1000);
+            const originalXDirection = (butterfly as any).xDiretion;
+            const originalYDirection = (butterfly as any).yDiretion;
+
+            (butterfly as any).fly(16, [], avoidPoint);
+
+            // 通常飛行のまま(画面端やライン接触が無ければ符号は変わらない)
+            expect((butterfly as any).xDiretion).toBe(originalXDirection);
+            expect((butterfly as any).yDiretion).toBe(originalYDirection);
+        });
+
+        it("should not be pushed beyond the screen edge while avoiding", async () => {
+            const UtilityMock = vi.mocked(
+                await import("../../../src/scripts/utils/Utility"),
+            );
+            UtilityMock.getDistance.mockReturnValue(50);
+
+            // 左端付近(left + spriteWith 以下)で、鉛筆が右側にある
+            butterfly.x = 60;
+            butterfly.y = 300;
+            (butterfly as any).fly(16, [], new MockPoint(150, 300));
+            // 遠ざかる方向は左(負)だが、画面端なので内側(正)方向を維持する
+            expect((butterfly as any).xDiretion).toBeGreaterThan(0);
+
+            // 下端付近で、鉛筆が上側にある
+            butterfly.x = 400;
+            butterfly.y = 580; // bottom(600 - MARGIN(50) = 550)以上
+            (butterfly as any).fly(16, [], new MockPoint(400, 500));
+            // 遠ざかる方向は下(正)だが、画面端なので内側(負)方向を維持する
+            expect((butterfly as any).yDiretion).toBeLessThan(0);
+        });
+
+        it("should behave exactly as before when avoidPoint is null (default)", async () => {
+            const UtilityMock = vi.mocked(
+                await import("../../../src/scripts/utils/Utility"),
+            );
+            UtilityMock.getDistance.mockReturnValue(50);
+            // xFrame/yFrameのランダム方向転換分岐(モックの都合でNaN化する)を避ける
+            (butterfly as any).xFrame = 0;
+            (butterfly as any).yFrame = 0;
+
+            const originalXDirection = (butterfly as any).xDiretion;
+            const originalYDirection = (butterfly as any).yDiretion;
+
+            // avoidPointを渡さない(=null)場合は従来の通常飛行ロジックのまま
+            (butterfly as any).fly(16, []);
+
+            expect((butterfly as any).xDiretion).toBe(originalXDirection);
+            expect((butterfly as any).yDiretion).toBe(originalYDirection);
         });
     });
 

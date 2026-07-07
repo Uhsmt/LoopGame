@@ -15,6 +15,7 @@ import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
 import { BaseObstacle } from "../components/BaseObstacle";
 import { Bee } from "../components/Bee";
+import { Spider } from "../components/Spider";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
@@ -34,6 +35,7 @@ export class GameplayState extends StateBase {
     private gatherElapsedTime: number = -1;
     private longLoopElapsedTime: number = -1;
     private lineShortenElapsedTime: number = -1;
+    private avoidPencilElapsedTime: number = -1;
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
@@ -374,6 +376,11 @@ export class GameplayState extends StateBase {
                     x: this.manager.app.screen.width,
                     y: this.manager.app.screen.height,
                 });
+            case "spider":
+                return new Spider({
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                });
             default:
                 return null;
         }
@@ -407,7 +414,20 @@ export class GameplayState extends StateBase {
         if (obstacle instanceof Bee) {
             this.lineShortenEffect(true);
             this.showHelpMessage("Short loop!");
+        } else if (obstacle instanceof Spider) {
+            this.avoidPencilEffect(true);
+            this.showHelpMessage("Run away!");
         }
+    }
+
+    /**
+     * spider(蝶が鉛筆から逃げる)に触れた時の効果
+     * @param isActive true: 発動, false: 解除
+     */
+    private avoidPencilEffect(isActive: boolean): void {
+        this.avoidPencilElapsedTime = isActive
+            ? Const.AVOID_PENCIL_EFFECT_TIME_MS
+            : -1;
     }
 
     async onEnter(): Promise<void> {
@@ -439,9 +459,17 @@ export class GameplayState extends StateBase {
     }
 
     update(delta: number): void {
-        // 蝶々
+        // 蝶々(spider効果中は鉛筆の最新位置から逃げる)
+        const avoidPoint =
+            this.avoidPencilElapsedTime >= 0
+                ? this.lineDrawer.lastPointerPoint
+                : null;
         this.butterflies.forEach((butterfly) => {
-            butterfly.update(delta, this.lineDrawer.getSegmentPoints());
+            butterfly.update(
+                delta,
+                this.lineDrawer.getSegmentPoints(),
+                avoidPoint,
+            );
         });
 
         // helpオブジェクトを出すタイミングで表示
@@ -578,6 +606,12 @@ export class GameplayState extends StateBase {
             this.lineShortenElapsedTime -= delta;
             if (this.lineShortenElapsedTime <= 0) {
                 this.lineShortenEffect(false);
+            }
+        }
+        if (this.avoidPencilElapsedTime >= 0) {
+            this.avoidPencilElapsedTime -= delta;
+            if (this.avoidPencilElapsedTime <= 0) {
+                this.avoidPencilEffect(false);
             }
         }
 
