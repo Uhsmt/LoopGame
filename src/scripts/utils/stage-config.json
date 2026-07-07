@@ -51,8 +51,7 @@
         "needCount": 16,
         "stageButterflyCount": 12,
         "butterflySize": "medium",
-        "isButterflyColorChange": true,
-        "obstacles": ["bee"]
+        "isButterflyColorChange": true
     },
     {
         "level": 6,
@@ -78,8 +77,7 @@
         "isButterflyColorChange": false,
         "maxMultipleRate": 2,
         "multipleButterflyRate": 0.15,
-        "helpObjectNum": 2,
-        "obstacles": ["bee", "spider"]
+        "helpObjectNum": 2
     },
     {
         "level": 8,
@@ -105,8 +103,7 @@
         "isButterflyColorChange": false,
         "maxMultipleRate": 2,
         "multipleButterflyRate": 0.2,
-        "helpObjectNum": 3,
-        "obstacles": ["bee", "spider", "catapy"]
+        "helpObjectNum": 3
     },
     {
         "level": 10,

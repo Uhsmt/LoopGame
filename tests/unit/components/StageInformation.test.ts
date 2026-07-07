@@ -59,36 +59,44 @@ describe("StageInformation", () => {
             expect(si.hasBonusButterfly).toBe(false);
         });
 
-        it("should add obstacles as levels progress and inherit them", () => {
+        it("should keep stages up to the final configured level obstacle-free", () => {
             const si = new StageInformation();
             expect(si.obstacles).toEqual([]);
 
-            while (si.level < 5) {
+            while (si.level < 10) {
+                si.next();
+                expect(si.obstacles).toEqual([]);
+            }
+        });
+
+        it("should add obstacle types progressively from level 11", () => {
+            const si = new StageInformation();
+            while (si.level < 11) {
                 si.next();
             }
             expect(si.obstacles).toEqual(["bee"]);
 
-            si.next(); // level 6: 設定キーが無いので引き継ぐ
+            si.next(); // level 12
             expect(si.obstacles).toEqual(["bee"]);
 
-            si.next(); // level 7
+            si.next(); // level 13
             expect(si.obstacles).toEqual(["bee", "spider"]);
 
-            while (si.level < 9) {
-                si.next();
-            }
+            si.next(); // level 14
+            expect(si.obstacles).toEqual(["bee", "spider"]);
+
+            si.next(); // level 15
             expect(si.obstacles).toEqual(["bee", "spider", "catapy"]);
 
-            while (si.level < 12) {
+            while (si.level < 20) {
                 si.next();
             }
-            // 最終レベル以降も引き継ぐ
             expect(si.obstacles).toEqual(["bee", "spider", "catapy"]);
         });
 
         it("should keep obstacles through a bonus stage for the next stage", () => {
             const si = new StageInformation();
-            while (si.level < 5) {
+            while (si.level < 11) {
                 si.next();
             }
             si.bonusStage();
