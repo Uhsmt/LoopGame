@@ -3,6 +3,7 @@ import * as PIXI from "pixi.js";
 import { GameStateManager } from "./GameStateManager";
 import { AudioManager } from "../utils/AudioManager";
 import { isMobileDevice } from "../utils/MobileDetection";
+import { SparkleEmitter } from "../components/SparkleEmitter";
 import { LineDrawer } from "../components/LineDrawer";
 import { Sun } from "../components/Sun";
 import { ResultState } from "./ResultState";
@@ -43,6 +44,8 @@ export class GameplayState extends StateBase {
     private gatherDistance: number = 0;
     private fontColor: number = 0x000000;
     private lastTickStep: number = -1;
+    private sparkles!: SparkleEmitter;
+    private trailElapsed: number = 0;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -164,6 +167,10 @@ export class GameplayState extends StateBase {
             this.togglePause();
         };
 
+        // キラキラ用パーティクル(最前面に重ねる)
+        this.sparkles = new SparkleEmitter(this.createStarTexture());
+        this.container.addChild(this.sparkles);
+
         // PCはステージクリックでも一時停止できる。タッチ端末では線を引く
         // 操作と衝突するため無効 (#41)
         if (!isMobileDevice()) {
@@ -171,6 +178,49 @@ export class GameplayState extends StateBase {
                 this.togglePause();
             };
             app.stage.addEventListener("pointerdown", this.stagePauseHandler);
+        }
+    }
+
+    private showerOverLoopArea(
+        butterflies: Butterfly[],
+        loopArea?: PIXI.Graphics,
+    ): void {
+        const fallbackX =
+            butterflies.reduce((sum, b) => sum + b.x - b.width / 2, 0) /
+            butterflies.length;
+        const fallbackY =
+            butterflies.reduce((sum, b) => sum + b.y - b.height / 2, 0) /
+            butterflies.length;
+        try {
+            if (!loopArea) throw new Error("no loop area");
+            const bounds = loopArea.getBounds();
+            // 領域の広さに応じて粒数を増やす(45〜90)
+            const count = Math.min(
+                90,
+                45 + Math.floor((bounds.width * bounds.height) / 8000),
+            );
+            this.sparkles.showerOver(count, () => {
+                // 矩形サンプリング+領域内判定(外れたら中心へフォールバック)
+                for (let i = 0; i < 8; i++) {
+                    const x = bounds.x + Math.random() * bounds.width;
+                    const y = bounds.y + Math.random() * bounds.height;
+                    if (loopArea.containsPoint({ x, y })) {
+                        return { x, y };
+                    }
+                }
+                return { x: fallbackX, y: fallbackY };
+            });
+        } catch {
+            this.sparkles.shower(fallbackX, fallbackY, 45);
+        }
+    }
+
+    private createStarTexture(): PIXI.Texture {
+        try {
+            return SparkleEmitter.createStarTexture(this.manager.app.renderer);
+        } catch {
+            // テスト等でレンダラーが使えない場合のフォールバック
+            return PIXI.Texture.WHITE;
         }
     }
 
@@ -358,7 +408,24 @@ export class GameplayState extends StateBase {
             this.helpMessage.alpha -= delta / 2000;
         }
 
+        // パーティクルはpause中も動かす(余韻が固まらないように)
+        this.sparkles.update(delta);
+
         if (!this.isRunning) return;
+
+        // ボーナス蝶の軌跡キラキラ
+        this.trailElapsed += delta;
+        if (this.trailElapsed >= 60) {
+            this.trailElapsed = 0;
+            this.butterflies.forEach((butterfly) => {
+                if (butterfly instanceof SpecialButterfly) {
+                    this.sparkles.trail(
+                        butterfly.x - butterfly.width / 2,
+                        butterfly.y - butterfly.height / 2,
+                    );
+                }
+            });
+        }
 
         // ↑ pause中でも動く処理、↓ pause中は動かない処理
 
@@ -422,6 +489,7 @@ export class GameplayState extends StateBase {
     }
 
     onExit(): void {
+        this.sparkles.clear();
         if (this.stagePauseHandler) {
             this.manager.app.stage.removeEventListener(
                 "pointerdown",
@@ -542,7 +610,7 @@ export class GameplayState extends StateBase {
             }
         } else if (butterfliesInLoopArea.length >= 2) {
             if (this.isSuccessLoop(butterfliesInLoopArea)) {
-                this.captureButterflies(butterfliesInLoopArea);
+                this.captureButterflies(butterfliesInLoopArea, loopArea);
                 this.captureFlowers(flowersInLoopArea);
             } else {
                 this.stagePoint -= 20;
@@ -552,10 +620,19 @@ export class GameplayState extends StateBase {
         }
     }
 
-    private captureButterflies(butterflies: Butterfly[]): void {
+    private captureButterflies(
+        butterflies: Butterfly[],
+        loopArea?: PIXI.Graphics,
+    ): void {
         AudioManager.shared.playSe(
             butterflies.length >= 10 ? "se_capture_many" : "se_capture",
         );
+
+        // 10匹以上の大量捕獲時だけ、囲んだ領域全体に淡いきらきらを降らせる
+        if (butterflies.length >= 10) {
+            this.showerOverLoopArea(butterflies, loopArea);
+        }
+
         this.caputuredButterflies.push(...butterflies);
         this.updateScoreMessage();
 

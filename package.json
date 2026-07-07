@@ -29,7 +29,8 @@
   },
   "homepage": "https://github.com/Uhsmt/LoopGame#readme",
   "dependencies": {
-    "@types/pixi.js": "^5.0.0"
+    "@types/pixi.js": "^5.0.0",
+    "pixi-filters": "^6.1.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.1",
