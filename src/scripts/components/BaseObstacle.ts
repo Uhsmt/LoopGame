@@ -21,6 +21,18 @@ export abstract class BaseObstacle extends BaseCaptureableObject {
     /** 退場時の移動速度(1フレーム16msあたりのpx) */
     protected leaveSpeed: number = 1.5;
 
+    // 徘徊(wander)移動のパラメータ。サブクラスのコンストラクタで設定して
+    // 最後にpickNewDirection()を呼ぶ
+    /** 1フレーム16msあたりの移動px */
+    protected moveSpeed: number = 0.35;
+    /** 直進フレーム数の範囲(この間隔でランダムに方向転換する) */
+    protected turnFrameMin: number = 120;
+    protected turnFrameMax: number = 180;
+    private directionX: number = 0;
+    private directionY: number = 0;
+    private frameCount: number = 0;
+    private turnFrame: number = 0;
+
     isActive: boolean = false;
     isLeaving: boolean = false;
     /** 画面外へ出た(削除待ち) */
@@ -51,8 +63,53 @@ export abstract class BaseObstacle extends BaseCaptureableObject {
         });
     }
 
-    /** 種別ごとの移動ロジック */
-    protected abstract move(delta: number): void;
+    /**
+     * 共通の移動ロジック: 一定フレームごとにランダムへ方向転換しながら
+     * 直進し、画面端(MARGIN内側)で反射する
+     */
+    protected move(delta: number): void {
+        const left = Const.MARGIN;
+        const right = this.screenSize.x - Const.MARGIN;
+        const top = Const.MARGIN;
+        const bottom = this.screenSize.y - Const.MARGIN;
+
+        // 一定フレーム進んだらランダムに方向転換
+        this.frameCount += 1;
+        if (this.frameCount >= this.turnFrame) {
+            this.pickNewDirection();
+        }
+
+        // 画面端(MARGIN内側)に達したら反射する
+        if (this.directionX < 0 && this.x <= left) {
+            this.directionX = Math.abs(this.directionX);
+        } else if (this.directionX > 0 && this.x >= right) {
+            this.directionX = -Math.abs(this.directionX);
+        }
+        if (this.directionY < 0 && this.y <= top) {
+            this.directionY = Math.abs(this.directionY);
+        } else if (this.directionY > 0 && this.y >= bottom) {
+            this.directionY = -Math.abs(this.directionY);
+        }
+
+        this.x += (this.directionX * this.moveSpeed * delta) / 16;
+        this.y += (this.directionY * this.moveSpeed * delta) / 16;
+
+        this.faceDirection(this.directionX);
+    }
+
+    /** ランダムな方向(単位ベクトル)と直進フレーム数を決め直す */
+    protected pickNewDirection(): void {
+        this.frameCount = 0;
+        this.turnFrame = Utility.random(this.turnFrameMin, this.turnFrameMax);
+        const angleRad = (this.pickDirectionAngleDeg() * Math.PI) / 180;
+        this.directionX = Math.cos(angleRad);
+        this.directionY = Math.sin(angleRad);
+    }
+
+    /** 進行方向の角度(度)を選ぶ。デフォルトは全方位ランダム */
+    protected pickDirectionAngleDeg(): number {
+        return Utility.random(0, 359);
+    }
 
     protected getObjectCenter(): { x: number; y: number } {
         return { x: this.x, y: this.y };

@@ -370,23 +370,17 @@ export class GameplayState extends StateBase {
     }
 
     private createObstacle(type: string): BaseObstacle | null {
-        // 各お邪魔オブジェクトの実装時にcaseを追加する
+        const screenSize = {
+            x: this.manager.app.screen.width,
+            y: this.manager.app.screen.height,
+        };
         switch (type) {
             case "bee":
-                return new Bee({
-                    x: this.manager.app.screen.width,
-                    y: this.manager.app.screen.height,
-                });
+                return new Bee(screenSize);
             case "spider":
-                return new Spider({
-                    x: this.manager.app.screen.width,
-                    y: this.manager.app.screen.height,
-                });
+                return new Spider(screenSize);
             case "catapy":
-                return new Catapy({
-                    x: this.manager.app.screen.width,
-                    y: this.manager.app.screen.height,
-                });
+                return new Catapy(screenSize);
             default:
                 return null;
         }
@@ -470,12 +464,9 @@ export class GameplayState extends StateBase {
             this.avoidPencilElapsedTime >= 0
                 ? this.lineDrawer.lastPointerPoint
                 : null;
+        const segmentPoints = this.lineDrawer.getSegmentPoints();
         this.butterflies.forEach((butterfly) => {
-            butterfly.update(
-                delta,
-                this.lineDrawer.getSegmentPoints(),
-                avoidPoint,
-            );
+            butterfly.update(delta, segmentPoints, avoidPoint);
         });
 
         // helpオブジェクトを出すタイミングで表示
@@ -753,10 +744,10 @@ export class GameplayState extends StateBase {
                 return;
             }
             // catapy単体で囲むと退場する(花は通常どおり取得できる)
-            catapiesInLoop.forEach((catapy) => {
-                this.obstacles = this.obstacles.filter((o) => o !== catapy);
-                catapy.delete();
-            });
+            this.obstacles = this.obstacles.filter(
+                (obstacle) => !catapiesInLoop.includes(obstacle),
+            );
+            catapiesInLoop.forEach((catapy) => catapy.delete());
             AudioManager.shared.playSe("se_obstacle_hit");
             this.captureFlowers(flowersInLoopArea);
             return;

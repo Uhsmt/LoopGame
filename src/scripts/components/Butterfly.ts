@@ -197,6 +197,9 @@ export class Butterfly extends BaseCaptureableObject {
             } else if (this.y >= bottom) {
                 this.yDiretion = -1 * Math.abs(this.yDiretion);
             }
+            // ライン判定をスキップする間は前フレームの接触状態を持ち越さない
+            // (効果終了直後の反転判定が誤ってスキップされないように)
+            this.isHitLineBeforeFrame = false;
         } else if (this.isForceToGather && this.gatherPoint) {
             // gatherPointに向かって飛ぶ
             // 横方向
@@ -211,6 +214,8 @@ export class Butterfly extends BaseCaptureableObject {
             } else {
                 this.yDiretion = -1 * Math.abs(this.yDiretion);
             }
+            // ライン判定をスキップする間は前フレームの接触状態を持ち越さない
+            this.isHitLineBeforeFrame = false;
         } else {
             // lineSegmentsと距離がhitAreaSize以下の点があればisHitLineをtrueにする
             const isHitLine = lineSegments.some((segment) => {
