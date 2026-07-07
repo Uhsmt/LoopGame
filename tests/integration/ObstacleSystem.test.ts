@@ -72,7 +72,7 @@ class TestGameplayEffects {
             color = 0x0081af;
         }
         if (this.lineShortenElapsedTime >= 0) {
-            time /= 2;
+            time /= 3;
             color = LINE_SHORTEN_COLOR;
         }
         this.lineDrawer.setLineDrawTime(time);
@@ -120,19 +120,19 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
     });
 
     describe("Bee hit -> line shorten effect", () => {
-        it("should halve the line draw time and show a help message", () => {
+        it("should cut the line draw time to 1/3 and show a help message", () => {
             const original = effects.lineDrawer.originalLineDrawTime;
 
             effects.applyObstacleEffect("bee");
 
-            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 2);
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 3);
             expect(effects.lineShortenElapsedTime).toBe(
                 LINE_SHORTEN_EFFECT_TIME_MS,
             );
             expect(effects.helpMessage).toBe("Short loop!");
         });
 
-        it("should turn the line gray while the effect is active", () => {
+        it("should turn the line red while the effect is active", () => {
             effects.applyObstacleEffect("bee");
 
             expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
@@ -157,7 +157,7 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
 
             effects.tick(LINE_SHORTEN_EFFECT_TIME_MS - 1000);
 
-            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 2);
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 3);
         });
     });
 
@@ -184,18 +184,18 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
     });
 
     describe("longLoop and line shorten overlap", () => {
-        it("should apply both: (original + 500) / 2", () => {
+        it("should apply both: (original + 500) / 3", () => {
             const original = effects.lineDrawer.originalLineDrawTime;
 
             effects.longLoopEffect(true);
             effects.applyObstacleEffect("bee");
 
             expect(effects.lineDrawer.getLineDrawTime()).toBe(
-                (original + 500) / 2,
+                (original + 500) / 3,
             );
         });
 
-        it("should prefer the gray shorten color over the longLoop color", () => {
+        it("should prefer the red shorten color over the longLoop color", () => {
             effects.longLoopEffect(true);
             effects.applyObstacleEffect("bee");
 
@@ -212,7 +212,7 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
 
             expect(effects.longLoopElapsedTime).toBe(-1);
             expect(effects.lineShortenElapsedTime).toBeGreaterThan(0);
-            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 2);
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 3);
             expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
         });
 

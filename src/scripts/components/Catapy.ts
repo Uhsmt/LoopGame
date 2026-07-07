@@ -1,3 +1,4 @@
+import * as PIXI from "pixi.js";
 import * as Utility from "../utils/Utility";
 import { BaseObstacle } from "./BaseObstacle";
 
@@ -15,6 +16,8 @@ export class Catapy extends BaseObstacle {
         this.hitAreaSize = 28;
         this.animIntervalMs = 400;
         this.reactsToLine = false;
+        // 体が少しでもループに含まれていたら「入っている」と判定する
+        this.hitRate = 0;
         // Spider(0.35)よりさらに遅い
         this.moveSpeed = 0.2;
         this.turnFrameMin = 180;
@@ -26,5 +29,26 @@ export class Catapy extends BaseObstacle {
     protected pickDirectionAngleDeg(): number {
         const baseAngleDeg = Utility.chooseAtRandom([0, 180], 1)[0];
         return baseAngleDeg + Utility.random(-20, 20);
+    }
+
+    /**
+     * 横長の体に合わせて楕円状にサンプリングする
+     * (基底の円判定だと長い体の端がループに入っていても検出できないため)
+     */
+    protected hitAreaPoints(): PIXI.Point[] {
+        const points: PIXI.Point[] = [];
+        const center = this.getObjectCenter();
+        const radiusX = this.width / 2;
+        const radiusY = this.height / 2;
+        for (let i = 0; i < 36; i++) {
+            const angle = (i * 10 * Math.PI) / 180;
+            points.push(
+                new PIXI.Point(
+                    center.x + Math.cos(angle) * radiusX,
+                    center.y + Math.sin(angle) * radiusY,
+                ),
+            );
+        }
+        return points;
     }
 }

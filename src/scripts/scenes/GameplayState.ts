@@ -333,14 +333,16 @@ export class GameplayState extends StateBase {
         }
         // 出現タイミングはステージ時間の等分割 + 3秒
         // (helpオブジェクトの出現タイミングと重ならないようにずらす)
+        // デバッグモードでは動作確認しやすいよう10秒間隔で早めに出す
         const types = this.stageInfo.obstacles;
         types.forEach((type, index) => {
             this.obstacleTimings.push({
                 type,
-                time:
-                    Math.floor(
-                        (this.gameTimer / (types.length + 1)) * (index + 1),
-                    ) + 3,
+                time: DEBUG_MODE
+                    ? 10 * (index + 1)
+                    : Math.floor(
+                          (this.gameTimer / (types.length + 1)) * (index + 1),
+                      ) + 3,
             });
         });
     }
@@ -943,8 +945,8 @@ export class GameplayState extends StateBase {
     /**
      * longLoop/ライン短縮の効果を一元的にlineDrawerへ反映する
      * - 描画時間: originalLineDrawTimeを基準に、longLoop有効なら+500、
-     *   ライン短縮有効なら半分(1/2)
-     * - 線の色: ライン短縮中はグレー(弱体化の視覚表現)を最優先、
+     *   ライン短縮有効なら1/3
+     * - 線の色: ライン短縮中は赤(弱体化の視覚表現)を最優先、
      *   longLoop中は青(ボーナス中は金)、どちらも無ければ元の色
      */
     private applyLineDrawTime(): void {
@@ -955,7 +957,7 @@ export class GameplayState extends StateBase {
             color = this.stageInfo.bonusFlag ? 0xffd700 : 0x0081af;
         }
         if (this.lineShortenElapsedTime >= 0) {
-            time /= 2;
+            time /= 3;
             color = Const.LINE_SHORTEN_COLOR;
         }
         this.lineDrawer.setLineDrawTime(time);

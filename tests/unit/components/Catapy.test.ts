@@ -106,6 +106,31 @@ describe("Catapy", () => {
             ).toBe(28);
         });
 
+        it("should treat any partial overlap with a loop as a hit (hitRate 0)", () => {
+            expect((catapy as unknown as { hitRate: number }).hitRate).toBe(0);
+        });
+
+        it("should sample hit points along the elongated body (ellipse)", () => {
+            catapy.x = 100;
+            catapy.y = 50;
+            (catapy as unknown as { width: number }).width = 120;
+            (catapy as unknown as { height: number }).height = 40;
+
+            const points = (
+                catapy as unknown as {
+                    hitAreaPoints(): { x: number; y: number }[];
+                }
+            ).hitAreaPoints();
+
+            const xs = points.map((p) => p.x);
+            const ys = points.map((p) => p.y);
+            // 横は体の幅(±60)、縦は体の高さ(±20)までサンプリングされる
+            expect(Math.max(...xs)).toBeCloseTo(160, 5);
+            expect(Math.min(...xs)).toBeCloseTo(40, 5);
+            expect(Math.max(...ys)).toBeCloseTo(70, 5);
+            expect(Math.min(...ys)).toBeCloseTo(30, 5);
+        });
+
         it("should set animIntervalMs to 400 (slow walking animation)", () => {
             expect(
                 (catapy as unknown as { animIntervalMs: number })
