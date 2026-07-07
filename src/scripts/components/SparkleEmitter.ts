@@ -103,14 +103,14 @@ export class SparkleEmitter extends PIXI.Container {
                 x + (Math.random() - 0.5) * 190,
                 y + (Math.random() - 0.5) * 80,
                 {
-                    vx: (Math.random() - 0.5) * 0.03,
-                    vy: 0.02 + Math.random() * 0.04,
-                    gravity: 0.00012,
+                    vx: (Math.random() - 0.5) * 0.02,
+                    vy: 0.012 + Math.random() * 0.022,
+                    gravity: 0.00007,
                     lifeMs:
                         (options.lifeMs ?? 1500) * (0.6 + Math.random() * 0.4),
                     scale: (options.scale ?? 1) * (0.5 + Math.random() * 0.6),
                     tints: options.tints,
-                    baseAlpha: 0.75,
+                    baseAlpha: 0.6,
                 },
             );
         }
@@ -128,13 +128,13 @@ export class SparkleEmitter extends PIXI.Container {
         for (let i = 0; i < count; i++) {
             const p = sample();
             this.spawn(p.x, p.y, {
-                vx: (Math.random() - 0.5) * 0.03,
-                vy: 0.02 + Math.random() * 0.04,
-                gravity: 0.00012,
+                vx: (Math.random() - 0.5) * 0.02,
+                vy: 0.012 + Math.random() * 0.022,
+                gravity: 0.00007,
                 lifeMs: (options.lifeMs ?? 1500) * (0.6 + Math.random() * 0.4),
                 scale: (options.scale ?? 1) * (0.5 + Math.random() * 0.6),
                 tints: options.tints,
-                baseAlpha: 0.75,
+                baseAlpha: 0.6,
             });
         }
     }
