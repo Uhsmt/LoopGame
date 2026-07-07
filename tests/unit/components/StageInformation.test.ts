@@ -59,6 +59,45 @@ describe("StageInformation", () => {
             expect(si.hasBonusButterfly).toBe(false);
         });
 
+        it("should add obstacles as levels progress and inherit them", () => {
+            const si = new StageInformation();
+            expect(si.obstacles).toEqual([]);
+
+            while (si.level < 5) {
+                si.next();
+            }
+            expect(si.obstacles).toEqual(["bee"]);
+
+            si.next(); // level 6: 設定キーが無いので引き継ぐ
+            expect(si.obstacles).toEqual(["bee"]);
+
+            si.next(); // level 7
+            expect(si.obstacles).toEqual(["bee", "spider"]);
+
+            while (si.level < 9) {
+                si.next();
+            }
+            expect(si.obstacles).toEqual(["bee", "spider", "catapy"]);
+
+            while (si.level < 12) {
+                si.next();
+            }
+            // 最終レベル以降も引き継ぐ
+            expect(si.obstacles).toEqual(["bee", "spider", "catapy"]);
+        });
+
+        it("should keep obstacles through a bonus stage for the next stage", () => {
+            const si = new StageInformation();
+            while (si.level < 5) {
+                si.next();
+            }
+            si.bonusStage();
+            expect(si.obstacles).toEqual(["bee"]);
+
+            si.next();
+            expect(si.obstacles).toEqual(["bee"]);
+        });
+
         it("should keep escalating needCount by 2 beyond the final level", () => {
             const si = new StageInformation();
             while (si.level < 11) {

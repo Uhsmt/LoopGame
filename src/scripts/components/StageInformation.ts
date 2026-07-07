@@ -19,6 +19,7 @@ interface StageConfig {
     maxMultipleRate?: number;
     helpObjectNum?: number;
     hasBonusButterfly?: boolean;
+    obstacles?: string[];
 }
 
 const stageConfigs: StageConfig[] = stageConfig;
@@ -37,6 +38,7 @@ export class StageInformation {
     maxMultipleRate: number = 1;
     helpObjectNum: number = 0;
     hasBonusButterfly: boolean = false;
+    obstacles: string[] = [];
 
     // scores
     captureCount: number = 0;
@@ -155,6 +157,9 @@ export class StageInformation {
         this.helpObjectNum = config.helpObjectNum ?? this.helpObjectNum;
         this.hasBonusButterfly =
             config.hasBonusButterfly ?? this.hasBonusButterfly;
+        // お邪魔オブジェクトも設定に無ければ前ステージから引き継ぐ
+        // (レベルが上がると種類が追加されていく)
+        this.obstacles = config.obstacles ?? this.obstacles;
 
         this.level = level;
         this.butterflyColors = Utility.chooseAtRandom(
@@ -210,5 +215,7 @@ export class StageInformation {
         this.maxMultipleRate = 3;
         this.helpObjectNum = Utility.random(4, 8);
         this.hasBonusButterfly = false;
+        // note: obstaclesはクリアしない(次ステージへの引き継ぎ用)
+        // ボーナスステージ中はGameplayState側がbonusFlagを見て出現させない
     }
 }

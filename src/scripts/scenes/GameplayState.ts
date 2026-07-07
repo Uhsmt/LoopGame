@@ -13,6 +13,7 @@ import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
+import { BaseObstacle } from "../components/BaseObstacle";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
@@ -36,8 +37,10 @@ export class GameplayState extends StateBase {
     butterflies: Butterfly[] = [];
     private isAddBonusButterfly = false;
     flowers: HelpFlower[] = [];
+    obstacles: BaseObstacle[] = [];
     private stageInfo: StageInformation;
     private readonly helpFlowersTiming: number[] = [];
+    private obstacleTimings: { type: string; time: number }[] = [];
     private pauseHandler: () => void;
     private stagePauseHandler: (() => void) | null = null;
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
@@ -158,6 +161,9 @@ export class GameplayState extends StateBase {
 
         // helpオブジェクトの設定
         this.setupForHelpObject();
+
+        // お邪魔オブジェクトの設定
+        this.setupForObstacles();
 
         // Frame
         this.addFrameGraphic();
@@ -315,6 +321,85 @@ export class GameplayState extends StateBase {
         this.gatherDistance = Math.min(distanceWidth, distanceHeight);
     }
 
+    private setupForObstacles(): void {
+        // ボーナスステージにはお邪魔オブジェクトを出さない
+        if (this.stageInfo.bonusFlag) {
+            return;
+        }
+        // 出現タイミングはステージ時間の等分割 + 3秒
+        // (helpオブジェクトの出現タイミングと重ならないようにずらす)
+        const types = this.stageInfo.obstacles;
+        types.forEach((type, index) => {
+            this.obstacleTimings.push({
+                type,
+                time:
+                    Math.floor(
+                        (this.gameTimer / (types.length + 1)) * (index + 1),
+                    ) + 3,
+            });
+        });
+    }
+
+    private spawnObstaclesIfNeeded(): void {
+        const nowSec = Math.floor(this.elapsedTime / 1000);
+        this.obstacleTimings = this.obstacleTimings.filter((timing) => {
+            if (timing.time > nowSec) {
+                return true;
+            }
+            const obstacle = this.createObstacle(timing.type);
+            if (obstacle) {
+                this.obstacles.push(obstacle);
+                this.container.addChildAt(
+                    obstacle,
+                    this.container.children.length - 2,
+                );
+                obstacle.setRandomInitialPosition(
+                    this.manager.app.screen.width,
+                    this.manager.app.screen.height,
+                );
+                obstacle.appear();
+                AudioManager.shared.playSe("se_obstacle_appear");
+            }
+            return false;
+        });
+    }
+
+    private createObstacle(type: string): BaseObstacle | null {
+        // 各お邪魔オブジェクトの実装時にcaseを追加する
+        switch (type) {
+            default:
+                return null;
+        }
+    }
+
+    private updateObstacles(delta: number): void {
+        this.spawnObstaclesIfNeeded();
+
+        const segmentPoints = this.lineDrawer.getSegmentPoints();
+        this.obstacles.forEach((obstacle) => {
+            obstacle.update(delta, segmentPoints);
+            if (obstacle.consumeLineHit()) {
+                AudioManager.shared.playSe("se_obstacle_hit");
+                this.applyObstacleEffect(obstacle);
+            }
+        });
+
+        // 画面外へ出たものを破棄する
+        this.obstacles = this.obstacles.filter((obstacle) => {
+            if (obstacle.isGone) {
+                obstacle.removeFromParent();
+                obstacle.destroy();
+                return false;
+            }
+            return true;
+        });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private applyObstacleEffect(obstacle: BaseObstacle): void {
+        // 各お邪魔オブジェクトの実装時に効果を追加する
+    }
+
     async onEnter(): Promise<void> {
         AudioManager.shared.playBgm(
             this.stageInfo.bonusFlag
@@ -431,6 +516,9 @@ export class GameplayState extends StateBase {
 
         this.elapsedTime += delta;
 
+        // お邪魔オブジェクト(pause中は動かない)
+        this.updateObstacles(delta);
+
         // sun
         const progress = this.elapsedTime / (this.gameTimer * 1000);
         this.sun.move(
@@ -536,6 +624,12 @@ export class GameplayState extends StateBase {
             flower.stop();
             flower.delete();
         });
+
+        this.obstacles.forEach((obstacle) => {
+            obstacle.isActive = false;
+            obstacle.delete();
+        });
+        this.obstacles = [];
 
         // captureButterfliesの中にSpecialButterflyが含まれているかどうか
         const isGotBonusButterfly = this.caputuredButterflies.some(
