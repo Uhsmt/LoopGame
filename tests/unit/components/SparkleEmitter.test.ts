@@ -85,6 +85,17 @@ describe("SparkleEmitter", () => {
         expect(moved).toBe(true);
     });
 
+    it("should spawn falling particles with a shower", () => {
+        emitter.shower(100, 100, 20);
+        expect(emitter.particleCount).toBe(20);
+        emitter.update(300);
+        const falling = emitter.children.filter(
+            (c) => (c as { y: number }).y > 40,
+        );
+        // 大半が下方向に動いている(初期位置はy=100±40)
+        expect(falling.length).toBeGreaterThan(10);
+    });
+
     it("should enforce the particle cap", () => {
         for (let i = 0; i < 10; i++) {
             emitter.burst(0, 0, 100);

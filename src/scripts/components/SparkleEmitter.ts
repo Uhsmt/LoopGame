@@ -9,6 +9,7 @@ interface Particle {
     lifeMs: number;
     maxLifeMs: number;
     baseScale: number;
+    baseAlpha: number;
 }
 
 export interface BurstOptions {
@@ -87,6 +88,34 @@ export class SparkleEmitter extends PIXI.Container {
         }
     }
 
+    /**
+     * 範囲内からきらきらを舞い降らせる(大量捕獲のお祝いなど)。
+     * 弾けるのではなく、淡くゆっくり落ちるイメージ
+     */
+    shower(
+        x: number,
+        y: number,
+        count: number,
+        options: BurstOptions = {},
+    ): void {
+        for (let i = 0; i < count; i++) {
+            this.spawn(
+                x + (Math.random() - 0.5) * 190,
+                y + (Math.random() - 0.5) * 80,
+                {
+                    vx: (Math.random() - 0.5) * 0.03,
+                    vy: 0.02 + Math.random() * 0.04,
+                    gravity: 0.00012,
+                    lifeMs:
+                        (options.lifeMs ?? 1500) * (0.6 + Math.random() * 0.4),
+                    scale: (options.scale ?? 1) * (0.5 + Math.random() * 0.6),
+                    tints: options.tints,
+                    baseAlpha: 0.75,
+                },
+            );
+        }
+    }
+
     /** 軌跡用に1粒だけこぼす(ボーナス蝶の尾など) */
     trail(x: number, y: number, options: BurstOptions = {}): void {
         this.spawn(
@@ -113,6 +142,7 @@ export class SparkleEmitter extends PIXI.Container {
             lifeMs: number;
             scale: number;
             tints?: number[];
+            baseAlpha?: number;
         },
     ): void {
         // 上限を超える分は古いものから消す
@@ -133,6 +163,7 @@ export class SparkleEmitter extends PIXI.Container {
         sprite.scale.set(baseScale);
         this.addChild(sprite);
 
+        sprite.alpha = opts.baseAlpha ?? 1;
         this.particles.push({
             sprite,
             vx: opts.vx,
@@ -142,6 +173,7 @@ export class SparkleEmitter extends PIXI.Container {
             lifeMs: opts.lifeMs,
             maxLifeMs: opts.lifeMs,
             baseScale,
+            baseAlpha: opts.baseAlpha ?? 1,
         });
     }
 
@@ -159,7 +191,7 @@ export class SparkleEmitter extends PIXI.Container {
             p.sprite.y += p.vy * deltaMS;
             p.sprite.rotation += p.spin * deltaMS;
             const t = p.lifeMs / p.maxLifeMs;
-            p.sprite.alpha = t;
+            p.sprite.alpha = t * p.baseAlpha;
             p.sprite.scale.set(p.baseScale * (0.4 + 0.6 * t));
         }
     }
