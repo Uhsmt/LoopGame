@@ -356,10 +356,7 @@ export class GameplayState extends StateBase {
             const obstacle = this.createObstacle(timing.type);
             if (obstacle) {
                 this.obstacles.push(obstacle);
-                this.container.addChildAt(
-                    obstacle,
-                    this.container.children.length - 2,
-                );
+                this.addChildBelowFrame(obstacle);
                 obstacle.setRandomInitialPosition(
                     this.manager.app.screen.width,
                     this.manager.app.screen.height,
@@ -486,10 +483,7 @@ export class GameplayState extends StateBase {
                 this.manager.app.screen.height,
             );
             this.flowers.push(flower);
-            this.container.addChildAt(
-                flower,
-                this.container.children.length - 2,
-            );
+            this.addChildBelowFrame(flower);
             this.helpFlowersTiming.shift();
             AudioManager.shared.playSe("se_powerup");
         }
@@ -524,7 +518,7 @@ export class GameplayState extends StateBase {
             this.butterflies.push(specialButterfly);
             this.isAddBonusButterfly = true;
             AudioManager.shared.playSe("se_powerup");
-            this.container.addChild(specialButterfly);
+            this.addChildBelowFrame(specialButterfly);
         }
         if (this.helpMessage.alpha > 0) {
             this.helpMessage.alpha -= delta / 2000;
@@ -848,10 +842,7 @@ export class GameplayState extends StateBase {
 
                 const butterfly = this.createButterfly();
                 this.butterflies.push(butterfly);
-                this.container.addChildAt(
-                    butterfly,
-                    this.container.children.length - 2,
-                );
+                this.addChildBelowFrame(butterfly);
                 butterfly.setRandomInitialPoistion(
                     this.manager.app.screen.width,
                     this.manager.app.screen.height,
