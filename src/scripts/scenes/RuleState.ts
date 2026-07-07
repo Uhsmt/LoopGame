@@ -858,6 +858,9 @@ export class RuleState extends StateBase {
 
         let obstacleY = title2jp.y + title2jp.height + Const.MARGIN;
         const obstacleRowGap = 70;
+        // ノートの右端。説明文はここまでで折り返す(はみ出し防止)
+        const noteRightX =
+            this.notebookSprite.x + this.notebookSprite.width / 2;
         hindranceObjects.forEach((obstacle) => {
             obstacle.x =
                 this.manager.app.screen.width / 2 +
@@ -868,17 +871,27 @@ export class RuleState extends StateBase {
             obstacle.appear(false);
             this.hindranceObjects.push(obstacle);
 
+            const textX = obstacle.x + obstacle.width;
+            const wrapWidth = noteRightX - Const.MARGIN * 2 - textX;
             const text = new PIXI.Text({
                 text: obstacle.description,
-                style: this.defaultTextStyle,
+                style: {
+                    ...this.defaultTextStyle,
+                    wordWrap: true,
+                    wordWrapWidth: wrapWidth,
+                },
             });
-            text.x = obstacle.x + obstacle.width;
+            text.x = textX;
             text.y = obstacle.y - obstacle.height / 2;
             this.pageInfos.push(text);
 
             const textjp = new PIXI.Text({
                 text: obstacle.descriptionJP,
-                style: this.defaultTextStyleJP,
+                style: {
+                    ...this.defaultTextStyleJP,
+                    wordWrap: true,
+                    wordWrapWidth: wrapWidth,
+                },
             });
             textjp.x = text.x;
             textjp.y = text.y + text.height * 1.1;
