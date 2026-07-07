@@ -11,6 +11,9 @@ import { BaseObstacle } from "./BaseObstacle";
  *   蝶と一緒に囲むとループ自体が無効になる(判定自体はGameplayState側で実装)
  */
 export class Catapy extends BaseObstacle {
+    readonly description: string = "Voids any loop that contains it";
+    readonly descriptionJP: string = "いっしょに かこむと ループむこう";
+
     constructor(screenSize: { x: number; y: number }) {
         super(["catapy1", "catapy2"], 0.192, screenSize);
         this.hitAreaSize = 28;

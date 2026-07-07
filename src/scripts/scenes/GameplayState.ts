@@ -415,10 +415,10 @@ export class GameplayState extends StateBase {
         // 各お邪魔オブジェクトの実装時に効果を追加する
         if (obstacle instanceof Bee) {
             this.lineShortenEffect(true);
-            this.showHelpMessage("Short loop!");
+            this.showHelpMessage("Line shortened!");
         } else if (obstacle instanceof Spider) {
             this.avoidPencilEffect(true);
-            this.showHelpMessage("Run away!");
+            this.showHelpMessage("Butterflies flee!");
         }
     }
 
@@ -615,7 +615,7 @@ export class GameplayState extends StateBase {
         }
 
         if (this.elapsedTime >= this.gameTimer * 1000) {
-            this.showActionMessage("Time up!");
+            this.showActionMessage("Time's up!");
             this.endGame();
         }
 
@@ -780,7 +780,7 @@ export class GameplayState extends StateBase {
             } else {
                 this.stagePoint -= 20;
                 AudioManager.shared.playSe("se_bad_loop");
-                this.showActionMessage("Bad Loop! \r\n -20 point");
+                this.showActionMessage("Bad loop! \r\n -20 points");
             }
         }
     }
@@ -822,7 +822,7 @@ export class GameplayState extends StateBase {
 
         this.stagePoint += point;
         this.showActionMessage(
-            `${calculationText} ${Utility.formatNumberWithCommas(point)} point`,
+            `${calculationText} ${Utility.formatNumberWithCommas(point)} points`,
         );
 
         butterflies.forEach((butterfly) => {

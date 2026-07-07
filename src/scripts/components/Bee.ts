@@ -7,6 +7,9 @@ import { BaseObstacle } from "./BaseObstacle";
  * - ラインに触れるとライン短縮効果を発動する(効果自体はGameplayState側で実装)
  */
 export class Bee extends BaseObstacle {
+    readonly description: string = "Shortens your loop line";
+    readonly descriptionJP: string = "ループせんが みじかくなる";
+
     constructor(screenSize: { x: number; y: number }) {
         super(["bee"], 0.16, screenSize);
         this.hitAreaSize = 16;

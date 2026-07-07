@@ -33,7 +33,7 @@ export class HelpFlower extends BaseCaptureableObject {
                 break;
             case "time_plus":
                 this.sprite = PIXI.Sprite.from("flower2");
-                this.message = "Time extension!";
+                this.message = "Time extended!";
                 this.messageJP = "もどれ！";
                 this.description = "Extend the game time";
                 this.descriptionJP = "ゲームじかんをのばす";

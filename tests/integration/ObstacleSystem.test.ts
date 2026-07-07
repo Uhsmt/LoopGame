@@ -82,10 +82,10 @@ class TestGameplayEffects {
     applyObstacleEffect(obstacleType: "bee" | "spider"): void {
         if (obstacleType === "bee") {
             this.lineShortenEffect(true);
-            this.helpMessage = "Short loop!";
+            this.helpMessage = "Line shortened!";
         } else if (obstacleType === "spider") {
             this.avoidPencilEffect(true);
-            this.helpMessage = "Run away!";
+            this.helpMessage = "Butterflies flee!";
         }
     }
 
@@ -129,7 +129,7 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             expect(effects.lineShortenElapsedTime).toBe(
                 LINE_SHORTEN_EFFECT_TIME_MS,
             );
-            expect(effects.helpMessage).toBe("Short loop!");
+            expect(effects.helpMessage).toBe("Line shortened!");
         });
 
         it("should turn the line red while the effect is active", () => {
@@ -235,7 +235,7 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             expect(effects.avoidPencilElapsedTime).toBe(
                 AVOID_PENCIL_EFFECT_TIME_MS,
             );
-            expect(effects.helpMessage).toBe("Run away!");
+            expect(effects.helpMessage).toBe("Butterflies flee!");
         });
 
         it("should clear the avoid-pencil timer once the effect duration elapses", () => {
