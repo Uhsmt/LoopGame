@@ -100,10 +100,10 @@ describe("Catapy", () => {
             expect(sprites).toHaveLength(2);
         });
 
-        it("should set hitAreaSize to 12", () => {
+        it("should set hitAreaSize to 14 (1.2x scale)", () => {
             expect(
                 (catapy as unknown as { hitAreaSize: number }).hitAreaSize,
-            ).toBe(12);
+            ).toBe(14);
         });
 
         it("should set animIntervalMs to 400 (slow walking animation)", () => {

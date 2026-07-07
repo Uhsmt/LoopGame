@@ -38,8 +38,10 @@ export const FREEZE_EFFECT_TIME_MS = 3000;
 // お邪魔オブジェクトの効果時間(bee: ライン短縮 / spider: 蝶が鉛筆から逃げる)
 export const LINE_SHORTEN_EFFECT_TIME_MS = 4000;
 export const AVOID_PENCIL_EFFECT_TIME_MS = 4000;
-// 鉛筆から逃げる効果が働く半径(px)
-export const AVOID_PENCIL_RADIUS = 200;
+// ライン短縮中の線の色(グレー: 弱体化の視覚表現)
+export const LINE_SHORTEN_COLOR = 0x808080;
+// 鉛筆から逃げるときの速さ(px/16ms、小蝶と同じ。サイズによらず共通)
+export const AVOID_PENCIL_SPEED = 0.6;
 
 export const seSrcs = [
     { alias: "se_switch", src: `${BASE_URL}assets/sounds/se_switch.m4a` },

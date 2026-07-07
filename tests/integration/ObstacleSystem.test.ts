@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 const LONG_LOOP_EFFECT_TIME_MS = 5000;
 const LINE_SHORTEN_EFFECT_TIME_MS = 4000;
+const LINE_SHORTEN_COLOR = 0x808080;
 const AVOID_PENCIL_EFFECT_TIME_MS = 4000;
 
 class TestLineDrawer {
@@ -52,13 +53,7 @@ class TestGameplayEffects {
     }
 
     longLoopEffect(isActive: boolean): void {
-        if (isActive) {
-            this.lineDrawer.setLineColor(0x0081af);
-            this.longLoopElapsedTime = LONG_LOOP_EFFECT_TIME_MS;
-        } else {
-            this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
-            this.longLoopElapsedTime = -1;
-        }
+        this.longLoopElapsedTime = isActive ? LONG_LOOP_EFFECT_TIME_MS : -1;
         this.applyLineDrawTime();
     }
 
@@ -71,13 +66,17 @@ class TestGameplayEffects {
 
     applyLineDrawTime(): void {
         let time = this.lineDrawer.originalLineDrawTime;
+        let color = this.lineDrawer.originalLineColor;
         if (this.longLoopElapsedTime >= 0) {
             time += 500;
+            color = 0x0081af;
         }
         if (this.lineShortenElapsedTime >= 0) {
             time /= 2;
+            color = LINE_SHORTEN_COLOR;
         }
         this.lineDrawer.setLineDrawTime(time);
+        this.lineDrawer.setLineColor(color);
     }
 
     applyObstacleEffect(obstacleType: "bee" | "spider"): void {
@@ -133,13 +132,22 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             expect(effects.helpMessage).toBe("Short loop!");
         });
 
-        it("should restore the original line draw time after the effect expires", () => {
+        it("should turn the line gray while the effect is active", () => {
+            effects.applyObstacleEffect("bee");
+
+            expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
+        });
+
+        it("should restore the original line draw time and color after the effect expires", () => {
             const original = effects.lineDrawer.originalLineDrawTime;
             effects.applyObstacleEffect("bee");
 
             effects.tick(LINE_SHORTEN_EFFECT_TIME_MS); // ちょうど時間切れ
 
             expect(effects.lineDrawer.getLineDrawTime()).toBe(original);
+            expect(effects.lineDrawer.getLineColor()).toBe(
+                effects.lineDrawer.originalLineColor,
+            );
             expect(effects.lineShortenElapsedTime).toBe(-1);
         });
 
@@ -187,7 +195,14 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             );
         });
 
-        it("should fall back to longLoop-only time once line shorten expires first", () => {
+        it("should prefer the gray shorten color over the longLoop color", () => {
+            effects.longLoopEffect(true);
+            effects.applyObstacleEffect("bee");
+
+            expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
+        });
+
+        it("should fall back to longLoop-only time and color once line shorten expires first", () => {
             const original = effects.lineDrawer.originalLineDrawTime;
 
             effects.longLoopEffect(true); // 5000ms
@@ -198,6 +213,7 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
             expect(effects.lineShortenElapsedTime).toBe(-1);
             expect(effects.longLoopElapsedTime).toBeGreaterThan(0);
             expect(effects.lineDrawer.getLineDrawTime()).toBe(original + 500);
+            expect(effects.lineDrawer.getLineColor()).toBe(0x0081af);
         });
 
         it("should fall back to original time once both effects expire", () => {

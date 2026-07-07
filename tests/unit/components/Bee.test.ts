@@ -27,8 +27,8 @@ vi.mock("pixi.js", () => {
 // Mock Utility(角度/直進フレーム数を呼び出し引数で制御する)
 vi.mock("../../../src/scripts/utils/Utility", () => ({
     random: vi.fn().mockImplementation((min: number, max: number) => {
-        // turnFrame(30〜60)は常に30を返す
-        if (max === 60) return 30;
+        // turnFrame(120〜240)は常に120を返す
+        if (max === 240) return 120;
         // angleDeg(0〜359)は0度(=x軸正方向)を返す
         if (max === 359) return 0;
         return min;
@@ -78,7 +78,7 @@ describe("Bee", () => {
     beforeEach(() => {
         vi.mocked(Utility.random).mockImplementation(
             (min: number, max: number) => {
-                if (max === 60) return 30;
+                if (max === 240) return 120;
                 if (max === 359) return 0;
                 return min;
             },
@@ -95,10 +95,10 @@ describe("Bee", () => {
             expect(sprites).toHaveLength(1);
         });
 
-        it("should set hitAreaSize smaller than the smallest butterfly (9)", () => {
+        it("should set hitAreaSize to 16 (2x scale)", () => {
             expect(
                 (bee as unknown as { hitAreaSize: number }).hitAreaSize,
-            ).toBe(8);
+            ).toBe(16);
         });
 
         it("should set leaveSpeed to 3 (faster than default)", () => {
@@ -110,7 +110,7 @@ describe("Bee", () => {
 
     describe("zigzag movement", () => {
         it("should move in a straight line while under the turn-frame threshold", () => {
-            // angleDeg=0 -> directionX=1, directionY=0 (turnFrame=30)
+            // angleDeg=0 -> directionX=1, directionY=0 (turnFrame=120)
             bee.update(16, []);
             const xAfterFirst = bee.x;
             bee.update(16, []);
@@ -123,22 +123,22 @@ describe("Bee", () => {
             const startX = bee.x;
             bee.update(16, []);
             const movedDistance = bee.x - startX;
-            expect(movedDistance).toBeCloseTo(1.2, 5);
+            expect(movedDistance).toBeCloseTo(2.4, 5);
             expect(movedDistance).toBeGreaterThan(0.6);
         });
 
         it("should turn to a new random direction after the turn-frame count", () => {
-            // 30フレーム進む間は同じ方向(dx=1,dy=0)
-            for (let i = 0; i < 29; i++) {
+            // 120フレーム進む間は同じ方向(dx=1,dy=0)
+            for (let i = 0; i < 119; i++) {
                 bee.update(16, []);
             }
             const xBeforeTurn = bee.x;
             const yBeforeTurn = bee.y;
 
-            // 30フレーム目の直前に方向を変える(90度=真下)ようモックを切り替える
+            // 120フレーム目の直前に方向を変える(90度=真下)ようモックを切り替える
             vi.mocked(Utility.random).mockImplementation(
                 (min: number, max: number) => {
-                    if (max === 60) return 30;
+                    if (max === 240) return 120;
                     if (max === 359) return 90;
                     return min;
                 },
@@ -156,7 +156,7 @@ describe("Bee", () => {
             // 左向きに直進させる(180度)
             vi.mocked(Utility.random).mockImplementation(
                 (min: number, max: number) => {
-                    if (max === 60) return 30;
+                    if (max === 240) return 120;
                     if (max === 359) return 180;
                     return min;
                 },
@@ -177,7 +177,7 @@ describe("Bee", () => {
         it("should reflect off the right edge", () => {
             vi.mocked(Utility.random).mockImplementation(
                 (min: number, max: number) => {
-                    if (max === 60) return 30;
+                    if (max === 240) return 120;
                     if (max === 359) return 0; // 右向き
                     return min;
                 },
@@ -197,7 +197,7 @@ describe("Bee", () => {
         it("should reflect off the top edge", () => {
             vi.mocked(Utility.random).mockImplementation(
                 (min: number, max: number) => {
-                    if (max === 60) return 30;
+                    if (max === 240) return 120;
                     if (max === 359) return 270; // 上向き
                     return min;
                 },
@@ -217,7 +217,7 @@ describe("Bee", () => {
         it("should reflect off the bottom edge", () => {
             vi.mocked(Utility.random).mockImplementation(
                 (min: number, max: number) => {
-                    if (max === 60) return 30;
+                    if (max === 240) return 120;
                     if (max === 359) return 90; // 下向き
                     return min;
                 },

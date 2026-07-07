@@ -48,7 +48,7 @@ vi.mock("../../../src/scripts/utils/Utility", () => ({
 vi.mock("../../../src/scripts/utils/Const", () => ({
     SIZE_LIST: ["small", "medium", "large"],
     MARGIN: 50,
-    AVOID_PENCIL_RADIUS: 200,
+    AVOID_PENCIL_SPEED: 0.6,
 }));
 
 // Mock BaseCaptureableObject
@@ -385,19 +385,44 @@ describe("Butterfly", () => {
             expect((butterfly as any).yDiretion).toBeLessThan(0);
         });
 
-        it("should move 1.7x faster than normal speed while avoiding", async () => {
+        it("should flee at the small-butterfly speed (0.6) x1.7 regardless of size", async () => {
             const UtilityMock = vi.mocked(
                 await import("../../../src/scripts/utils/Utility"),
             );
             UtilityMock.getDistance.mockReturnValue(50);
 
-            const avoidPoint = new MockPoint(0, 0);
+            // 一番遅いlargeサイズでも小蝶(0.6)と同じ速さで逃げる
+            const largeButterfly = new Butterfly(
+                "large",
+                0xff0000,
+                0x00ff00,
+                1,
+                mockScreenSize,
+            );
+            largeButterfly.isFlying = true;
+            largeButterfly.x = 400;
+            largeButterfly.y = 300;
+
+            (largeButterfly as any).fly(16, [], new MockPoint(0, 0));
+
+            // avoidPoint(0,0)より右下にいるので正方向へ、速度は0.6の1.7倍
+            expect(largeButterfly.x).toBeCloseTo(400 + 0.6 * 1.7, 5);
+        });
+
+        it("should not permanently change the butterfly's own speed after avoiding", async () => {
+            const UtilityMock = vi.mocked(
+                await import("../../../src/scripts/utils/Utility"),
+            );
+            UtilityMock.getDistance.mockReturnValue(50);
             const baseXDiretion = Math.abs((butterfly as any).xDiretion);
 
-            (butterfly as any).fly(16, [], avoidPoint);
+            (butterfly as any).fly(16, [], new MockPoint(0, 0));
 
-            // avoidPoint(0,0)より右下にいるので正方向へ、速度は1.7倍
-            expect(butterfly.x).toBeCloseTo(400 + baseXDiretion * 1.7, 5);
+            // xDiretion自体の大きさは書き換えない(向きだけ変わる)
+            expect(Math.abs((butterfly as any).xDiretion)).toBeCloseTo(
+                baseXDiretion,
+                5,
+            );
         });
 
         it("should prioritize avoiding over the gather point when both apply", async () => {
@@ -417,24 +442,19 @@ describe("Butterfly", () => {
             expect((butterfly as any).yDiretion).toBeLessThan(0);
         });
 
-        it("should ignore an avoidPoint outside AVOID_PENCIL_RADIUS (normal flight)", async () => {
+        it("should flee even when the avoidPoint is far away (no radius limit)", async () => {
             const UtilityMock = vi.mocked(
                 await import("../../../src/scripts/utils/Utility"),
             );
-            UtilityMock.getDistance.mockReturnValue(300); // AVOID_PENCIL_RADIUS(200)より遠い
-            // xFrame/yFrameのランダム方向転換分岐(モックの都合でNaN化する)を避ける
-            (butterfly as any).xFrame = 0;
-            (butterfly as any).yFrame = 0;
+            UtilityMock.getDistance.mockReturnValue(300); // 遠くてもスクリーン上の全蝶が逃げる
 
-            const avoidPoint = new MockPoint(1000, 1000);
-            const originalXDirection = (butterfly as any).xDiretion;
-            const originalYDirection = (butterfly as any).yDiretion;
+            const avoidPoint = new MockPoint(120, 100); // 蝶(400,300)の左上
 
             (butterfly as any).fly(16, [], avoidPoint);
 
-            // 通常飛行のまま(画面端やライン接触が無ければ符号は変わらない)
-            expect((butterfly as any).xDiretion).toBe(originalXDirection);
-            expect((butterfly as any).yDiretion).toBe(originalYDirection);
+            // avoidPointから遠ざかる(右下)方向に符号が設定される
+            expect((butterfly as any).xDiretion).toBeGreaterThan(0);
+            expect((butterfly as any).yDiretion).toBeGreaterThan(0);
         });
 
         it("should not be pushed beyond the screen edge while avoiding", async () => {

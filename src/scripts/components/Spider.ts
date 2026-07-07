@@ -9,8 +9,8 @@ import { BaseObstacle } from "./BaseObstacle";
  */
 export class Spider extends BaseObstacle {
     constructor(screenSize: { x: number; y: number }) {
-        super(["spider1", "spider2"], 0.09, screenSize);
-        this.hitAreaSize = 9;
+        super(["spider1", "spider2"], 0.18, screenSize);
+        this.hitAreaSize = 18;
         this.animIntervalMs = 300;
         // 一番遅い蝶(large: 0.4/0.3)くらいの速さ
         this.moveSpeed = 0.35;

@@ -166,11 +166,9 @@ export class Butterfly extends BaseCaptureableObject {
         const top = Const.MARGIN;
         const bottom = this.screenSize.y - Const.MARGIN;
 
-        // avoidPointが近くにあれば、gather・通常移動より優先して遠ざかる
-        const isAvoiding =
-            !!avoidPoint &&
-            Utility.getDistance(new PIXI.Point(this.x, this.y), avoidPoint) <=
-                Const.AVOID_PENCIL_RADIUS;
+        // avoidPointが指定されていれば、画面上の全ての蝶が
+        // gather・通常移動より優先して遠ざかる
+        const isAvoiding = !!avoidPoint;
 
         if (isAvoiding && avoidPoint) {
             // avoidPointから遠ざかる方向へ飛ぶ(gatherPointロジックの逆)
@@ -277,6 +275,12 @@ export class Butterfly extends BaseCaptureableObject {
         // update position
         let useXDiretion = this.xDiretion;
         let useYDiretion = this.yDiretion;
+        if (isAvoiding) {
+            // 逃避中はサイズによらず小蝶(0.6)と同じ速さで逃げる
+            // (向きだけ維持して大きさを揃える。xDiretion自体は書き換えない)
+            useXDiretion = Math.sign(this.xDiretion) * Const.AVOID_PENCIL_SPEED;
+            useYDiretion = Math.sign(this.yDiretion) * Const.AVOID_PENCIL_SPEED;
+        }
         if (isAvoiding || this.isForceToGather) {
             useXDiretion *= 1.7;
             useYDiretion *= 1.7;

@@ -97,10 +97,10 @@ describe("Spider", () => {
             expect(sprites).toHaveLength(2);
         });
 
-        it("should set hitAreaSize to 9 (same as the smallest butterfly)", () => {
+        it("should set hitAreaSize to 18 (2x scale)", () => {
             expect(
                 (spider as unknown as { hitAreaSize: number }).hitAreaSize,
-            ).toBe(9);
+            ).toBe(18);
         });
 
         it("should set animIntervalMs to 300 (slow walking animation)", () => {

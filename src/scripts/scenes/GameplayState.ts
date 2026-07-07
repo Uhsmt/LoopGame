@@ -923,15 +923,9 @@ export class GameplayState extends StateBase {
      * @param isActive true: longLoop, false: playing
      */
     private longLoopEffect(isActive: boolean): void {
-        if (isActive) {
-            this.lineDrawer.setLineColor(
-                this.stageInfo.bonusFlag ? 0xffd700 : 0x0081af,
-            );
-            this.longLoopElapsedTime = Const.LONG_LOOP_EFFECT_TIME_MS;
-        } else {
-            this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
-            this.longLoopElapsedTime = -1;
-        }
+        this.longLoopElapsedTime = isActive
+            ? Const.LONG_LOOP_EFFECT_TIME_MS
+            : -1;
         this.applyLineDrawTime();
     }
 
@@ -948,17 +942,24 @@ export class GameplayState extends StateBase {
 
     /**
      * longLoop/ライン短縮の効果を一元的にlineDrawerへ反映する
-     * originalLineDrawTimeを基準に、longLoop有効なら+500、ライン短縮有効なら半分(1/2)にする
+     * - 描画時間: originalLineDrawTimeを基準に、longLoop有効なら+500、
+     *   ライン短縮有効なら半分(1/2)
+     * - 線の色: ライン短縮中はグレー(弱体化の視覚表現)を最優先、
+     *   longLoop中は青(ボーナス中は金)、どちらも無ければ元の色
      */
     private applyLineDrawTime(): void {
         let time = this.lineDrawer.originalLineDrawTime;
+        let color = this.lineDrawer.originalLineColor;
         if (this.longLoopElapsedTime >= 0) {
             time += 500;
+            color = this.stageInfo.bonusFlag ? 0xffd700 : 0x0081af;
         }
         if (this.lineShortenElapsedTime >= 0) {
             time /= 2;
+            color = Const.LINE_SHORTEN_COLOR;
         }
         this.lineDrawer.setLineDrawTime(time);
+        this.lineDrawer.setLineColor(color);
     }
 
     /**
