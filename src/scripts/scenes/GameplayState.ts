@@ -590,6 +590,26 @@ export class GameplayState extends StateBase {
         AudioManager.shared.playSe(
             butterflies.length >= 10 ? "se_capture_many" : "se_capture",
         );
+
+        // 捕まえた蝶たちの中心からキラキラを散らす(多いほど盛大に)
+        const centerX =
+            butterflies.reduce((sum, b) => sum + b.x - b.width / 2, 0) /
+            butterflies.length;
+        const centerY =
+            butterflies.reduce((sum, b) => sum + b.y - b.height / 2, 0) /
+            butterflies.length;
+        if (butterflies.length >= 10) {
+            this.sparkles.burst(centerX, centerY, 70, {
+                speed: 0.26,
+                scale: 1.25,
+                lifeMs: 1100,
+            });
+        } else {
+            this.sparkles.burst(centerX, centerY, 6 + butterflies.length * 2, {
+                scale: 0.9,
+            });
+        }
+
         this.caputuredButterflies.push(...butterflies);
         this.updateScoreMessage();
 
