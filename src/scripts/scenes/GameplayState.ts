@@ -16,6 +16,7 @@ import { HelpFlower } from "../components/HelpFlower";
 import { BaseObstacle } from "../components/BaseObstacle";
 import { Bee } from "../components/Bee";
 import { Spider } from "../components/Spider";
+import { Catapy } from "../components/Catapy";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
@@ -381,6 +382,11 @@ export class GameplayState extends StateBase {
                     x: this.manager.app.screen.width,
                     y: this.manager.app.screen.height,
                 });
+            case "catapy":
+                return new Catapy({
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                });
             default:
                 return null;
         }
@@ -733,6 +739,28 @@ export class GameplayState extends StateBase {
         const flowersInLoopArea = this.flowers.filter((flower) => {
             return flower.isHit(loopArea);
         });
+
+        // loopArea内にいるcatapyを取得
+        const catapiesInLoop = this.obstacles.filter(
+            (obstacle) =>
+                obstacle instanceof Catapy && obstacle.isHit(loopArea),
+        );
+        if (catapiesInLoop.length > 0) {
+            if (butterfliesInLoopArea.length > 0) {
+                // 蝶と一緒に囲むとループ自体が無効(捕獲・色替え・花取得は一切行わない)
+                AudioManager.shared.playSe("se_obstacle_hit");
+                this.showActionMessage("Invalid loop!");
+                return;
+            }
+            // catapy単体で囲むと退場する(花は通常どおり取得できる)
+            catapiesInLoop.forEach((catapy) => {
+                this.obstacles = this.obstacles.filter((o) => o !== catapy);
+                catapy.delete();
+            });
+            AudioManager.shared.playSe("se_obstacle_hit");
+            this.captureFlowers(flowersInLoopArea);
+            return;
+        }
 
         if (butterfliesInLoopArea.length <= 0) {
             // 空ループは音を出さない(線を引くだけで頻発してうるさいため)

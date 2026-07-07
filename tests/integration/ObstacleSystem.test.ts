@@ -254,3 +254,178 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
         });
     });
 });
+
+/**
+ * GameplayState.handleLoopAreaCompleted内のcatapy(イモムシ)判定ロジックを
+ * 再現したテストダブル(実装と同じ分岐であることをテストで担保する)。
+ * - 蝶+catapyが同じループ内 -> ループ無効(捕獲・色替え・花取得を一切行わない)
+ * - catapy単体(蝶0匹)で囲む -> catapyが消える。花は通常どおり取得できる
+ * - catapyがいない -> 既存の蝶/花のロジックそのまま
+ */
+class TestCatapy {
+    public removed = false;
+    constructor(public inLoop: boolean) {}
+    isHit(_loopArea: unknown): boolean {
+        return this.inLoop;
+    }
+    delete(): void {
+        this.removed = true;
+    }
+}
+
+class TestFlower {
+    public captured = false;
+    constructor(public inLoop: boolean) {}
+    isHit(_loopArea: unknown): boolean {
+        return this.inLoop;
+    }
+}
+
+class TestButterflyForCatapy {
+    public colorSwitched = false;
+    public captured = false;
+    constructor(public inLoop: boolean) {}
+    isHit(_loopArea: unknown): boolean {
+        return this.inLoop;
+    }
+    switchColor(): void {
+        this.colorSwitched = true;
+    }
+}
+
+class TestGameplayLoopHandler {
+    public obstacles: TestCatapy[] = [];
+    public flowers: TestFlower[] = [];
+    public butterflies: TestButterflyForCatapy[] = [];
+    public playedSe: string[] = [];
+    public actionMessage = "";
+    public capturedFlowers: TestFlower[] = [];
+    public capturedButterflies: TestButterflyForCatapy[] = [];
+
+    playSe(name: string): void {
+        this.playedSe.push(name);
+    }
+
+    showActionMessage(message: string): void {
+        this.actionMessage = message;
+    }
+
+    captureFlowers(flowers: TestFlower[]): void {
+        flowers.forEach((flower) => {
+            flower.captured = true;
+            this.flowers = this.flowers.filter((f) => f !== flower);
+        });
+        this.capturedFlowers.push(...flowers);
+    }
+
+    // GameplayState.handleLoopAreaCompletedのcatapy判定部分を再現
+    handleLoopAreaCompleted(loopArea: unknown): void {
+        const butterfliesInLoopArea = this.butterflies.filter((b) =>
+            b.isHit(loopArea),
+        );
+        const flowersInLoopArea = this.flowers.filter((f) => f.isHit(loopArea));
+        const catapiesInLoop = this.obstacles.filter((o) => o.isHit(loopArea));
+
+        if (catapiesInLoop.length > 0) {
+            if (butterfliesInLoopArea.length > 0) {
+                this.playSe("se_obstacle_hit");
+                this.showActionMessage("Invalid loop!");
+                return;
+            }
+            catapiesInLoop.forEach((catapy) => {
+                this.obstacles = this.obstacles.filter((o) => o !== catapy);
+                catapy.delete();
+            });
+            this.playSe("se_obstacle_hit");
+            this.captureFlowers(flowersInLoopArea);
+            return;
+        }
+
+        if (butterfliesInLoopArea.length === 1) {
+            butterfliesInLoopArea[0].switchColor();
+            this.playSe("se_switch");
+            this.captureFlowers(flowersInLoopArea);
+        } else if (butterfliesInLoopArea.length >= 2) {
+            this.capturedButterflies.push(...butterfliesInLoopArea);
+            this.captureFlowers(flowersInLoopArea);
+        } else {
+            this.captureFlowers(flowersInLoopArea);
+        }
+    }
+}
+
+describe("Obstacle System Integration Tests (Catapy / loop invalidation)", () => {
+    let handler: TestGameplayLoopHandler;
+
+    beforeEach(() => {
+        handler = new TestGameplayLoopHandler();
+    });
+
+    describe("butterfly + catapy in the same loop", () => {
+        it("should invalidate the loop entirely (no capture, no color switch, no flower)", () => {
+            const catapy = new TestCatapy(true);
+            const flower = new TestFlower(true);
+            const butterfly = new TestButterflyForCatapy(true);
+            handler.obstacles = [catapy];
+            handler.flowers = [flower];
+            handler.butterflies = [butterfly];
+
+            handler.handleLoopAreaCompleted({});
+
+            expect(handler.playedSe).toEqual(["se_obstacle_hit"]);
+            expect(handler.actionMessage).toBe("Invalid loop!");
+            expect(catapy.removed).toBe(false);
+            expect(butterfly.colorSwitched).toBe(false);
+            expect(handler.capturedFlowers).toHaveLength(0);
+            expect(handler.flowers).toHaveLength(1);
+            expect(handler.obstacles).toHaveLength(1);
+        });
+    });
+
+    describe("catapy alone (no butterfly) in the loop", () => {
+        it("should remove the catapy and still capture flowers normally", () => {
+            const catapy = new TestCatapy(true);
+            const flower = new TestFlower(true);
+            handler.obstacles = [catapy];
+            handler.flowers = [flower];
+            handler.butterflies = [];
+
+            handler.handleLoopAreaCompleted({});
+
+            expect(handler.playedSe).toEqual(["se_obstacle_hit"]);
+            expect(catapy.removed).toBe(true);
+            expect(handler.obstacles).toHaveLength(0);
+            expect(handler.capturedFlowers).toEqual([flower]);
+            expect(handler.flowers).toHaveLength(0);
+        });
+    });
+
+    describe("no catapy in the loop", () => {
+        it("should fall back to the normal single-butterfly color switch behavior", () => {
+            const catapy = new TestCatapy(false); // ループ外
+            const butterfly = new TestButterflyForCatapy(true);
+            handler.obstacles = [catapy];
+            handler.butterflies = [butterfly];
+
+            handler.handleLoopAreaCompleted({});
+
+            expect(handler.playedSe).toEqual(["se_switch"]);
+            expect(butterfly.colorSwitched).toBe(true);
+            expect(catapy.removed).toBe(false);
+            expect(handler.obstacles).toHaveLength(1);
+        });
+
+        it("should fall back to normal multi-butterfly capture behavior", () => {
+            const butterflyA = new TestButterflyForCatapy(true);
+            const butterflyB = new TestButterflyForCatapy(true);
+            handler.butterflies = [butterflyA, butterflyB];
+
+            handler.handleLoopAreaCompleted({});
+
+            expect(handler.capturedButterflies).toEqual([
+                butterflyA,
+                butterflyB,
+            ]);
+        });
+    });
+});
