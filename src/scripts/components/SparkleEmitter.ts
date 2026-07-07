@@ -41,6 +41,11 @@ export class SparkleEmitter extends PIXI.Container {
      */
     static createStarTexture(renderer: PIXI.Renderer): PIXI.Texture {
         const g = new PIXI.Graphics();
+        // 柔らかいハロー(同心円のアルファ重ね)で発光レイヤーっぽく見せる
+        g.circle(0, 0, 12).fill({ color: 0xffffff, alpha: 0.1 });
+        g.circle(0, 0, 8).fill({ color: 0xffffff, alpha: 0.18 });
+        g.circle(0, 0, 5).fill({ color: 0xffffff, alpha: 0.3 });
+        // 中心の星
         const outer = 7;
         const inner = 2;
         const points: number[] = [];
@@ -122,7 +127,7 @@ export class SparkleEmitter extends PIXI.Container {
         sprite.rotation = Math.random() * Math.PI;
         // 加算合成は明るい背景で白飛びして見えなくなるため通常合成にする
         sprite.blendMode = "normal";
-        const tints = opts.tints ?? [0xffb300, 0xff9500, 0xffd23e];
+        const tints = opts.tints ?? [0xffffff, 0xfff6d8, 0xffe9a8];
         sprite.tint = tints[Math.floor(Math.random() * tints.length)];
         const baseScale = opts.scale * (0.6 + Math.random() * 0.6);
         sprite.scale.set(baseScale);

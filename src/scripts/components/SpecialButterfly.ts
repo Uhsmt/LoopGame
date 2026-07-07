@@ -14,8 +14,8 @@ export class SpecialButterfly extends Butterfly {
         this.glow = new GlowFilter({
             distance: 14,
             outerStrength: 2.5,
-            innerStrength: 0.6,
-            color: 0xffe066,
+            innerStrength: 0.9,
+            color: 0xfff0c8,
             quality: 0.3,
         });
         this.filters = [this.glow];
