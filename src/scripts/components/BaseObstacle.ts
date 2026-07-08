@@ -8,8 +8,16 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
  * - 複数画像の交互表示による歩行アニメーション(1枚なら静止画)
  * - 鉛筆ライン(描画中の線分)との接触判定
  * - ライン接触後は効果を1度だけ発動し、画面外へ退場する
+ * - 単体でループに囲まれると反応し、3回囲まれると消える(全種共通)
  */
 export abstract class BaseObstacle extends BaseCaptureableObject {
+    /**
+     * 単体で囲まれるとこの回数で消える。
+     * note: この「3回囲むと消える」仕様は隠し要素として、How To Playの
+     * 説明文(description/descriptionJP)にはあえて書いていない
+     */
+    static readonly REQUIRED_LOOP_COUNT = 3;
+    private loopedCount = 0;
     protected sprites: PIXI.Sprite[] = [];
     /** 歩行アニメーションのコマ切り替え間隔(ms) */
     protected animIntervalMs: number = 250;
@@ -179,6 +187,36 @@ export abstract class BaseObstacle extends BaseCaptureableObject {
         if (this.reactsToLine) {
             this.checkLineHit(lineSegments);
         }
+    }
+
+    /**
+     * 単体で囲まれた時に呼ぶ
+     * @returns true: 規定回数(3回)に達した(=消えるべき)
+     */
+    countLoop(): boolean {
+        this.loopedCount += 1;
+        if (this.loopedCount >= BaseObstacle.REQUIRED_LOOP_COUNT) {
+            return true;
+        }
+        // まだ消えない間は、囲まれた手応えとして一瞬薄くなって戻る
+        this.flash();
+        return false;
+    }
+
+    /** 一瞬薄くして徐々に戻す(囲まれた時のリアクション) */
+    private flash(): void {
+        this.alpha = 0.3;
+        const restore = () => {
+            // 破棄済みならループを止める(リーク防止)
+            if (this.destroyed) {
+                return;
+            }
+            if (this.alpha < 1) {
+                this.alpha = Math.min(this.alpha + 0.05, 1);
+                requestAnimationFrame(restore);
+            }
+        };
+        restore();
     }
 
     /**

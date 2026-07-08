@@ -257,4 +257,22 @@ describe("BaseObstacle", () => {
             expect(sprites[0].scale.x).toBe(before);
         });
     });
+
+    describe("countLoop (solo-loop counter, common to all obstacles)", () => {
+        it("should survive the first two solo loops with a flash reaction", () => {
+            obstacle.alpha = 1;
+
+            expect(obstacle.countLoop()).toBe(false);
+            // 囲まれた手応えとして一瞬薄くなる
+            expect(obstacle.alpha).toBeLessThan(1);
+
+            expect(obstacle.countLoop()).toBe(false);
+        });
+
+        it("should report defeat on the third solo loop", () => {
+            obstacle.countLoop();
+            obstacle.countLoop();
+            expect(obstacle.countLoop()).toBe(true);
+        });
+    });
 });

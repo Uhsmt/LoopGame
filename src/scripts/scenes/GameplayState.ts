@@ -727,27 +727,30 @@ export class GameplayState extends StateBase {
             return flower.isHit(loopArea);
         });
 
-        // loopArea内にいるcatapyを取得
-        const catapiesInLoop = this.obstacles.filter(
-            (obstacle): obstacle is Catapy =>
-                obstacle instanceof Catapy && obstacle.isHit(loopArea),
+        // loopArea内にいるお邪魔オブジェクトを取得
+        const obstaclesInLoop = this.obstacles.filter((obstacle) =>
+            obstacle.isHit(loopArea),
         );
-        if (catapiesInLoop.length > 0) {
-            if (butterfliesInLoopArea.length > 0) {
-                // 蝶と一緒に囲むとループ自体が無効(捕獲・色替え・花取得は一切行わない)
+        if (butterfliesInLoopArea.length > 0) {
+            // 蝶と一緒にcatapyを囲むとループ自体が無効
+            // (捕獲・色替え・花取得は一切行わない。bee/spiderは無効化しない)
+            if (
+                obstaclesInLoop.some((obstacle) => obstacle instanceof Catapy)
+            ) {
                 AudioManager.shared.playSe("se_obstacle_hit");
                 this.showActionMessage("Invalid loop!");
                 return;
             }
-            // catapy単体で囲むとカウントが進み、3回囲むと消える
-            // (花は通常どおり取得できる)
-            const defeated: BaseObstacle[] = catapiesInLoop.filter((catapy) =>
-                catapy.countLoop(),
+        } else if (obstaclesInLoop.length > 0) {
+            // お邪魔オブジェクトを単体で囲むとカウントが進み、3回囲むと消える
+            // (全種共通。花は通常どおり取得できる)
+            const defeated = obstaclesInLoop.filter((obstacle) =>
+                obstacle.countLoop(),
             );
             this.obstacles = this.obstacles.filter(
                 (obstacle) => !defeated.includes(obstacle),
             );
-            defeated.forEach((catapy) => catapy.delete());
+            defeated.forEach((obstacle) => obstacle.delete());
             AudioManager.shared.playSe("se_obstacle_hit");
             this.captureFlowers(flowersInLoopArea);
             return;

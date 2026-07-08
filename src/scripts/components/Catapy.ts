@@ -11,13 +11,6 @@ import { BaseObstacle } from "./BaseObstacle";
  *   蝶と一緒に囲むとループ自体が無効になる(判定自体はGameplayState側で実装)
  */
 export class Catapy extends BaseObstacle {
-    /**
-     * 単体で囲まれるとこの回数で消える。
-     * note: この「3回囲むと消える」仕様は隠し要素として、How To Playの
-     * 説明文(description/descriptionJP)にはあえて書いていない
-     */
-    static readonly REQUIRED_LOOP_COUNT = 3;
-    private loopedCount = 0;
     readonly description: string = "Voids any loop that contains it";
     readonly descriptionJP: string = "いっしょに かこむと ループむこう";
 
@@ -33,36 +26,6 @@ export class Catapy extends BaseObstacle {
         this.turnFrameMin = 180;
         this.turnFrameMax = 300;
         this.pickNewDirection();
-    }
-
-    /**
-     * 単体で囲まれた時に呼ぶ
-     * @returns true: 規定回数(3回)に達した(=消えるべき)
-     */
-    countLoop(): boolean {
-        this.loopedCount += 1;
-        if (this.loopedCount >= Catapy.REQUIRED_LOOP_COUNT) {
-            return true;
-        }
-        // まだ消えない間は、囲まれた手応えとして一瞬薄くなって戻る
-        this.flash();
-        return false;
-    }
-
-    /** 一瞬薄くして徐々に戻す(囲まれた時のリアクション) */
-    private flash(): void {
-        this.alpha = 0.3;
-        const restore = () => {
-            // 破棄済みならループを止める(リーク防止)
-            if (this.destroyed) {
-                return;
-            }
-            if (this.alpha < 1) {
-                this.alpha = Math.min(this.alpha + 0.05, 1);
-                requestAnimationFrame(restore);
-            }
-        };
-        restore();
     }
 
     /** イモムシらしく、左右どちらかの水平±20度からランダムに選ぶ */

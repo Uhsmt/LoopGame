@@ -275,24 +275,36 @@ describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
  * GameplayState.handleLoopAreaCompleted内のcatapy(イモムシ)判定ロジックを
  * 再現したテストダブル(実装と同じ分岐であることをテストで担保する)。
  * - 蝶+catapyが同じループ内 -> ループ無効(捕獲・色替え・花取得を一切行わない)
- * - catapy単体(蝶0匹)で囲む -> カウントが進み、3回で消える。花は通常どおり取得できる
- * - catapyがいない -> 既存の蝶/花のロジックそのまま
+ *   (bee/spiderは蝶と一緒でもループを無効化しない)
+ * - お邪魔オブジェクト単体(蝶0匹)で囲む -> カウントが進み、3回で消える(全種共通)。
+ *   花は通常どおり取得できる
+ * - お邪魔オブジェクトがいない -> 既存の蝶/花のロジックそのまま
  */
-const CATAPY_REQUIRED_LOOP_COUNT = 3;
+const OBSTACLE_REQUIRED_LOOP_COUNT = 3;
 
-class TestCatapy {
+class TestObstacleForLoop {
     public removed = false;
     public loopedCount = 0;
-    constructor(public inLoop: boolean) {}
+    constructor(
+        public inLoop: boolean,
+        /** 蝶と一緒に囲まれたときループを無効化するか(catapyのみtrue) */
+        public voidsLoop: boolean = false,
+    ) {}
     isHit(_loopArea: unknown): boolean {
         return this.inLoop;
     }
     countLoop(): boolean {
         this.loopedCount += 1;
-        return this.loopedCount >= CATAPY_REQUIRED_LOOP_COUNT;
+        return this.loopedCount >= OBSTACLE_REQUIRED_LOOP_COUNT;
     }
     delete(): void {
         this.removed = true;
+    }
+}
+
+class TestCatapy extends TestObstacleForLoop {
+    constructor(inLoop: boolean) {
+        super(inLoop, true);
     }
 }
 
@@ -317,7 +329,7 @@ class TestButterflyForCatapy {
 }
 
 class TestGameplayLoopHandler {
-    public obstacles: TestCatapy[] = [];
+    public obstacles: TestObstacleForLoop[] = [];
     public flowers: TestFlower[] = [];
     public butterflies: TestButterflyForCatapy[] = [];
     public playedSe: string[] = [];
@@ -347,21 +359,22 @@ class TestGameplayLoopHandler {
             b.isHit(loopArea),
         );
         const flowersInLoopArea = this.flowers.filter((f) => f.isHit(loopArea));
-        const catapiesInLoop = this.obstacles.filter((o) => o.isHit(loopArea));
+        const obstaclesInLoop = this.obstacles.filter((o) => o.isHit(loopArea));
 
-        if (catapiesInLoop.length > 0) {
-            if (butterfliesInLoopArea.length > 0) {
+        if (butterfliesInLoopArea.length > 0) {
+            if (obstaclesInLoop.some((obstacle) => obstacle.voidsLoop)) {
                 this.playSe("se_obstacle_hit");
                 this.showActionMessage("Invalid loop!");
                 return;
             }
-            const defeated = catapiesInLoop.filter((catapy) =>
-                catapy.countLoop(),
+        } else if (obstaclesInLoop.length > 0) {
+            const defeated = obstaclesInLoop.filter((obstacle) =>
+                obstacle.countLoop(),
             );
             this.obstacles = this.obstacles.filter(
                 (obstacle) => !defeated.includes(obstacle),
             );
-            defeated.forEach((catapy) => catapy.delete());
+            defeated.forEach((obstacle) => obstacle.delete());
             this.playSe("se_obstacle_hit");
             this.captureFlowers(flowersInLoopArea);
             return;
@@ -443,6 +456,42 @@ describe("Obstacle System Integration Tests (Catapy / loop invalidation)", () =>
             expect(catapy.loopedCount).toBe(3);
             expect(catapy.removed).toBe(true);
             expect(handler.obstacles).toHaveLength(0);
+        });
+    });
+
+    describe("bee/spider (non-voiding obstacles) and the solo-loop rule", () => {
+        it("should remove a bee-like obstacle on the third solo loop too", () => {
+            const bee = new TestObstacleForLoop(true); // voidsLoop=false
+            handler.obstacles = [bee];
+            handler.butterflies = [];
+
+            handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
+            expect(bee.removed).toBe(false);
+
+            handler.handleLoopAreaCompleted({});
+            expect(bee.loopedCount).toBe(3);
+            expect(bee.removed).toBe(true);
+            expect(handler.obstacles).toHaveLength(0);
+        });
+
+        it("should not invalidate nor count when looped together with butterflies", () => {
+            const bee = new TestObstacleForLoop(true); // voidsLoop=false
+            const butterflyA = new TestButterflyForCatapy(true);
+            const butterflyB = new TestButterflyForCatapy(true);
+            handler.obstacles = [bee];
+            handler.butterflies = [butterflyA, butterflyB];
+
+            handler.handleLoopAreaCompleted({});
+
+            // 通常の捕獲がそのまま行われ、bee側は反応しない
+            expect(handler.actionMessage).not.toBe("Invalid loop!");
+            expect(handler.capturedButterflies).toEqual([
+                butterflyA,
+                butterflyB,
+            ]);
+            expect(bee.loopedCount).toBe(0);
+            expect(bee.removed).toBe(false);
         });
     });
 
