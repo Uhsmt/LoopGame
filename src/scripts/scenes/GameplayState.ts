@@ -13,6 +13,10 @@ import * as Const from "../utils/Const";
 import { StageInformation } from "../components/StageInformation";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
+import { BaseObstacle } from "../components/BaseObstacle";
+import { Bee } from "../components/Bee";
+import { Spider } from "../components/Spider";
+import { Catapy } from "../components/Catapy";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
@@ -31,13 +35,17 @@ export class GameplayState extends StateBase {
     private freezeElapsedTime: number = -1;
     private gatherElapsedTime: number = -1;
     private longLoopElapsedTime: number = -1;
+    private lineShortenElapsedTime: number = -1;
+    private avoidPencilElapsedTime: number = -1;
     private stagePoint = 0;
     caputuredButterflies: Butterfly[] = [];
     butterflies: Butterfly[] = [];
     private isAddBonusButterfly = false;
     flowers: HelpFlower[] = [];
+    obstacles: BaseObstacle[] = [];
     private stageInfo: StageInformation;
     private readonly helpFlowersTiming: number[] = [];
+    private obstacleTimings: { type: string; time: number }[] = [];
     private pauseHandler: () => void;
     private stagePauseHandler: (() => void) | null = null;
     private gatherPointMap: Map<number, PIXI.Point> = new Map();
@@ -158,6 +166,9 @@ export class GameplayState extends StateBase {
 
         // helpオブジェクトの設定
         this.setupForHelpObject();
+
+        // お邪魔オブジェクトの設定
+        this.setupForObstacles();
 
         // Frame
         this.addFrameGraphic();
@@ -315,6 +326,109 @@ export class GameplayState extends StateBase {
         this.gatherDistance = Math.min(distanceWidth, distanceHeight);
     }
 
+    private setupForObstacles(): void {
+        // ボーナスステージにはお邪魔オブジェクトを出さない
+        if (this.stageInfo.bonusFlag) {
+            return;
+        }
+        // 出現タイミングはステージ時間の等分割 + 3秒
+        // (helpオブジェクトの出現タイミングと重ならないようにずらす)
+        // デバッグモードでは動作確認しやすいよう10秒間隔で早めに出す
+        const types = this.stageInfo.obstacles;
+        types.forEach((type, index) => {
+            this.obstacleTimings.push({
+                type,
+                time: DEBUG_MODE
+                    ? 10 * (index + 1)
+                    : Math.floor(
+                          (this.gameTimer / (types.length + 1)) * (index + 1),
+                      ) + 3,
+            });
+        });
+    }
+
+    private spawnObstaclesIfNeeded(): void {
+        const nowSec = Math.floor(this.elapsedTime / 1000);
+        this.obstacleTimings = this.obstacleTimings.filter((timing) => {
+            if (timing.time > nowSec) {
+                return true;
+            }
+            const obstacle = this.createObstacle(timing.type);
+            if (obstacle) {
+                this.obstacles.push(obstacle);
+                this.addChildBelowFrame(obstacle);
+                obstacle.setRandomInitialPosition(
+                    this.manager.app.screen.width,
+                    this.manager.app.screen.height,
+                );
+                obstacle.appear();
+                AudioManager.shared.playSe("se_obstacle_appear");
+            }
+            return false;
+        });
+    }
+
+    private createObstacle(type: string): BaseObstacle | null {
+        const screenSize = {
+            x: this.manager.app.screen.width,
+            y: this.manager.app.screen.height,
+        };
+        switch (type) {
+            case "bee":
+                return new Bee(screenSize);
+            case "spider":
+                return new Spider(screenSize);
+            case "catapy":
+                return new Catapy(screenSize);
+            default:
+                return null;
+        }
+    }
+
+    private updateObstacles(delta: number): void {
+        this.spawnObstaclesIfNeeded();
+
+        const segmentPoints = this.lineDrawer.getSegmentPoints();
+        this.obstacles.forEach((obstacle) => {
+            obstacle.update(delta, segmentPoints);
+            if (obstacle.consumeLineHit()) {
+                AudioManager.shared.playSe("se_obstacle_hit");
+                this.applyObstacleEffect(obstacle);
+            }
+        });
+
+        // 画面外へ出たものを破棄する
+        this.obstacles = this.obstacles.filter((obstacle) => {
+            if (obstacle.isGone) {
+                obstacle.removeFromParent();
+                obstacle.destroy();
+                return false;
+            }
+            return true;
+        });
+    }
+
+    private applyObstacleEffect(obstacle: BaseObstacle): void {
+        // 各お邪魔オブジェクトの実装時に効果を追加する
+        if (obstacle instanceof Bee) {
+            this.lineShortenEffect(true);
+            this.showHelpMessage("Line shortened!");
+        } else if (obstacle instanceof Spider) {
+            this.avoidPencilEffect(true);
+            this.showHelpMessage("Butterflies flee!");
+        }
+    }
+
+    /**
+     * spider(蝶が鉛筆から逃げる)に触れた時の効果
+     * @param isActive true: 発動, false: 解除
+     */
+    private avoidPencilEffect(isActive: boolean): void {
+        this.avoidPencilElapsedTime = isActive
+            ? Const.AVOID_PENCIL_EFFECT_TIME_MS
+            : -1;
+    }
+
     async onEnter(): Promise<void> {
         AudioManager.shared.playBgm(
             this.stageInfo.bonusFlag
@@ -344,9 +458,14 @@ export class GameplayState extends StateBase {
     }
 
     update(delta: number): void {
-        // 蝶々
+        // 蝶々(spider効果中は鉛筆の最新位置から逃げる)
+        const avoidPoint =
+            this.avoidPencilElapsedTime >= 0
+                ? this.lineDrawer.lastPointerPoint
+                : null;
+        const segmentPoints = this.lineDrawer.getSegmentPoints();
         this.butterflies.forEach((butterfly) => {
-            butterfly.update(delta, this.lineDrawer.getSegmentPoints());
+            butterfly.update(delta, segmentPoints, avoidPoint);
         });
 
         // helpオブジェクトを出すタイミングで表示
@@ -364,10 +483,7 @@ export class GameplayState extends StateBase {
                 this.manager.app.screen.height,
             );
             this.flowers.push(flower);
-            this.container.addChildAt(
-                flower,
-                this.container.children.length - 2,
-            );
+            this.addChildBelowFrame(flower);
             this.helpFlowersTiming.shift();
             AudioManager.shared.playSe("se_powerup");
         }
@@ -402,7 +518,7 @@ export class GameplayState extends StateBase {
             this.butterflies.push(specialButterfly);
             this.isAddBonusButterfly = true;
             AudioManager.shared.playSe("se_powerup");
-            this.container.addChild(specialButterfly);
+            this.addChildBelowFrame(specialButterfly);
         }
         if (this.helpMessage.alpha > 0) {
             this.helpMessage.alpha -= delta / 2000;
@@ -430,6 +546,9 @@ export class GameplayState extends StateBase {
         // ↑ pause中でも動く処理、↓ pause中は動かない処理
 
         this.elapsedTime += delta;
+
+        // お邪魔オブジェクト(pause中は動かない)
+        this.updateObstacles(delta);
 
         // sun
         const progress = this.elapsedTime / (this.gameTimer * 1000);
@@ -476,9 +595,21 @@ export class GameplayState extends StateBase {
                 this.gatherEffect(false);
             }
         }
+        if (this.lineShortenElapsedTime >= 0) {
+            this.lineShortenElapsedTime -= delta;
+            if (this.lineShortenElapsedTime <= 0) {
+                this.lineShortenEffect(false);
+            }
+        }
+        if (this.avoidPencilElapsedTime >= 0) {
+            this.avoidPencilElapsedTime -= delta;
+            if (this.avoidPencilElapsedTime <= 0) {
+                this.avoidPencilEffect(false);
+            }
+        }
 
         if (this.elapsedTime >= this.gameTimer * 1000) {
-            this.showActionMessage("Time up!");
+            this.showActionMessage("Time's up!");
             this.endGame();
         }
 
@@ -537,6 +668,12 @@ export class GameplayState extends StateBase {
             flower.delete();
         });
 
+        this.obstacles.forEach((obstacle) => {
+            obstacle.isActive = false;
+            obstacle.delete();
+        });
+        this.obstacles = [];
+
         // captureButterfliesの中にSpecialButterflyが含まれているかどうか
         const isGotBonusButterfly = this.caputuredButterflies.some(
             (butterfly) => butterfly instanceof SpecialButterfly,
@@ -590,6 +727,35 @@ export class GameplayState extends StateBase {
             return flower.isHit(loopArea);
         });
 
+        // loopArea内にいるお邪魔オブジェクトを取得
+        const obstaclesInLoop = this.obstacles.filter((obstacle) =>
+            obstacle.isHit(loopArea),
+        );
+        if (butterfliesInLoopArea.length > 0) {
+            // 蝶と一緒にcatapyを囲むとループ自体が無効
+            // (捕獲・色替え・花取得は一切行わない。bee/spiderは無効化しない)
+            if (
+                obstaclesInLoop.some((obstacle) => obstacle instanceof Catapy)
+            ) {
+                AudioManager.shared.playSe("se_obstacle_hit");
+                this.showActionMessage("Invalid loop!");
+                return;
+            }
+        } else if (obstaclesInLoop.length > 0) {
+            // お邪魔オブジェクトを単体で囲むとカウントが進み、3回囲むと消える
+            // (全種共通。花は通常どおり取得できる)
+            const defeated = obstaclesInLoop.filter((obstacle) =>
+                obstacle.countLoop(),
+            );
+            this.obstacles = this.obstacles.filter(
+                (obstacle) => !defeated.includes(obstacle),
+            );
+            defeated.forEach((obstacle) => obstacle.delete());
+            AudioManager.shared.playSe("se_obstacle_hit");
+            this.captureFlowers(flowersInLoopArea);
+            return;
+        }
+
         if (butterfliesInLoopArea.length <= 0) {
             // 空ループは音を出さない(線を引くだけで頻発してうるさいため)
             this.captureFlowers(flowersInLoopArea);
@@ -615,7 +781,7 @@ export class GameplayState extends StateBase {
             } else {
                 this.stagePoint -= 20;
                 AudioManager.shared.playSe("se_bad_loop");
-                this.showActionMessage("Bad Loop! \r\n -20 point");
+                this.showActionMessage("Bad loop! \r\n -20 points");
             }
         }
     }
@@ -657,7 +823,7 @@ export class GameplayState extends StateBase {
 
         this.stagePoint += point;
         this.showActionMessage(
-            `${calculationText} ${Utility.formatNumberWithCommas(point)} point`,
+            `${calculationText} ${Utility.formatNumberWithCommas(point)} points`,
         );
 
         butterflies.forEach((butterfly) => {
@@ -679,10 +845,7 @@ export class GameplayState extends StateBase {
 
                 const butterfly = this.createButterfly();
                 this.butterflies.push(butterfly);
-                this.container.addChildAt(
-                    butterfly,
-                    this.container.children.length - 2,
-                );
+                this.addChildBelowFrame(butterfly);
                 butterfly.setRandomInitialPoistion(
                     this.manager.app.screen.width,
                     this.manager.app.screen.height,
@@ -760,21 +923,43 @@ export class GameplayState extends StateBase {
      * @param isActive true: longLoop, false: playing
      */
     private longLoopEffect(isActive: boolean): void {
-        if (isActive) {
-            this.lineDrawer.setLineDrawTime(
-                this.lineDrawer.originalLineDrawTime + 500,
-            );
-            this.lineDrawer.setLineColor(
-                this.stageInfo.bonusFlag ? 0xffd700 : 0x0081af,
-            );
-            this.longLoopElapsedTime = Const.LONG_LOOP_EFFECT_TIME_MS;
-        } else {
-            this.lineDrawer.setLineDrawTime(
-                this.lineDrawer.originalLineDrawTime,
-            );
-            this.lineDrawer.setLineColor(this.lineDrawer.originalLineColor);
-            this.longLoopElapsedTime = -1;
+        this.longLoopElapsedTime = isActive
+            ? Const.LONG_LOOP_EFFECT_TIME_MS
+            : -1;
+        this.applyLineDrawTime();
+    }
+
+    /**
+     * bee(ライン短縮)に触れた時の効果。lineDrawerの描画時間を半分にする
+     * @param isActive true: 発動, false: 解除
+     */
+    private lineShortenEffect(isActive: boolean): void {
+        this.lineShortenElapsedTime = isActive
+            ? Const.LINE_SHORTEN_EFFECT_TIME_MS
+            : -1;
+        this.applyLineDrawTime();
+    }
+
+    /**
+     * longLoop/ライン短縮の効果を一元的にlineDrawerへ反映する
+     * - 描画時間: originalLineDrawTimeを基準に、longLoop有効なら+500、
+     *   ライン短縮有効なら1/3
+     * - 線の色: ライン短縮中は赤(弱体化の視覚表現)を最優先、
+     *   longLoop中は青(ボーナス中は金)、どちらも無ければ元の色
+     */
+    private applyLineDrawTime(): void {
+        let time = this.lineDrawer.originalLineDrawTime;
+        let color = this.lineDrawer.originalLineColor;
+        if (this.longLoopElapsedTime >= 0) {
+            time += 500;
+            color = this.stageInfo.bonusFlag ? 0xffd700 : 0x0081af;
         }
+        if (this.lineShortenElapsedTime >= 0) {
+            time /= 3;
+            color = Const.LINE_SHORTEN_COLOR;
+        }
+        this.lineDrawer.setLineDrawTime(time);
+        this.lineDrawer.setLineColor(color);
     }
 
     /**

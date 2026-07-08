@@ -20,7 +20,8 @@
         "maxMultipleRate": 2,
         "multipleButterflyRate": 0.2,
         "helpObjectNum": 10,
-        "hasBonusButterfly": true
+        "hasBonusButterfly": true,
+        "obstacles": ["bee", "spider", "catapy"]
     },
     {
         "level": 2,

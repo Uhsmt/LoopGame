@@ -7,6 +7,9 @@ import { Butterfly } from "../components/Butterfly";
 import * as Const from "../utils/Const";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
+import { Bee } from "../components/Bee";
+import { Spider } from "../components/Spider";
+import { Catapy } from "../components/Catapy";
 import { Button } from "../components/Button";
 import { StartState } from "./StartState";
 import * as Utility from "../utils/Utility";
@@ -38,6 +41,7 @@ export class RuleState extends StateBase {
     };
     private butterflies: Butterfly[] = [];
     private helpFlowers: HelpFlower[] = [];
+    private hindranceObjects: (Bee | Spider | Catapy)[] = [];
     private practiceMode: boolean = false;
 
     constructor(manager: GameStateManager) {
@@ -165,7 +169,7 @@ export class RuleState extends StateBase {
                 butterfly.switchColor();
                 AudioManager.shared.playSe("se_switch");
                 if (butterfly.color !== butterfly.getSubColor()) {
-                    message = "Switch Color";
+                    message = "Color switched!";
                 }
             } else if (butterfliesInLoopArea.length > 1) {
                 if (this.isSuccessLoop(butterfliesInLoopArea)) {
@@ -174,7 +178,7 @@ export class RuleState extends StateBase {
                             ? "se_capture_many"
                             : "se_capture",
                     );
-                    message = `Get ${butterfliesInLoopArea.length} Butterflies!`;
+                    message = `Got ${butterfliesInLoopArea.length} butterflies!`;
                     butterfliesInLoopArea.forEach((butterfly) => {
                         butterfly.delete();
                         // this.butterfliesからけす
@@ -387,7 +391,7 @@ export class RuleState extends StateBase {
         this.pageInfos.push(text2jp);
 
         const text3 = new PIXI.Text({
-            text: "Capture neeeded number of\rbutterflies before sunset",
+            text: "Capture needed number of\rbutterflies before sunset",
             style: this.defaultTextStyle,
         });
         text3.x = this.manager.app.screen.width / 2 + Const.MARGIN * 2;
@@ -834,19 +838,72 @@ export class RuleState extends StateBase {
         title2jp.y = title2.y + title2.height * 1.1;
         this.pageInfos.push(title2jp);
 
-        const text1 = new PIXI.Text({
-            text: "Comming soon...",
-            style: this.defaultTextStyle,
+        // 右半分にお邪魔オブジェクトを縦に並べて表示(左半分のHelpFlowerと同じレイアウト)
+        const hindranceObjects: (Bee | Spider | Catapy)[] = [
+            new Bee({
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            }),
+            new Spider({
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            }),
+            new Catapy({
+                x: this.manager.app.screen.width,
+                y: this.manager.app.screen.height,
+            }),
+        ];
+        // Catapyは横長(幅約115px)で右半分にはみ出すため、表示用インスタンスのみ縮小する
+        hindranceObjects[2].scale.set(0.4);
+
+        let obstacleY = title2jp.y + title2jp.height + Const.MARGIN;
+        const obstacleRowGap = 70;
+        // ノートの右端。説明文はここまでで折り返す(はみ出し防止)
+        const noteRightX =
+            this.notebookSprite.x + this.notebookSprite.width / 2;
+        hindranceObjects.forEach((obstacle) => {
+            obstacle.x =
+                this.manager.app.screen.width / 2 +
+                Const.MARGIN * 2 +
+                obstacle.width / 2;
+            obstacle.y = obstacleY + obstacle.height / 2;
+            obstacleY += obstacle.height + obstacleRowGap;
+            obstacle.appear(false);
+            this.hindranceObjects.push(obstacle);
+
+            const textX = obstacle.x + obstacle.width;
+            const wrapWidth = noteRightX - Const.MARGIN * 2 - textX;
+            const text = new PIXI.Text({
+                text: obstacle.description,
+                style: {
+                    ...this.defaultTextStyle,
+                    wordWrap: true,
+                    wordWrapWidth: wrapWidth,
+                },
+            });
+            text.x = textX;
+            text.y = obstacle.y - obstacle.height / 2;
+            this.pageInfos.push(text);
+
+            const textjp = new PIXI.Text({
+                text: obstacle.descriptionJP,
+                style: {
+                    ...this.defaultTextStyleJP,
+                    wordWrap: true,
+                    wordWrapWidth: wrapWidth,
+                },
+            });
+            textjp.x = text.x;
+            textjp.y = text.y + text.height * 1.1;
+            this.pageInfos.push(textjp);
         });
-        text1.x = this.manager.app.screen.width / 2 + Const.MARGIN * 2;
-        text1.y = title2jp.y + title2jp.height + Const.MARGIN;
-        this.pageInfos.push(text1);
 
         // pageInfoを表示
         this.pageInfos.forEach((pageInfo) => {
             this.container.addChild(pageInfo);
         });
         this.container.addChild(...this.helpFlowers);
+        this.container.addChild(...this.hindranceObjects);
     }
 
     //  ページ情報をリセット
@@ -860,6 +917,10 @@ export class RuleState extends StateBase {
             flower.delete(0.05);
         });
         this.helpFlowers = [];
+        this.hindranceObjects.forEach((obstacle) => {
+            obstacle.delete(0.05);
+        });
+        this.hindranceObjects = [];
         await Promise.all(
             this.pageInfos.map((pageInfo) => {
                 return this.fadeOut(pageInfo, 0.05);

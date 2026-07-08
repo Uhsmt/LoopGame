@@ -59,6 +59,53 @@ describe("StageInformation", () => {
             expect(si.hasBonusButterfly).toBe(false);
         });
 
+        it("should keep stages up to the final configured level obstacle-free", () => {
+            const si = new StageInformation();
+            expect(si.obstacles).toEqual([]);
+
+            while (si.level < 10) {
+                si.next();
+                expect(si.obstacles).toEqual([]);
+            }
+        });
+
+        it("should add obstacle types progressively from level 11", () => {
+            const si = new StageInformation();
+            while (si.level < 11) {
+                si.next();
+            }
+            expect(si.obstacles).toEqual(["bee"]);
+
+            si.next(); // level 12
+            expect(si.obstacles).toEqual(["bee"]);
+
+            si.next(); // level 13
+            expect(si.obstacles).toEqual(["bee", "spider"]);
+
+            si.next(); // level 14
+            expect(si.obstacles).toEqual(["bee", "spider"]);
+
+            si.next(); // level 15
+            expect(si.obstacles).toEqual(["bee", "spider", "catapy"]);
+
+            while (si.level < 20) {
+                si.next();
+            }
+            expect(si.obstacles).toEqual(["bee", "spider", "catapy"]);
+        });
+
+        it("should keep obstacles through a bonus stage for the next stage", () => {
+            const si = new StageInformation();
+            while (si.level < 11) {
+                si.next();
+            }
+            si.bonusStage();
+            expect(si.obstacles).toEqual(["bee"]);
+
+            si.next();
+            expect(si.obstacles).toEqual(["bee"]);
+        });
+
         it("should keep escalating needCount by 2 beyond the final level", () => {
             const si = new StageInformation();
             while (si.level < 11) {

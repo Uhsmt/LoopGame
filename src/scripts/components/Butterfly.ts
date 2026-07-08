@@ -146,19 +146,59 @@ export class Butterfly extends BaseCaptureableObject {
         }
     }
 
-    update(delta: number, lineSegments: PIXI.Point[]): void {
+    update(
+        delta: number,
+        lineSegments: PIXI.Point[],
+        avoidPoint: PIXI.Point | null = null,
+    ): void {
         this.flap(delta);
-        this.fly(delta, lineSegments);
+        this.fly(delta, lineSegments, avoidPoint);
     }
 
-    private fly(delta: number, lineSegments: PIXI.Point[]): void {
+    private fly(
+        delta: number,
+        lineSegments: PIXI.Point[],
+        avoidPoint: PIXI.Point | null = null,
+    ): void {
         if (!this.isFlying) return;
         const left = Const.MARGIN;
         const right = this.screenSize.x - Const.MARGIN;
         const top = Const.MARGIN;
         const bottom = this.screenSize.y - Const.MARGIN;
 
-        if (this.isForceToGather && this.gatherPoint) {
+        // avoidPointが指定されていれば、画面上の全ての蝶が
+        // gather・通常移動より優先して遠ざかる
+        const isAvoiding = !!avoidPoint;
+
+        if (isAvoiding && avoidPoint) {
+            // avoidPointから遠ざかる方向へ飛ぶ(gatherPointロジックの逆)
+            // 横方向
+            if (this.x < avoidPoint.x) {
+                this.xDiretion = -1 * Math.abs(this.xDiretion);
+            } else {
+                this.xDiretion = Math.abs(this.xDiretion);
+            }
+            // 縦方向
+            if (this.y < avoidPoint.y) {
+                this.yDiretion = -1 * Math.abs(this.yDiretion);
+            } else {
+                this.yDiretion = Math.abs(this.yDiretion);
+            }
+            // 画面端では外側へ逃げ続けない(端に達したら内側方向を維持)
+            if (this.x <= left + this.spriteWith) {
+                this.xDiretion = Math.abs(this.xDiretion);
+            } else if (this.x >= right) {
+                this.xDiretion = -1 * Math.abs(this.xDiretion);
+            }
+            if (this.y <= this.sprite.height + top) {
+                this.yDiretion = Math.abs(this.yDiretion);
+            } else if (this.y >= bottom) {
+                this.yDiretion = -1 * Math.abs(this.yDiretion);
+            }
+            // ライン判定をスキップする間は前フレームの接触状態を持ち越さない
+            // (効果終了直後の反転判定が誤ってスキップされないように)
+            this.isHitLineBeforeFrame = false;
+        } else if (this.isForceToGather && this.gatherPoint) {
             // gatherPointに向かって飛ぶ
             // 横方向
             if (this.x < this.gatherPoint.x) {
@@ -172,6 +212,8 @@ export class Butterfly extends BaseCaptureableObject {
             } else {
                 this.yDiretion = -1 * Math.abs(this.yDiretion);
             }
+            // ライン判定をスキップする間は前フレームの接触状態を持ち越さない
+            this.isHitLineBeforeFrame = false;
         } else {
             // lineSegmentsと距離がhitAreaSize以下の点があればisHitLineをtrueにする
             const isHitLine = lineSegments.some((segment) => {
@@ -233,7 +275,13 @@ export class Butterfly extends BaseCaptureableObject {
         // update position
         let useXDiretion = this.xDiretion;
         let useYDiretion = this.yDiretion;
-        if (this.isForceToGather) {
+        if (isAvoiding) {
+            // 逃避中はサイズによらず小蝶(0.6)と同じ速さで逃げる
+            // (向きだけ維持して大きさを揃える。xDiretion自体は書き換えない)
+            useXDiretion = Math.sign(this.xDiretion) * Const.AVOID_PENCIL_SPEED;
+            useYDiretion = Math.sign(this.yDiretion) * Const.AVOID_PENCIL_SPEED;
+        }
+        if (isAvoiding || this.isForceToGather) {
             useXDiretion *= 1.7;
             useYDiretion *= 1.7;
         }

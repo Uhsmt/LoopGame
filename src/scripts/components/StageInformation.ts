@@ -19,6 +19,7 @@ interface StageConfig {
     maxMultipleRate?: number;
     helpObjectNum?: number;
     hasBonusButterfly?: boolean;
+    obstacles?: string[];
 }
 
 const stageConfigs: StageConfig[] = stageConfig;
@@ -37,6 +38,7 @@ export class StageInformation {
     maxMultipleRate: number = 1;
     helpObjectNum: number = 0;
     hasBonusButterfly: boolean = false;
+    obstacles: string[] = [];
 
     // scores
     captureCount: number = 0;
@@ -80,11 +82,21 @@ export class StageInformation {
             : stageConfigs.length - 1;
         const needCount = base.needCount + (level - lastLevel) * 2;
 
+        // お邪魔オブジェクトは最終レベル以降で種類を段階的に増やしていく
+        // (11〜12: bee / 13〜14: bee+spider / 15〜: 全種)
+        const obstacles =
+            level >= 15
+                ? ["bee", "spider", "catapy"]
+                : level >= 13
+                  ? ["bee", "spider"]
+                  : ["bee"];
+
         switch (level % 4) {
             case 0: // 群れ: 少ない色でまとめ捕り推奨
                 return {
                     level,
                     needCount,
+                    obstacles,
                     butterflyColorNum: pick(1, [2, 3]),
                     stageButterflyCount: 16 + Math.floor(rand(2) * 5), // 16-20
                     butterflySize: pick(3, ["small", "medium", "random"]),
@@ -97,6 +109,7 @@ export class StageInformation {
                 return {
                     level,
                     needCount,
+                    obstacles,
                     butterflyColorNum: 5,
                     stageButterflyCount: 11 + Math.floor(rand(2) * 4), // 11-14
                     butterflySize: pick(3, ["medium", "random"]),
@@ -109,6 +122,7 @@ export class StageInformation {
                 return {
                     level,
                     needCount,
+                    obstacles,
                     butterflyColorNum: 3,
                     stageButterflyCount: 9 + Math.floor(rand(2) * 4), // 9-12
                     butterflySize: "large",
@@ -121,6 +135,7 @@ export class StageInformation {
                 return {
                     level,
                     needCount,
+                    obstacles,
                     butterflyColorNum: 4,
                     stageButterflyCount: 14 + Math.floor(rand(2) * 5), // 14-18
                     butterflySize: pick(3, ["small", "random"]),
@@ -155,6 +170,9 @@ export class StageInformation {
         this.helpObjectNum = config.helpObjectNum ?? this.helpObjectNum;
         this.hasBonusButterfly =
             config.hasBonusButterfly ?? this.hasBonusButterfly;
+        // お邪魔オブジェクトも設定に無ければ前ステージから引き継ぐ
+        // (レベルが上がると種類が追加されていく)
+        this.obstacles = config.obstacles ?? this.obstacles;
 
         this.level = level;
         this.butterflyColors = Utility.chooseAtRandom(
@@ -210,5 +228,7 @@ export class StageInformation {
         this.maxMultipleRate = 3;
         this.helpObjectNum = Utility.random(4, 8);
         this.hasBonusButterfly = false;
+        // note: obstaclesはクリアしない(次ステージへの引き継ぎ用)
+        // ボーナスステージ中はGameplayState側がbonusFlagを見て出現させない
     }
 }

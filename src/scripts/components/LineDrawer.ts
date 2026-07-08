@@ -15,6 +15,7 @@ export class LineDrawer extends EventEmitter {
     readonly originalLineColor: number = 0xffffff;
     private lineDrawTime: number;
     private lineColor: number;
+    private _lastPointerPoint: PIXI.Point | null = null;
     pointerMoveHandler: ((e: PIXI.FederatedPointerEvent) => void) | null = null;
 
     constructor(app: PIXI.Application, color: number = 0xffffff) {
@@ -62,6 +63,9 @@ export class LineDrawer extends EventEmitter {
         } else if (y > this.app.screen.height - Const.MARGIN) {
             y = this.app.screen.height - Const.MARGIN + 1;
         }
+
+        // 鉛筆(ポインタ)の最新位置を保持する(spider効果の逃避先計算用)
+        this._lastPointerPoint = new PIXI.Point(x, y);
 
         if (!this.startPoint) {
             // 線の描画開始点が未設定の場合、現在の位置を開始点とする
@@ -218,6 +222,13 @@ export class LineDrawer extends EventEmitter {
 
     setLineDrawTime(time: number): void {
         this.lineDrawTime = time;
+    }
+
+    /**
+     * 鉛筆(ポインタ)の最新位置。まだ一度も動かしていない場合はnull
+     */
+    get lastPointerPoint(): PIXI.Point | null {
+        return this._lastPointerPoint;
     }
 
     getSegmentPoints(): PIXI.Point[] {

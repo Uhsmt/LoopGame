@@ -1,0 +1,526 @@
+import { describe, it, expect, beforeEach } from "vitest";
+
+/**
+ * GameplayStateはPIXI.Applicationに強く依存し直接インスタンス化が難しいため、
+ * PowerUpSystem.test.tsと同様に実装ロジックを模したテストダブルで検証する。
+ * ここでは applyLineDrawTime / longLoopEffect / lineShortenEffect の
+ * 「lineDrawer描画時間の一元管理」ロジックにフォーカスする。
+ */
+
+const LONG_LOOP_EFFECT_TIME_MS = 5000;
+const LINE_SHORTEN_EFFECT_TIME_MS = 6000;
+const LINE_SHORTEN_COLOR = 0xff0000;
+const AVOID_PENCIL_EFFECT_TIME_MS = 6000;
+
+class TestLineDrawer {
+    public originalLineDrawTime: number = 1500;
+    public originalLineColor: number = 0xffffff;
+    private lineDrawTime: number = 1500;
+    private lineColor: number = 0xffffff;
+
+    setLineDrawTime(time: number): void {
+        this.lineDrawTime = time;
+    }
+
+    setLineColor(color: number): void {
+        this.lineColor = color;
+    }
+
+    getLineDrawTime(): number {
+        return this.lineDrawTime;
+    }
+
+    getLineColor(): number {
+        return this.lineColor;
+    }
+}
+
+/**
+ * GameplayState.applyLineDrawTime / longLoopEffect / lineShortenEffect
+ * を再現したテストダブル(実装と同じ分岐ロジックであることをテストで担保する)
+ */
+class TestGameplayEffects {
+    public longLoopElapsedTime = -1;
+    public lineShortenElapsedTime = -1;
+    public avoidPencilElapsedTime = -1;
+    public lineDrawer = new TestLineDrawer();
+    public helpMessage = "";
+
+    avoidPencilEffect(isActive: boolean): void {
+        this.avoidPencilElapsedTime = isActive
+            ? AVOID_PENCIL_EFFECT_TIME_MS
+            : -1;
+    }
+
+    longLoopEffect(isActive: boolean): void {
+        this.longLoopElapsedTime = isActive ? LONG_LOOP_EFFECT_TIME_MS : -1;
+        this.applyLineDrawTime();
+    }
+
+    lineShortenEffect(isActive: boolean): void {
+        this.lineShortenElapsedTime = isActive
+            ? LINE_SHORTEN_EFFECT_TIME_MS
+            : -1;
+        this.applyLineDrawTime();
+    }
+
+    applyLineDrawTime(): void {
+        let time = this.lineDrawer.originalLineDrawTime;
+        let color = this.lineDrawer.originalLineColor;
+        if (this.longLoopElapsedTime >= 0) {
+            time += 500;
+            color = 0x0081af;
+        }
+        if (this.lineShortenElapsedTime >= 0) {
+            time /= 3;
+            color = LINE_SHORTEN_COLOR;
+        }
+        this.lineDrawer.setLineDrawTime(time);
+        this.lineDrawer.setLineColor(color);
+    }
+
+    applyObstacleEffect(obstacleType: "bee" | "spider"): void {
+        if (obstacleType === "bee") {
+            this.lineShortenEffect(true);
+            this.helpMessage = "Line shortened!";
+        } else if (obstacleType === "spider") {
+            this.avoidPencilEffect(true);
+            this.helpMessage = "Butterflies flee!";
+        }
+    }
+
+    // GameplayState.update()内のeffect時間管理を再現
+    tick(delta: number): void {
+        if (this.longLoopElapsedTime >= 0) {
+            this.longLoopElapsedTime -= delta;
+            if (this.longLoopElapsedTime <= 0) {
+                this.longLoopEffect(false);
+            }
+        }
+        if (this.lineShortenElapsedTime >= 0) {
+            this.lineShortenElapsedTime -= delta;
+            if (this.lineShortenElapsedTime <= 0) {
+                this.lineShortenEffect(false);
+            }
+        }
+        if (this.avoidPencilElapsedTime >= 0) {
+            this.avoidPencilElapsedTime -= delta;
+            if (this.avoidPencilElapsedTime <= 0) {
+                this.avoidPencilEffect(false);
+            }
+        }
+    }
+}
+
+describe("Obstacle System Integration Tests (Bee / line shorten)", () => {
+    let effects: TestGameplayEffects;
+
+    beforeEach(() => {
+        effects = new TestGameplayEffects();
+    });
+
+    describe("Bee hit -> line shorten effect", () => {
+        it("should cut the line draw time to 1/3 and show a help message", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+
+            effects.applyObstacleEffect("bee");
+
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 3);
+            expect(effects.lineShortenElapsedTime).toBe(
+                LINE_SHORTEN_EFFECT_TIME_MS,
+            );
+            expect(effects.helpMessage).toBe("Line shortened!");
+        });
+
+        it("should turn the line red while the effect is active", () => {
+            effects.applyObstacleEffect("bee");
+
+            expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
+        });
+
+        it("should restore the original line draw time and color after the effect expires", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+            effects.applyObstacleEffect("bee");
+
+            effects.tick(LINE_SHORTEN_EFFECT_TIME_MS); // ちょうど時間切れ
+
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original);
+            expect(effects.lineDrawer.getLineColor()).toBe(
+                effects.lineDrawer.originalLineColor,
+            );
+            expect(effects.lineShortenElapsedTime).toBe(-1);
+        });
+
+        it("should not restore before the effect duration has elapsed", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+            effects.applyObstacleEffect("bee");
+
+            effects.tick(LINE_SHORTEN_EFFECT_TIME_MS - 1000);
+
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 3);
+        });
+    });
+
+    describe("longLoop effect (existing behavior, unaffected by refactor)", () => {
+        it("should add 500ms to the line draw time", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+
+            effects.longLoopEffect(true);
+
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original + 500);
+            expect(effects.lineDrawer.getLineColor()).toBe(0x0081af);
+        });
+
+        it("should restore original time and color when it expires", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+            const originalColor = effects.lineDrawer.originalLineColor;
+            effects.longLoopEffect(true);
+
+            effects.tick(LONG_LOOP_EFFECT_TIME_MS);
+
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original);
+            expect(effects.lineDrawer.getLineColor()).toBe(originalColor);
+        });
+    });
+
+    describe("longLoop and line shorten overlap", () => {
+        it("should apply both: (original + 500) / 3", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+
+            effects.longLoopEffect(true);
+            effects.applyObstacleEffect("bee");
+
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(
+                (original + 500) / 3,
+            );
+        });
+
+        it("should prefer the red shorten color over the longLoop color", () => {
+            effects.longLoopEffect(true);
+            effects.applyObstacleEffect("bee");
+
+            expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
+        });
+
+        it("should fall back to shorten-only time and color once longLoop expires first", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+
+            effects.longLoopEffect(true); // 5000ms
+            effects.applyObstacleEffect("bee"); // 6000ms
+
+            effects.tick(LONG_LOOP_EFFECT_TIME_MS); // longLoopのみ失効
+
+            expect(effects.longLoopElapsedTime).toBe(-1);
+            expect(effects.lineShortenElapsedTime).toBeGreaterThan(0);
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original / 3);
+            expect(effects.lineDrawer.getLineColor()).toBe(LINE_SHORTEN_COLOR);
+        });
+
+        it("should fall back to original time once both effects expire", () => {
+            const original = effects.lineDrawer.originalLineDrawTime;
+
+            effects.longLoopEffect(true);
+            effects.applyObstacleEffect("bee");
+
+            effects.tick(LINE_SHORTEN_EFFECT_TIME_MS); // 両方の効果時間を超過
+
+            expect(effects.lineDrawer.getLineDrawTime()).toBe(original);
+        });
+    });
+
+    describe("Spider hit -> avoid pencil effect", () => {
+        it("should start the avoid-pencil timer and show a help message", () => {
+            effects.applyObstacleEffect("spider");
+
+            expect(effects.avoidPencilElapsedTime).toBe(
+                AVOID_PENCIL_EFFECT_TIME_MS,
+            );
+            expect(effects.helpMessage).toBe("Butterflies flee!");
+        });
+
+        it("should clear the avoid-pencil timer once the effect duration elapses", () => {
+            effects.applyObstacleEffect("spider");
+
+            effects.tick(AVOID_PENCIL_EFFECT_TIME_MS); // ちょうど時間切れ
+
+            expect(effects.avoidPencilElapsedTime).toBe(-1);
+        });
+
+        it("should keep the avoid-pencil timer running before the duration has elapsed", () => {
+            effects.applyObstacleEffect("spider");
+
+            effects.tick(AVOID_PENCIL_EFFECT_TIME_MS - 1000);
+
+            expect(effects.avoidPencilElapsedTime).toBe(1000);
+        });
+
+        it("should not interfere with the independent line shorten timer (bee + spider overlap)", () => {
+            effects.applyObstacleEffect("bee"); // 6000ms line shorten
+            effects.applyObstacleEffect("spider"); // 6000ms avoid pencil
+
+            effects.tick(1000);
+
+            expect(effects.lineShortenElapsedTime).toBe(5000);
+            expect(effects.avoidPencilElapsedTime).toBe(5000);
+
+            effects.tick(5000);
+
+            expect(effects.lineShortenElapsedTime).toBe(-1);
+            expect(effects.avoidPencilElapsedTime).toBe(-1);
+        });
+    });
+});
+
+/**
+ * GameplayState.handleLoopAreaCompleted内のcatapy(イモムシ)判定ロジックを
+ * 再現したテストダブル(実装と同じ分岐であることをテストで担保する)。
+ * - 蝶+catapyが同じループ内 -> ループ無効(捕獲・色替え・花取得を一切行わない)
+ *   (bee/spiderは蝶と一緒でもループを無効化しない)
+ * - お邪魔オブジェクト単体(蝶0匹)で囲む -> カウントが進み、3回で消える(全種共通)。
+ *   花は通常どおり取得できる
+ * - お邪魔オブジェクトがいない -> 既存の蝶/花のロジックそのまま
+ */
+const OBSTACLE_REQUIRED_LOOP_COUNT = 3;
+
+class TestObstacleForLoop {
+    public removed = false;
+    public loopedCount = 0;
+    constructor(
+        public inLoop: boolean,
+        /** 蝶と一緒に囲まれたときループを無効化するか(catapyのみtrue) */
+        public voidsLoop: boolean = false,
+    ) {}
+    isHit(_loopArea: unknown): boolean {
+        return this.inLoop;
+    }
+    countLoop(): boolean {
+        this.loopedCount += 1;
+        return this.loopedCount >= OBSTACLE_REQUIRED_LOOP_COUNT;
+    }
+    delete(): void {
+        this.removed = true;
+    }
+}
+
+class TestCatapy extends TestObstacleForLoop {
+    constructor(inLoop: boolean) {
+        super(inLoop, true);
+    }
+}
+
+class TestFlower {
+    public captured = false;
+    constructor(public inLoop: boolean) {}
+    isHit(_loopArea: unknown): boolean {
+        return this.inLoop;
+    }
+}
+
+class TestButterflyForCatapy {
+    public colorSwitched = false;
+    public captured = false;
+    constructor(public inLoop: boolean) {}
+    isHit(_loopArea: unknown): boolean {
+        return this.inLoop;
+    }
+    switchColor(): void {
+        this.colorSwitched = true;
+    }
+}
+
+class TestGameplayLoopHandler {
+    public obstacles: TestObstacleForLoop[] = [];
+    public flowers: TestFlower[] = [];
+    public butterflies: TestButterflyForCatapy[] = [];
+    public playedSe: string[] = [];
+    public actionMessage = "";
+    public capturedFlowers: TestFlower[] = [];
+    public capturedButterflies: TestButterflyForCatapy[] = [];
+
+    playSe(name: string): void {
+        this.playedSe.push(name);
+    }
+
+    showActionMessage(message: string): void {
+        this.actionMessage = message;
+    }
+
+    captureFlowers(flowers: TestFlower[]): void {
+        flowers.forEach((flower) => {
+            flower.captured = true;
+            this.flowers = this.flowers.filter((f) => f !== flower);
+        });
+        this.capturedFlowers.push(...flowers);
+    }
+
+    // GameplayState.handleLoopAreaCompletedのcatapy判定部分を再現
+    handleLoopAreaCompleted(loopArea: unknown): void {
+        const butterfliesInLoopArea = this.butterflies.filter((b) =>
+            b.isHit(loopArea),
+        );
+        const flowersInLoopArea = this.flowers.filter((f) => f.isHit(loopArea));
+        const obstaclesInLoop = this.obstacles.filter((o) => o.isHit(loopArea));
+
+        if (butterfliesInLoopArea.length > 0) {
+            if (obstaclesInLoop.some((obstacle) => obstacle.voidsLoop)) {
+                this.playSe("se_obstacle_hit");
+                this.showActionMessage("Invalid loop!");
+                return;
+            }
+        } else if (obstaclesInLoop.length > 0) {
+            const defeated = obstaclesInLoop.filter((obstacle) =>
+                obstacle.countLoop(),
+            );
+            this.obstacles = this.obstacles.filter(
+                (obstacle) => !defeated.includes(obstacle),
+            );
+            defeated.forEach((obstacle) => obstacle.delete());
+            this.playSe("se_obstacle_hit");
+            this.captureFlowers(flowersInLoopArea);
+            return;
+        }
+
+        if (butterfliesInLoopArea.length === 1) {
+            butterfliesInLoopArea[0].switchColor();
+            this.playSe("se_switch");
+            this.captureFlowers(flowersInLoopArea);
+        } else if (butterfliesInLoopArea.length >= 2) {
+            this.capturedButterflies.push(...butterfliesInLoopArea);
+            this.captureFlowers(flowersInLoopArea);
+        } else {
+            this.captureFlowers(flowersInLoopArea);
+        }
+    }
+}
+
+describe("Obstacle System Integration Tests (Catapy / loop invalidation)", () => {
+    let handler: TestGameplayLoopHandler;
+
+    beforeEach(() => {
+        handler = new TestGameplayLoopHandler();
+    });
+
+    describe("butterfly + catapy in the same loop", () => {
+        it("should invalidate the loop entirely (no capture, no color switch, no flower)", () => {
+            const catapy = new TestCatapy(true);
+            const flower = new TestFlower(true);
+            const butterfly = new TestButterflyForCatapy(true);
+            handler.obstacles = [catapy];
+            handler.flowers = [flower];
+            handler.butterflies = [butterfly];
+
+            handler.handleLoopAreaCompleted({});
+
+            expect(handler.playedSe).toEqual(["se_obstacle_hit"]);
+            expect(handler.actionMessage).toBe("Invalid loop!");
+            expect(catapy.removed).toBe(false);
+            expect(butterfly.colorSwitched).toBe(false);
+            expect(handler.capturedFlowers).toHaveLength(0);
+            expect(handler.flowers).toHaveLength(1);
+            expect(handler.obstacles).toHaveLength(1);
+        });
+    });
+
+    describe("catapy alone (no butterfly) in the loop", () => {
+        it("should keep the catapy alive with feedback for the first two loops", () => {
+            const catapy = new TestCatapy(true);
+            const flower = new TestFlower(true);
+            handler.obstacles = [catapy];
+            handler.flowers = [flower];
+            handler.butterflies = [];
+
+            handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
+
+            // 2回まではカウントだけ進んで消えない(毎回効果音は鳴る)
+            expect(handler.playedSe).toEqual([
+                "se_obstacle_hit",
+                "se_obstacle_hit",
+            ]);
+            expect(catapy.loopedCount).toBe(2);
+            expect(catapy.removed).toBe(false);
+            expect(handler.obstacles).toHaveLength(1);
+            // 花は1回目のループで通常どおり取得できる
+            expect(handler.capturedFlowers).toEqual([flower]);
+        });
+
+        it("should remove the catapy on the third solo loop", () => {
+            const catapy = new TestCatapy(true);
+            handler.obstacles = [catapy];
+            handler.butterflies = [];
+
+            handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
+
+            expect(catapy.loopedCount).toBe(3);
+            expect(catapy.removed).toBe(true);
+            expect(handler.obstacles).toHaveLength(0);
+        });
+    });
+
+    describe("bee/spider (non-voiding obstacles) and the solo-loop rule", () => {
+        it("should remove a bee-like obstacle on the third solo loop too", () => {
+            const bee = new TestObstacleForLoop(true); // voidsLoop=false
+            handler.obstacles = [bee];
+            handler.butterflies = [];
+
+            handler.handleLoopAreaCompleted({});
+            handler.handleLoopAreaCompleted({});
+            expect(bee.removed).toBe(false);
+
+            handler.handleLoopAreaCompleted({});
+            expect(bee.loopedCount).toBe(3);
+            expect(bee.removed).toBe(true);
+            expect(handler.obstacles).toHaveLength(0);
+        });
+
+        it("should not invalidate nor count when looped together with butterflies", () => {
+            const bee = new TestObstacleForLoop(true); // voidsLoop=false
+            const butterflyA = new TestButterflyForCatapy(true);
+            const butterflyB = new TestButterflyForCatapy(true);
+            handler.obstacles = [bee];
+            handler.butterflies = [butterflyA, butterflyB];
+
+            handler.handleLoopAreaCompleted({});
+
+            // 通常の捕獲がそのまま行われ、bee側は反応しない
+            expect(handler.actionMessage).not.toBe("Invalid loop!");
+            expect(handler.capturedButterflies).toEqual([
+                butterflyA,
+                butterflyB,
+            ]);
+            expect(bee.loopedCount).toBe(0);
+            expect(bee.removed).toBe(false);
+        });
+    });
+
+    describe("no catapy in the loop", () => {
+        it("should fall back to the normal single-butterfly color switch behavior", () => {
+            const catapy = new TestCatapy(false); // ループ外
+            const butterfly = new TestButterflyForCatapy(true);
+            handler.obstacles = [catapy];
+            handler.butterflies = [butterfly];
+
+            handler.handleLoopAreaCompleted({});
+
+            expect(handler.playedSe).toEqual(["se_switch"]);
+            expect(butterfly.colorSwitched).toBe(true);
+            expect(catapy.removed).toBe(false);
+            expect(handler.obstacles).toHaveLength(1);
+        });
+
+        it("should fall back to normal multi-butterfly capture behavior", () => {
+            const butterflyA = new TestButterflyForCatapy(true);
+            const butterflyB = new TestButterflyForCatapy(true);
+            handler.butterflies = [butterflyA, butterflyB];
+
+            handler.handleLoopAreaCompleted({});
+
+            expect(handler.capturedButterflies).toEqual([
+                butterflyA,
+                butterflyB,
+            ]);
+        });
+    });
+});

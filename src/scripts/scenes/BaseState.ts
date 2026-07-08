@@ -6,6 +6,8 @@ import { Butterfly } from "../components/Butterfly";
 export class StateBase {
     protected manager: GameStateManager;
     protected container: PIXI.Container;
+    /** 外周の黒枠。ゲームオブジェクトはこれより下のレイヤーに挿入する */
+    protected frameGraphics: PIXI.Graphics | null = null;
 
     constructor(manager: GameStateManager) {
         this.manager = manager;
@@ -45,6 +47,22 @@ export class StateBase {
             alignment: 1,
         });
         this.container.addChild(frameGraphics);
+        this.frameGraphics = frameGraphics;
+    }
+
+    /**
+     * 黒枠の直下のレイヤーにゲームオブジェクトを挿入する
+     * (蝶・花・お邪魔オブジェクトはすべて黒枠より下に描画する)
+     */
+    protected addChildBelowFrame(child: PIXI.Container): void {
+        if (this.frameGraphics && !this.frameGraphics.destroyed) {
+            this.container.addChildAt(
+                child,
+                this.container.getChildIndex(this.frameGraphics),
+            );
+        } else {
+            this.container.addChild(child);
+        }
     }
 
     protected fadeOut(

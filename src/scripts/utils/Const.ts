@@ -26,6 +26,8 @@ export const HELP_FLOWER_TYPES = [
     "long",
 ] as const;
 
+export const OBSTACLE_TYPES = ["bee", "spider", "catapy"] as const;
+
 // ゲームの設計解像度(全レイアウトはapp.screen基準なのでここを変えれば全体が追従)
 export const GAME_WIDTH = 1150;
 export const GAME_HEIGHT = 650;
@@ -33,6 +35,13 @@ export const GAME_HEIGHT = 650;
 export const LONG_LOOP_EFFECT_TIME_MS = 5000;
 export const GATHER_EFFECT_TIME_MS = 10000;
 export const FREEZE_EFFECT_TIME_MS = 3000;
+// お邪魔オブジェクトの効果時間(bee: ライン短縮 / spider: 蝶が鉛筆から逃げる)
+export const LINE_SHORTEN_EFFECT_TIME_MS = 6000;
+export const AVOID_PENCIL_EFFECT_TIME_MS = 6000;
+// ライン短縮中の線の色(赤: 弱体化がひと目で分かるように)
+export const LINE_SHORTEN_COLOR = 0xff0000;
+// 鉛筆から逃げるときの速さ(px/16ms、小蝶と同じ。サイズによらず共通)
+export const AVOID_PENCIL_SPEED = 0.6;
 
 export const seSrcs = [
     { alias: "se_switch", src: `${BASE_URL}assets/sounds/se_switch.m4a` },
@@ -91,4 +100,9 @@ export const imageSrcs = [
     { alias: "flower4", src: `${BASE_URL}assets/flower4.png` },
     { alias: "notebook", src: `${BASE_URL}assets/notebook.png` },
     { alias: "stardust", src: `${BASE_URL}assets/stardust_effect.png` },
+    { alias: "bee", src: `${BASE_URL}assets/bee.png` },
+    { alias: "spider1", src: `${BASE_URL}assets/spider1.png` },
+    { alias: "spider2", src: `${BASE_URL}assets/spider2.png` },
+    { alias: "catapy1", src: `${BASE_URL}assets/catapy1.png` },
+    { alias: "catapy2", src: `${BASE_URL}assets/catapy2.png` },
 ];

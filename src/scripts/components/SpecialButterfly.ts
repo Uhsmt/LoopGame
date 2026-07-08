@@ -23,12 +23,16 @@ export class SpecialButterfly extends Butterfly {
         this.hitAreaSize = this.sprite.height / 3;
     }
 
-    update(delta: number, lineSegments: PIXI.Point[]): void {
+    update(
+        delta: number,
+        lineSegments: PIXI.Point[],
+        avoidPoint: PIXI.Point | null = null,
+    ): void {
         // グローの強さをふわ〜っと脈動させる
         this.glowProgress += 0.003 * delta;
         this.glow.outerStrength = 2.2 + 1.5 * Math.sin(this.glowProgress);
 
-        super.update(delta, lineSegments);
+        super.update(delta, lineSegments, avoidPoint);
     }
 
     protected getObjectCenter(): { x: number; y: number } {

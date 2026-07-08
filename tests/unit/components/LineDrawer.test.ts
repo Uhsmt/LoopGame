@@ -302,6 +302,30 @@ describe("LineDrawer", () => {
         });
     });
 
+    describe("lastPointerPoint", () => {
+        it("should be null before any pointer movement", () => {
+            expect(lineDrawer.lastPointerPoint).toBeNull();
+        });
+
+        it("should track the latest pointer position", () => {
+            (lineDrawer as any).onPointerMove(100, 200);
+            expect(lineDrawer.lastPointerPoint).toEqual(
+                expect.objectContaining({ x: 100, y: 200 }),
+            );
+
+            (lineDrawer as any).onPointerMove(150, 250);
+            expect(lineDrawer.lastPointerPoint).toEqual(
+                expect.objectContaining({ x: 150, y: 250 }),
+            );
+        });
+
+        it("should clamp the position to the margin", () => {
+            (lineDrawer as any).onPointerMove(0, 10000);
+            expect(lineDrawer.lastPointerPoint!.x).toBe(49); // MARGIN(50) - 1
+            expect(lineDrawer.lastPointerPoint!.y).toBe(551); // 600 - 50 + 1
+        });
+    });
+
     describe("cleanup()", () => {
         it("should remove event listeners and clean up graphics", () => {
             (lineDrawer as any).pointerMoveHandler = vi.fn();
