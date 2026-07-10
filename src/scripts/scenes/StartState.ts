@@ -30,6 +30,8 @@ export class StartState extends StateBase {
 
     // ボタンをクリック/タップした際のヒントメッセージ表示用
     private hintMessage: PIXI.Text;
+    // クリック候補として追跡中のポインタID(マルチタッチ時の指の混線を防ぐため)
+    private clickPointerId: number | null = null;
     private clickDownPoint: PIXI.Point | null = null;
     private clickDownTime: number = 0;
     // このジェスチャー中(pointerdown〜pointerup)にループが完成したか
@@ -38,6 +40,10 @@ export class StartState extends StateBase {
         | ((e: PIXI.FederatedPointerEvent) => void)
         | null = null;
     private stagePointerUpHandler:
+        | ((e: PIXI.FederatedPointerEvent) => void)
+        | null = null;
+    // pointercancel / pointerupoutside(キャンセル・画面外リリース)で追跡状態を破棄するハンドラ
+    private stagePointerCancelHandler:
         | ((e: PIXI.FederatedPointerEvent) => void)
         | null = null;
 
@@ -143,12 +149,25 @@ export class StartState extends StateBase {
 
         // ボタンをクリック/タップした際にヒントを出すためのハンドラを設定
         this.stagePointerDownHandler = (e: PIXI.FederatedPointerEvent) => {
+            if (this.clickPointerId !== null) {
+                // 既に別の指(ポインタ)を追跡中に新しい指が追加された
+                // = マルチタッチなのでクリック候補ではない。追跡状態を破棄する
+                this.clearClickState();
+                return;
+            }
+            this.clickPointerId = e.pointerId;
             this.clickDownPoint = new PIXI.Point(e.global.x, e.global.y);
             this.clickDownTime = Date.now();
             this.loopCompletedDuringGesture = false;
         };
         this.stagePointerUpHandler = (e: PIXI.FederatedPointerEvent) => {
             this.handlePointerUp(e);
+        };
+        this.stagePointerCancelHandler = (e: PIXI.FederatedPointerEvent) => {
+            // 追跡中のポインタがキャンセル/画面外リリースされたら状態を破棄する
+            if (this.clickPointerId === e.pointerId) {
+                this.clearClickState();
+            }
         };
         this.manager.app.stage.addEventListener(
             "pointerdown",
@@ -157,6 +176,14 @@ export class StartState extends StateBase {
         this.manager.app.stage.addEventListener(
             "pointerup",
             this.stagePointerUpHandler,
+        );
+        this.manager.app.stage.addEventListener(
+            "pointercancel",
+            this.stagePointerCancelHandler,
+        );
+        this.manager.app.stage.addEventListener(
+            "pointerupoutside",
+            this.stagePointerCancelHandler,
         );
 
         if (DEBUG_MODE) {
@@ -234,6 +261,16 @@ export class StartState extends StateBase {
             this.manager.app.stage.removeEventListener(
                 "pointerup",
                 this.stagePointerUpHandler,
+            );
+        }
+        if (this.stagePointerCancelHandler) {
+            this.manager.app.stage.removeEventListener(
+                "pointercancel",
+                this.stagePointerCancelHandler,
+            );
+            this.manager.app.stage.removeEventListener(
+                "pointerupoutside",
+                this.stagePointerCancelHandler,
             );
         }
 
@@ -344,7 +381,13 @@ export class StartState extends StateBase {
      * その位置がボタン上であればヒントメッセージを表示する。
      */
     private handlePointerUp(e: PIXI.FederatedPointerEvent): void {
-        if (!this.clickDownPoint) {
+        // 追跡中のポインタ(指)のpointerupでなければ無視する
+        // (マルチタッチで別の指がpointerdown/pointerupした場合の混線を防ぐ)
+        if (
+            this.clickPointerId === null ||
+            this.clickPointerId !== e.pointerId ||
+            !this.clickDownPoint
+        ) {
             return;
         }
 
@@ -353,8 +396,7 @@ export class StartState extends StateBase {
         const duration = Date.now() - this.clickDownTime;
         const loopCompleted = this.loopCompletedDuringGesture;
 
-        this.clickDownPoint = null;
-        this.loopCompletedDuringGesture = false;
+        this.clearClickState();
 
         // ループが完成した操作、またはドラッグ量・時間がクリックの範囲を超える操作は無視する
         if (
@@ -378,6 +420,13 @@ export class StartState extends StateBase {
         if (clickedButton) {
             this.showHintMessage();
         }
+    }
+
+    /** クリック(タップ)候補として追跡していた状態を破棄する */
+    private clearClickState(): void {
+        this.clickPointerId = null;
+        this.clickDownPoint = null;
+        this.loopCompletedDuringGesture = false;
     }
 
     /**

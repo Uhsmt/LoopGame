@@ -112,7 +112,7 @@ function createMockManager(app: ReturnType<typeof createMockApp>) {
 function getHandler(
     stage: ReturnType<typeof createMockApp>["stage"],
     eventName: string,
-): (event: { global: { x: number; y: number } }) => void {
+): (event: { global: { x: number; y: number }; pointerId: number }) => void {
     const call = (stage.addEventListener as any).mock.calls.find(
         (c: any[]) => c[0] === eventName,
     );
@@ -159,15 +159,15 @@ describe("StartState click hint", () => {
         vi.useRealTimers();
     });
 
-    const click = (point: { x: number; y: number }) => {
+    const click = (point: { x: number; y: number }, pointerId: number = 1) => {
         const downHandler = getHandler(app.stage, "pointerdown");
         const upHandler = getHandler(app.stage, "pointerup");
-        downHandler({ global: point });
-        upHandler({ global: point });
+        downHandler({ global: point, pointerId });
+        upHandler({ global: point, pointerId });
     };
 
     describe("wiring", () => {
-        it("registers pointerdown/pointerup handlers on the stage during onEnter", () => {
+        it("registers pointerdown/pointerup/pointercancel/pointerupoutside handlers on the stage during onEnter", () => {
             startState.onEnter();
             expect(app.stage.addEventListener).toHaveBeenCalledWith(
                 "pointerdown",
@@ -177,12 +177,22 @@ describe("StartState click hint", () => {
                 "pointerup",
                 expect.any(Function),
             );
+            expect(app.stage.addEventListener).toHaveBeenCalledWith(
+                "pointercancel",
+                expect.any(Function),
+            );
+            expect(app.stage.addEventListener).toHaveBeenCalledWith(
+                "pointerupoutside",
+                expect.any(Function),
+            );
         });
 
-        it("removes the pointer handlers on onExit", () => {
+        it("removes all pointer handlers on onExit, symmetric with onEnter", () => {
             startState.onEnter();
             const downHandler = getHandler(app.stage, "pointerdown");
             const upHandler = getHandler(app.stage, "pointerup");
+            const cancelHandler = getHandler(app.stage, "pointercancel");
+            const outsideHandler = getHandler(app.stage, "pointerupoutside");
 
             startState.onExit();
 
@@ -193,6 +203,14 @@ describe("StartState click hint", () => {
             expect(app.stage.removeEventListener).toHaveBeenCalledWith(
                 "pointerup",
                 upHandler,
+            );
+            expect(app.stage.removeEventListener).toHaveBeenCalledWith(
+                "pointercancel",
+                cancelHandler,
+            );
+            expect(app.stage.removeEventListener).toHaveBeenCalledWith(
+                "pointerupoutside",
+                outsideHandler,
             );
         });
     });
@@ -235,8 +253,8 @@ describe("StartState click hint", () => {
             const downHandler = getHandler(app.stage, "pointerdown");
             const upHandler = getHandler(app.stage, "pointerup");
 
-            downHandler({ global: START_BUTTON });
-            upHandler({ global: RULE_BUTTON }); // 400px移動
+            downHandler({ global: START_BUTTON, pointerId: 1 });
+            upHandler({ global: RULE_BUTTON, pointerId: 1 }); // 400px移動
 
             expect((startState as any).hintMessage.alpha).toBe(0);
         });
@@ -247,9 +265,9 @@ describe("StartState click hint", () => {
             const downHandler = getHandler(app.stage, "pointerdown");
             const upHandler = getHandler(app.stage, "pointerup");
 
-            downHandler({ global: START_BUTTON });
+            downHandler({ global: START_BUTTON, pointerId: 1 });
             vi.advanceTimersByTime(600);
-            upHandler({ global: START_BUTTON });
+            upHandler({ global: START_BUTTON, pointerId: 1 });
 
             expect((startState as any).hintMessage.alpha).toBe(0);
         });
@@ -259,12 +277,12 @@ describe("StartState click hint", () => {
             const downHandler = getHandler(app.stage, "pointerdown");
             const upHandler = getHandler(app.stage, "pointerup");
 
-            downHandler({ global: START_BUTTON });
+            downHandler({ global: START_BUTTON, pointerId: 1 });
             // ジェスチャーの途中でループが完成したことをシミュレート
             (startState as any).handleLoopAreaCompleted({
                 containsPoint: () => false,
             });
-            upHandler({ global: START_BUTTON });
+            upHandler({ global: START_BUTTON, pointerId: 1 });
 
             expect((startState as any).hintMessage.alpha).toBe(0);
         });
@@ -273,8 +291,97 @@ describe("StartState click hint", () => {
             startState.onEnter();
             const upHandler = getHandler(app.stage, "pointerup");
 
-            expect(() => upHandler({ global: START_BUTTON })).not.toThrow();
+            expect(() =>
+                upHandler({ global: START_BUTTON, pointerId: 1 }),
+            ).not.toThrow();
             expect((startState as any).hintMessage.alpha).toBe(0);
+        });
+    });
+
+    describe("multi-touch pointer tracking", () => {
+        it("discards the click candidate when a second finger goes down, so the first finger's release does not show a hint (finger A down -> finger B down -> A up)", () => {
+            startState.onEnter();
+            const downHandler = getHandler(app.stage, "pointerdown");
+            const upHandler = getHandler(app.stage, "pointerup");
+
+            // 指A: startButton上でpointerdown
+            downHandler({ global: START_BUTTON, pointerId: 1 });
+            // 指B: 別の指が(どこでも)pointerdownしてくる = マルチタッチ
+            downHandler({ global: RULE_BUTTON, pointerId: 2 });
+            // 指Aがボタン上でpointerupしても、マルチタッチだったのでヒントは出ない
+            upHandler({ global: START_BUTTON, pointerId: 1 });
+
+            expect((startState as any).hintMessage.alpha).toBe(0);
+        });
+
+        it("does not let finger B's release be treated as finger A's click", () => {
+            startState.onEnter();
+            const downHandler = getHandler(app.stage, "pointerdown");
+            const upHandler = getHandler(app.stage, "pointerup");
+
+            downHandler({ global: START_BUTTON, pointerId: 1 });
+            downHandler({ global: RULE_BUTTON, pointerId: 2 });
+            // 指Bのpointerupも(状態が破棄済みなので)ヒントを出さない
+            upHandler({ global: RULE_BUTTON, pointerId: 2 });
+
+            expect((startState as any).hintMessage.alpha).toBe(0);
+        });
+
+        it("tracks a fresh click normally after a multi-touch collision has cleared the state", () => {
+            startState.onEnter();
+            const downHandler = getHandler(app.stage, "pointerdown");
+            const upHandler = getHandler(app.stage, "pointerup");
+
+            downHandler({ global: START_BUTTON, pointerId: 1 });
+            downHandler({ global: RULE_BUTTON, pointerId: 2 }); // 状態破棄
+            upHandler({ global: START_BUTTON, pointerId: 1 });
+            expect((startState as any).hintMessage.alpha).toBe(0);
+
+            // 新しく単独のクリックをすれば通常通りヒントが出る
+            click(START_BUTTON, 3);
+            expect((startState as any).hintMessage.alpha).toBe(1);
+        });
+    });
+
+    describe("pointercancel / pointerupoutside", () => {
+        it("does not show the hint when the gesture is cancelled before pointerup", () => {
+            startState.onEnter();
+            const downHandler = getHandler(app.stage, "pointerdown");
+            const cancelHandler = getHandler(app.stage, "pointercancel");
+            const upHandler = getHandler(app.stage, "pointerup");
+
+            downHandler({ global: START_BUTTON, pointerId: 1 });
+            cancelHandler({ global: START_BUTTON, pointerId: 1 });
+            // キャンセル後にpointerupが来ても(実装上あり得るが)追跡状態は既に破棄済み
+            upHandler({ global: START_BUTTON, pointerId: 1 });
+
+            expect((startState as any).hintMessage.alpha).toBe(0);
+        });
+
+        it("clears the tracked state on pointerupoutside (release outside the canvas)", () => {
+            startState.onEnter();
+            const downHandler = getHandler(app.stage, "pointerdown");
+            const outsideHandler = getHandler(app.stage, "pointerupoutside");
+
+            downHandler({ global: START_BUTTON, pointerId: 1 });
+            outsideHandler({ global: FAR_AWAY, pointerId: 1 });
+
+            expect((startState as any).clickPointerId).toBeNull();
+            expect((startState as any).clickDownPoint).toBeNull();
+        });
+
+        it("ignores a cancel event for an unrelated pointerId", () => {
+            startState.onEnter();
+            const downHandler = getHandler(app.stage, "pointerdown");
+            const cancelHandler = getHandler(app.stage, "pointercancel");
+            const upHandler = getHandler(app.stage, "pointerup");
+
+            downHandler({ global: START_BUTTON, pointerId: 1 });
+            cancelHandler({ global: START_BUTTON, pointerId: 99 }); // 無関係なポインタ
+            upHandler({ global: START_BUTTON, pointerId: 1 });
+
+            // 無関係なcancelでは状態が破棄されないので、通常通りヒントが出る
+            expect((startState as any).hintMessage.alpha).toBe(1);
         });
     });
 
@@ -288,9 +395,9 @@ describe("StartState click hint", () => {
             click(START_BUTTON);
             click(START_BUTTON);
 
-            const hintAddChildCalls = (
-                container.addChild
-            ).mock.calls.filter((args: any[]) => args[0] === hintMessage);
+            const hintAddChildCalls = container.addChild.mock.calls.filter(
+                (args: any[]) => args[0] === hintMessage,
+            );
             expect(hintAddChildCalls).toHaveLength(1);
         });
 
