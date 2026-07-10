@@ -3,11 +3,39 @@ import * as Utility from "../utils/Utility";
 import { t, MessageKey } from "../utils/Language";
 import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
+/**
+ * HelpFlowerのtype文字列 → カタログキーの対応表。
+ * 動的にキー文字列を組み立てて `as MessageKey` でキャストすると、カタログ側の
+ * キー名変更時にコンパイルチェックをすり抜けてしまう(生キーがそのまま
+ * 画面に出かねない)ため、type ごとに明示したマッピングでキーの存在を
+ * コンパイル時に保証する。
+ */
+const TEXT_KEYS: Record<
+    string,
+    { message: MessageKey; description: MessageKey }
+> = {
+    freeze: {
+        message: "flower.freeze.message",
+        description: "flower.freeze.description",
+    },
+    time_plus: {
+        message: "flower.time_plus.message",
+        description: "flower.time_plus.description",
+    },
+    gather: {
+        message: "flower.gather.message",
+        description: "flower.gather.description",
+    },
+    long: {
+        message: "flower.long.message",
+        description: "flower.long.description",
+    },
+};
+
 export class HelpFlower extends BaseCaptureableObject {
     private type: string;
     private elapsedX: number = 0; // 時間パラメータ
     private elapsedY: number = 0; // 時間パラメータ
-    readonly message: string;
     isRunning: boolean = true;
     private sprite: PIXI.Sprite;
     private readonly screenWidth: number;
@@ -17,12 +45,10 @@ export class HelpFlower extends BaseCaptureableObject {
     private readonly coefficientY: number = Utility.random(50, 70) / 100; // Y軸の振動の係数
     private readonly coefficientX: number =
         (Utility.chooseAtRandom([-1, 1], 1)[0] * Utility.random(50, 70)) / 100; // X軸の振動の係数
-    readonly description: string;
 
     constructor(type: string, screenWidth: number, screenHeight: number) {
         super();
         this.type = type;
-        // テキストは選択中の言語でカタログから引く(生成時に確定)
         switch (type) {
             case "freeze":
                 this.sprite = PIXI.Sprite.from("flower1");
@@ -38,10 +64,6 @@ export class HelpFlower extends BaseCaptureableObject {
                 this.sprite = PIXI.Sprite.from("flower4");
                 break;
         }
-        const known = ["freeze", "time_plus", "gather", "long"];
-        const catalogType = known.includes(type) ? type : "long";
-        this.message = t(`flower.${catalogType}.message` as MessageKey);
-        this.description = t(`flower.${catalogType}.description` as MessageKey);
         this.scale.set(0.3);
         this.sprite.anchor.set(0.5);
         this.addChild(this.sprite);
@@ -59,6 +81,20 @@ export class HelpFlower extends BaseCaptureableObject {
             (this.screenWidth * 5) / 6,
         );
         this.y = Utility.random(-this.screenHeight / 4, 0);
+    }
+
+    /** 表示メッセージ(参照都度、現在の言語でカタログから引く) */
+    get message(): string {
+        return t(this.textKeys().message);
+    }
+
+    /** How To Play用の説明文(参照都度、現在の言語でカタログから引く) */
+    get description(): string {
+        return t(this.textKeys().description);
+    }
+
+    private textKeys(): { message: MessageKey; description: MessageKey } {
+        return TEXT_KEYS[this.type] ?? TEXT_KEYS.long;
     }
 
     protected getObjectCenter(): { x: number; y: number } {
