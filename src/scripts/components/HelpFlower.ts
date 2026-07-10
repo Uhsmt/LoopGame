@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import * as Utility from "../utils/Utility";
+import { t, MessageKey } from "../utils/Language";
 import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
 export class HelpFlower extends BaseCaptureableObject {
@@ -17,43 +18,30 @@ export class HelpFlower extends BaseCaptureableObject {
     private readonly coefficientX: number =
         (Utility.chooseAtRandom([-1, 1], 1)[0] * Utility.random(50, 70)) / 100; // X軸の振動の係数
     readonly description: string;
-    readonly descriptionJP: string;
-    readonly messageJP: string;
 
     constructor(type: string, screenWidth: number, screenHeight: number) {
         super();
         this.type = type;
+        // テキストは選択中の言語でカタログから引く(生成時に確定)
         switch (type) {
             case "freeze":
                 this.sprite = PIXI.Sprite.from("flower1");
-                this.message = "Freeze!";
-                this.messageJP = "とまれ！";
-                this.description = "Freeze the butterflies";
-                this.descriptionJP = "ちょうちょをとめる";
                 break;
             case "time_plus":
                 this.sprite = PIXI.Sprite.from("flower2");
-                this.message = "Time extended!";
-                this.messageJP = "もどれ！";
-                this.description = "Extend the game time";
-                this.descriptionJP = "ゲームじかんをのばす";
                 break;
             case "gather":
                 this.sprite = PIXI.Sprite.from("flower3");
-                this.message = "Gather!";
-                this.messageJP = "あつまれ！";
-                this.description = "Gather the butterflies by color";
-                this.descriptionJP = "ちょうちょをあつめる";
                 break;
             default:
             case "long":
                 this.sprite = PIXI.Sprite.from("flower4");
-                this.message = "Long Loop!";
-                this.messageJP = "ながいループ！";
-                this.description = "Extend the loop line";
-                this.descriptionJP = "ループをのばす";
                 break;
         }
+        const known = ["freeze", "time_plus", "gather", "long"];
+        const catalogType = known.includes(type) ? type : "long";
+        this.message = t(`flower.${catalogType}.message` as MessageKey);
+        this.description = t(`flower.${catalogType}.description` as MessageKey);
         this.scale.set(0.3);
         this.sprite.anchor.set(0.5);
         this.addChild(this.sprite);

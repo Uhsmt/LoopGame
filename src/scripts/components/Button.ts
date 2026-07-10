@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import * as Const from "../utils/Const";
+import { isJapaneseText } from "../utils/Language";
 import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
 export class Button extends BaseCaptureableObject {
@@ -15,8 +16,7 @@ export class Button extends BaseCaptureableObject {
         this.buttonText = new PIXI.Text({
             text: text,
             style: {
-                fontFamily: Const.FONT_ENGLISH,
-                fontWeight: Const.FONT_ENGLISH_BOLD,
+                ...Button.fontStyleFor(text),
                 fontSize: 30,
                 fill: "#ffffff",
                 align: "center",
@@ -32,6 +32,32 @@ export class Button extends BaseCaptureableObject {
         this.pivot.set(this.width / 2, this.height / 2);
         this.hitAreaSize = this.leafSprite.height * 0.4;
         this.hitRate = 0.3;
+    }
+
+    /** 表示テキストに応じて日本語/英語フォントを選ぶ */
+    private static fontStyleFor(text: string): {
+        fontFamily: string;
+        fontWeight: PIXI.TextStyleFontWeight;
+    } {
+        return isJapaneseText(text)
+            ? {
+                  fontFamily: Const.FONT_JAPANESE,
+                  fontWeight:
+                      Const.FONT_JAPANESE_BOLD as PIXI.TextStyleFontWeight,
+              }
+            : {
+                  fontFamily: Const.FONT_ENGLISH,
+                  fontWeight:
+                      Const.FONT_ENGLISH_BOLD as PIXI.TextStyleFontWeight,
+              };
+    }
+
+    /** ボタンのラベルを差し替える(言語切替時に使う) */
+    setLabel(text: string): void {
+        this.buttonText.text = text;
+        const font = Button.fontStyleFor(text);
+        this.buttonText.style.fontFamily = font.fontFamily;
+        this.buttonText.style.fontWeight = font.fontWeight;
     }
 
     protected getObjectCenter(): { x: number; y: number } {

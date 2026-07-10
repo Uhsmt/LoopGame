@@ -1,3 +1,4 @@
+import { t } from "../utils/Language";
 import { BaseObstacle } from "./BaseObstacle";
 
 /**
@@ -8,8 +9,9 @@ import { BaseObstacle } from "./BaseObstacle";
  * - ラインに触れると鉛筆から逃げる効果を発動する(効果自体はGameplayState側で実装)
  */
 export class Spider extends BaseObstacle {
-    readonly description: string = "Butterflies flee from your pencil";
-    readonly descriptionJP: string = "ちょうちょが えんぴつから にげる";
+    get description(): string {
+        return t("obstacle.spider.description");
+    }
 
     constructor(screenSize: { x: number; y: number }) {
         super(["spider1", "spider2"], 0.18, screenSize);

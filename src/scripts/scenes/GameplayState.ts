@@ -20,6 +20,7 @@ import { Catapy } from "../components/Catapy";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
+import { t, getLang } from "../utils/Language";
 
 export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
@@ -73,6 +74,13 @@ export class GameplayState extends StateBase {
         this.gameTimer = this.stageInfo.stageTime;
         this.fontColor = this.stageInfo.bonusFlag ? 0xffffff : 0x000000;
 
+        // ゲーム中テキストのフォント(選択言語に合わせる)
+        const isJa = getLang() === "ja";
+        const uiFontFamily = isJa ? Const.FONT_JAPANESE : Const.FONT_ENGLISH;
+        const uiFontWeight = isJa
+            ? Const.FONT_JAPANESE_BOLD
+            : Const.FONT_ENGLISH_BOLD;
+
         // background
         const backgroundSprite = PIXI.Sprite.from(
             this.stageInfo.bonusFlag ? "background_night" : "background",
@@ -87,12 +95,14 @@ export class GameplayState extends StateBase {
 
         // スタートメッセージ
         this.startMessage = new PIXI.BitmapText({
-            text: `Capture ${this.stageInfo.bonusFlag ? "many" : this.stageInfo.needCount} butterflies!`,
+            text: this.stageInfo.bonusFlag
+                ? t("game.captureMany")
+                : t("game.captureN", { n: this.stageInfo.needCount }),
             style: new PIXI.TextStyle({
-                fontFamily: Const.FONT_ENGLISH,
+                fontFamily: uiFontFamily,
                 fontSize: 24,
                 fill: this.fontColor,
-                fontWeight: Const.FONT_ENGLISH_BOLD,
+                fontWeight: uiFontWeight,
             }),
         });
         this.startMessage.x =
@@ -106,8 +116,8 @@ export class GameplayState extends StateBase {
         this.scoreMessage = new PIXI.BitmapText({
             text: `0 / ${this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount}`,
             style: new PIXI.TextStyle({
-                fontFamily: Const.FONT_ENGLISH,
-                fontWeight: Const.FONT_ENGLISH_BOLD,
+                fontFamily: uiFontFamily,
+                fontWeight: uiFontWeight,
                 fontSize: 24,
                 fill: this.fontColor,
             }),
@@ -125,8 +135,8 @@ export class GameplayState extends StateBase {
         this.actionMessage = new PIXI.BitmapText({
             text: "A",
             style: new PIXI.TextStyle({
-                fontFamily: Const.FONT_ENGLISH,
-                fontWeight: Const.FONT_ENGLISH_BOLD,
+                fontFamily: uiFontFamily,
+                fontWeight: uiFontWeight,
                 fontSize: 24,
                 fill: this.fontColor,
             }),
@@ -139,8 +149,8 @@ export class GameplayState extends StateBase {
         this.helpMessage = new PIXI.BitmapText({
             text: "A",
             style: new PIXI.TextStyle({
-                fontFamily: Const.FONT_ENGLISH,
-                fontWeight: Const.FONT_ENGLISH_BOLD,
+                fontFamily: uiFontFamily,
+                fontWeight: uiFontWeight,
                 fontSize: 24,
                 fill: this.fontColor,
             }),
@@ -248,7 +258,7 @@ export class GameplayState extends StateBase {
             icon.className = this.isRunning ? "fa fa-pause" : "fa fa-play";
         }
         if (!this.isRunning) {
-            this.showActionMessage("Pause");
+            this.showActionMessage(t("game.pause"));
         } else {
             this.actionMessage.alpha = 0;
         }
@@ -412,10 +422,10 @@ export class GameplayState extends StateBase {
         // 各お邪魔オブジェクトの実装時に効果を追加する
         if (obstacle instanceof Bee) {
             this.lineShortenEffect(true);
-            this.showHelpMessage("Line shortened!");
+            this.showHelpMessage(t("game.lineShortened"));
         } else if (obstacle instanceof Spider) {
             this.avoidPencilEffect(true);
-            this.showHelpMessage("Butterflies flee!");
+            this.showHelpMessage(t("game.butterfliesFlee"));
         }
     }
 
@@ -609,7 +619,7 @@ export class GameplayState extends StateBase {
         }
 
         if (this.elapsedTime >= this.gameTimer * 1000) {
-            this.showActionMessage("Time's up!");
+            this.showActionMessage(t("game.timesUp"));
             this.endGame();
         }
 
@@ -738,7 +748,7 @@ export class GameplayState extends StateBase {
                 obstaclesInLoop.some((obstacle) => obstacle instanceof Catapy)
             ) {
                 AudioManager.shared.playSe("se_obstacle_hit");
-                this.showActionMessage("Invalid loop!");
+                this.showActionMessage(t("game.invalidLoop"));
                 return;
             }
         } else if (obstaclesInLoop.length > 0) {
@@ -781,7 +791,7 @@ export class GameplayState extends StateBase {
             } else {
                 this.stagePoint -= 20;
                 AudioManager.shared.playSe("se_bad_loop");
-                this.showActionMessage("Bad loop! \r\n -20 points");
+                this.showActionMessage(t("game.badLoop"));
             }
         }
     }
@@ -823,7 +833,10 @@ export class GameplayState extends StateBase {
 
         this.stagePoint += point;
         this.showActionMessage(
-            `${calculationText} ${Utility.formatNumberWithCommas(point)} points`,
+            t("game.points", {
+                calc: calculationText === "" ? "" : `${calculationText} `,
+                points: Utility.formatNumberWithCommas(point),
+            }),
         );
 
         butterflies.forEach((butterfly) => {

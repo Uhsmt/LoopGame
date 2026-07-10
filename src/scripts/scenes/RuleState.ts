@@ -13,6 +13,7 @@ import { Catapy } from "../components/Catapy";
 import { Button } from "../components/Button";
 import { StartState } from "./StartState";
 import * as Utility from "../utils/Utility";
+import { t, getLang } from "../utils/Language";
 
 export class RuleState extends StateBase {
     private backgroundSprite: PIXI.Sprite;
@@ -22,23 +23,35 @@ export class RuleState extends StateBase {
     private nextButton: Button;
     private page: number = 0;
     private pageInfos: PIXI.Container[] = [];
-    private defaultTextStyle: PIXI.TextStyleOptions = {
-        fontFamily: Const.FONT_ENGLISH,
-        fontSize: 22,
-        fill: "#000000",
-    };
-    private defaultTextStyleJP: PIXI.TextStyleOptions = {
-        fontFamily: Const.FONT_JAPANESE,
-        fontSize: 15,
-        fill: "#000000",
-    };
-    private titleTextStyle: PIXI.TextStyleOptions = {
-        fontFamily: Const.FONT_ENGLISH,
-        fontWeight: Const.FONT_ENGLISH_BOLD,
-        fontSize: 30,
-        fill: "#000000",
-        align: "center",
-    };
+    // 選択言語に応じた本文/タイトルのテキストスタイル(1言語のみ表示)
+    private readonly isJa: boolean = getLang() === "ja";
+    private defaultTextStyle: PIXI.TextStyleOptions = this.isJa
+        ? {
+              fontFamily: Const.FONT_JAPANESE,
+              fontWeight: Const.FONT_JAPANESE_BOLD,
+              fontSize: 18,
+              fill: "#000000",
+          }
+        : {
+              fontFamily: Const.FONT_ENGLISH,
+              fontSize: 22,
+              fill: "#000000",
+          };
+    private titleTextStyle: PIXI.TextStyleOptions = this.isJa
+        ? {
+              fontFamily: Const.FONT_JAPANESE,
+              fontWeight: Const.FONT_JAPANESE_BOLD,
+              fontSize: 26,
+              fill: "#000000",
+              align: "center",
+          }
+        : {
+              fontFamily: Const.FONT_ENGLISH,
+              fontWeight: Const.FONT_ENGLISH_BOLD,
+              fontSize: 30,
+              fill: "#000000",
+              align: "center",
+          };
     private butterflies: Butterfly[] = [];
     private helpFlowers: HelpFlower[] = [];
     private hindranceObjects: (Bee | Spider | Catapy)[] = [];
@@ -65,7 +78,7 @@ export class RuleState extends StateBase {
 
         // buttons
         this.backButton = new Button(
-            "Back",
+            t("button.back"),
             this.manager.app.screen.width / 7,
             this.manager.app.screen.height * 0.85,
         );
@@ -74,7 +87,7 @@ export class RuleState extends StateBase {
         this.container.addChild(this.backButton);
 
         this.nextButton = new Button(
-            "Next",
+            t("button.next"),
             (this.manager.app.screen.width * 6) / 7,
             this.manager.app.screen.height * 0.85,
         );
@@ -169,7 +182,7 @@ export class RuleState extends StateBase {
                 butterfly.switchColor();
                 AudioManager.shared.playSe("se_switch");
                 if (butterfly.color !== butterfly.getSubColor()) {
-                    message = "Color switched!";
+                    message = t("rule.practice.colorSwitched");
                 }
             } else if (butterfliesInLoopArea.length > 1) {
                 if (this.isSuccessLoop(butterfliesInLoopArea)) {
@@ -178,7 +191,9 @@ export class RuleState extends StateBase {
                             ? "se_capture_many"
                             : "se_capture",
                     );
-                    message = `Got ${butterfliesInLoopArea.length} butterflies!`;
+                    message = t("rule.practice.gotN", {
+                        n: butterfliesInLoopArea.length,
+                    });
                     butterfliesInLoopArea.forEach((butterfly) => {
                         butterfly.delete();
                         // this.butterfliesからけす
@@ -189,7 +204,7 @@ export class RuleState extends StateBase {
                     });
                 } else {
                     AudioManager.shared.playSe("se_bad_loop");
-                    message = "Bad Loop!";
+                    message = t("rule.practice.badLoop");
                 }
             }
 
@@ -312,7 +327,7 @@ export class RuleState extends StateBase {
     // 1ページ目情報をセット
     private setPageInfoOne(): void {
         const title = new PIXI.Text({
-            text: "How to play",
+            text: t("rule.title.howToPlay"),
             style: this.titleTextStyle,
         });
         title.anchor.x = 0.5;
@@ -323,30 +338,13 @@ export class RuleState extends StateBase {
             Const.MARGIN * 2;
         this.pageInfos.push(title);
 
-        const titlejp = new PIXI.Text({
-            text: "あそびかた",
-            style: this.defaultTextStyleJP,
-        });
-        titlejp.anchor.x = 0.5;
-        titlejp.x = title.x;
-        titlejp.y = title.y + title.height * 1.1;
-        this.pageInfos.push(titlejp);
-
         const text1 = new PIXI.Text({
-            text: "Draw a loop to capture butterflies",
+            text: t("rule.p1.draw"),
             style: this.defaultTextStyle,
         });
         text1.x = this.noteLeftX() + Const.MARGIN;
         text1.y = this.manager.app.screen.height * 0.3;
         this.pageInfos.push(text1);
-
-        const text1jp = new PIXI.Text({
-            text: "せんをかいて　ちょうちょをつかまえて",
-            style: this.defaultTextStyleJP,
-        });
-        text1jp.x = text1.x;
-        text1jp.y = text1.y + text1.height * 1.1;
-        this.pageInfos.push(text1jp);
 
         for (let i = 0; i < 4; i++) {
             const color = i === 3 ? Const.COLOR_LIST[1] : Const.COLOR_LIST[0];
@@ -375,36 +373,20 @@ export class RuleState extends StateBase {
         }
 
         const text2 = new PIXI.Text({
-            text: "More butterflies, more points",
+            text: t("rule.p1.morePoints"),
             style: this.defaultTextStyle,
         });
         text2.x = text1.x;
         text2.y = this.manager.app.screen.height * 0.7;
         this.pageInfos.push(text2);
 
-        const text2jp = new PIXI.Text({
-            text: "おおいほど　高とくてん",
-            style: this.defaultTextStyleJP,
-        });
-        text2jp.x = text2.x;
-        text2jp.y = text2.y + text2.height * 1.1;
-        this.pageInfos.push(text2jp);
-
         const text3 = new PIXI.Text({
-            text: "Capture needed number of\rbutterflies before sunset",
+            text: t("rule.p1.beforeSunset"),
             style: this.defaultTextStyle,
         });
         text3.x = this.manager.app.screen.width / 2 + Const.MARGIN * 2;
         text3.y = text1.y;
         this.pageInfos.push(text3);
-
-        const text3jp = new PIXI.Text({
-            text: "たいようがしずむまえに \rひつようなかずをつかまえて",
-            style: this.defaultTextStyleJP,
-        });
-        text3jp.x = text3.x;
-        text3jp.y = text3.y + text3.height * 1.1;
-        this.pageInfos.push(text3jp);
 
         const sun = new Sun();
         sun.scale.set(0.7);
@@ -412,7 +394,7 @@ export class RuleState extends StateBase {
             this.notebookSprite.x -
             this.notebookSprite.width / 2 +
             this.notebookSprite.width * 0.75;
-        sun.y = text3jp.y + text3jp.height + sun.height / 2 + Const.MARGIN;
+        sun.y = text3.y + text3.height + sun.height / 2 + Const.MARGIN * 2;
         sun.blink();
         this.pageInfos.push(sun);
 
@@ -523,7 +505,7 @@ export class RuleState extends StateBase {
     // 2ページ目情報をセット
     private setPageInfoTwo(): void {
         const title = new PIXI.Text({
-            text: "Combinations",
+            text: t("rule.title.combinations"),
             style: this.titleTextStyle,
         });
         title.anchor.x = 0.5;
@@ -534,31 +516,14 @@ export class RuleState extends StateBase {
             Const.MARGIN * 2;
         this.pageInfos.push(title);
 
-        const titlejp = new PIXI.Text({
-            text: "くみあわせ",
-            style: this.defaultTextStyleJP,
-        });
-        titlejp.anchor.x = 0.5;
-        titlejp.x = title.x;
-        titlejp.y = title.y + title.height * 1.1;
-        this.pageInfos.push(titlejp);
-
         const text1 = new PIXI.Text({
-            text: "Same color 2 or more: OK",
+            text: t("rule.p2.sameColor"),
             style: this.defaultTextStyle,
         });
         text1.x = this.noteLeftX() + Const.MARGIN;
-        text1.y = titlejp.y + titlejp.height + Const.MARGIN;
+        text1.y = title.y + title.height + Const.MARGIN * 2;
 
         this.pageInfos.push(text1);
-
-        const text1jp = new PIXI.Text({
-            text: "おなじいろ 2ひきいじょう…OK",
-            style: this.defaultTextStyleJP,
-        });
-        text1jp.x = text1.x;
-        text1jp.y = text1.y + text1.height * 1.1;
-        this.pageInfos.push(text1jp);
 
         for (let i = 0; i < 2; i++) {
             const text1_butterfly = new Butterfly(
@@ -575,8 +540,8 @@ export class RuleState extends StateBase {
                 this.noteLeftX() +
                 this.notebookSprite.width * (0.135 + 0.135 * i);
             text1_butterfly.y =
-                text1jp.y +
-                text1jp.height * 1.1 +
+                text1.y +
+                text1.height * 1.1 +
                 text1_butterfly.height +
                 Const.MARGIN;
             text1_butterfly.appear(false);
@@ -585,20 +550,12 @@ export class RuleState extends StateBase {
         }
 
         const text2 = new PIXI.Text({
-            text: "Each different color 3 or more: OK",
+            text: t("rule.p2.eachDifferent"),
             style: this.defaultTextStyle,
         });
         text2.x = text1.x;
         text2.y = this.manager.app.screen.height * 0.5 + Const.MARGIN;
         this.pageInfos.push(text2);
-
-        const text2jp = new PIXI.Text({
-            text: "ちがういろを1ひきずつ　3ひきいじょう…OK",
-            style: this.defaultTextStyleJP,
-        });
-        text2jp.x = text2.x;
-        text2jp.y = text2.y + text2.height * 1.1;
-        this.pageInfos.push(text2jp);
 
         for (let i = 0; i < 3; i++) {
             const text2_butterfly = new Butterfly(
@@ -615,8 +572,8 @@ export class RuleState extends StateBase {
                 this.noteLeftX() +
                 this.notebookSprite.width * (0.135 + 0.113 * i);
             text2_butterfly.y =
-                text2jp.y +
-                text2jp.height * 1.1 +
+                text2.y +
+                text2.height * 1.1 +
                 text2_butterfly.height +
                 Const.MARGIN;
             text2_butterfly.isFlapping = true;
@@ -625,20 +582,12 @@ export class RuleState extends StateBase {
         }
 
         const text3 = new PIXI.Text({
-            text: "Only one butterfly: Change color",
+            text: t("rule.p2.onlyOne"),
             style: this.defaultTextStyle,
         });
         text3.x = this.manager.app.screen.width / 2 + Const.MARGIN * 2;
         text3.y = text1.y;
         this.pageInfos.push(text3);
-
-        const text3jp = new PIXI.Text({
-            text: "1ひきだけ…いろをかえる",
-            style: this.defaultTextStyleJP,
-        });
-        text3jp.x = text3.x;
-        text3jp.y = text3.y + text3.height * 1.1;
-        this.pageInfos.push(text3jp);
 
         const text3_butterfly = new Butterfly(
             "medium",
@@ -652,8 +601,8 @@ export class RuleState extends StateBase {
         );
         text3_butterfly.x = this.noteLeftX() + this.notebookSprite.width * 0.78;
         text3_butterfly.y =
-            text3jp.y +
-            text3jp.height * 1.1 +
+            text3.y +
+            text3.height * 1.1 +
             text3_butterfly.height +
             Const.MARGIN;
         text3_butterfly.appear(false);
@@ -661,20 +610,12 @@ export class RuleState extends StateBase {
         this.butterflies.push(text3_butterfly);
 
         const text4 = new PIXI.Text({
-            text: "Other combinations: Bad Loop",
+            text: t("rule.p2.other"),
             style: this.defaultTextStyle,
         });
         text4.x = text3.x;
         text4.y = text2.y;
         this.pageInfos.push(text4);
-
-        const text4jp = new PIXI.Text({
-            text: "それいがい…だめループ",
-            style: this.defaultTextStyleJP,
-        });
-        text4jp.x = text4.x;
-        text4jp.y = text4.y + text4.height * 1.1;
-        this.pageInfos.push(text4jp);
 
         // pageInfoを表示
         this.pageInfos.forEach((pageInfo) => {
@@ -686,7 +627,7 @@ export class RuleState extends StateBase {
     // 3ページ目情報をセット
     private setPageInfoThree(): void {
         const title = new PIXI.Text({
-            text: "Let's try to loop!",
+            text: t("rule.title.tryLoop"),
             style: this.titleTextStyle,
         });
         title.anchor.x = 0.5;
@@ -696,15 +637,6 @@ export class RuleState extends StateBase {
             this.notebookSprite.height / 2 +
             Const.MARGIN * 2;
         this.pageInfos.push(title);
-
-        const titlejp = new PIXI.Text({
-            text: "ループのれんしゅう",
-            style: this.defaultTextStyleJP,
-        });
-        titlejp.anchor.x = 0.5;
-        titlejp.x = title.x;
-        titlejp.y = title.y + title.height * 1.1;
-        this.pageInfos.push(titlejp);
 
         // 蝶々をセット
         for (let i = 0; i < 8; i++) {
@@ -748,8 +680,8 @@ export class RuleState extends StateBase {
                 Const.MARGIN * 3 +
                 butterfly.width * 2 * (index % 6);
             butterfly.y =
-                titlejp.y +
-                titlejp.height +
+                title.y +
+                title.height +
                 butterfly.height +
                 Const.MARGIN * 2 +
                 butterfly.height * 2 * Math.floor(index / 6);
@@ -768,7 +700,7 @@ export class RuleState extends StateBase {
     // 4ページ目情報をセット
     private setPageInfoFour(): void {
         const title = new PIXI.Text({
-            text: "Help Objects",
+            text: t("rule.title.helpObjects"),
             style: this.titleTextStyle,
         });
         title.anchor.x = 0.5;
@@ -779,15 +711,6 @@ export class RuleState extends StateBase {
             Const.MARGIN * 2;
         this.pageInfos.push(title);
 
-        const titlejp = new PIXI.Text({
-            text: "おたすけ オブジェクト",
-            style: this.defaultTextStyleJP,
-        });
-        titlejp.anchor.x = 0.5;
-        titlejp.x = title.x;
-        titlejp.y = title.y + title.height * 1.1;
-        this.pageInfos.push(titlejp);
-
         Const.HELP_FLOWER_TYPES.forEach((type, index) => {
             const flower = new HelpFlower(
                 type,
@@ -796,8 +719,8 @@ export class RuleState extends StateBase {
             );
             flower.x = this.noteLeftX() + Const.MARGIN + flower.width / 2;
             flower.y =
-                titlejp.y +
-                titlejp.height +
+                title.y +
+                title.height +
                 Const.MARGIN +
                 flower.height * 0.5 +
                 flower.height * 2.5 * index;
@@ -810,33 +733,16 @@ export class RuleState extends StateBase {
             text.x = flower.x + flower.width;
             text.y = flower.y - flower.height / 2;
             this.pageInfos.push(text);
-
-            const textjp = new PIXI.Text({
-                text: flower.descriptionJP,
-                style: this.defaultTextStyleJP,
-            });
-            textjp.x = text.x;
-            textjp.y = text.y + text.height * 1.1;
-            this.pageInfos.push(textjp);
         });
 
         const title2 = new PIXI.Text({
-            text: "Hindrance Objects",
+            text: t("rule.title.hindranceObjects"),
             style: this.titleTextStyle,
         });
         title2.anchor.x = 0.5;
         title2.x = this.noteLeftX() + (this.notebookSprite.width * 3) / 4;
         title2.y = title.y;
         this.pageInfos.push(title2);
-
-        const title2jp = new PIXI.Text({
-            text: "おじゃま オブジェクト",
-            style: this.defaultTextStyleJP,
-        });
-        title2jp.anchor.x = 0.5;
-        title2jp.x = title2.x;
-        title2jp.y = title2.y + title2.height * 1.1;
-        this.pageInfos.push(title2jp);
 
         // 右半分にお邪魔オブジェクトを縦に並べて表示(左半分のHelpFlowerと同じレイアウト)
         const hindranceObjects: (Bee | Spider | Catapy)[] = [
@@ -856,7 +762,7 @@ export class RuleState extends StateBase {
         // Catapyは横長(幅約115px)で右半分にはみ出すため、表示用インスタンスのみ縮小する
         hindranceObjects[2].scale.set(0.4);
 
-        let obstacleY = title2jp.y + title2jp.height + Const.MARGIN;
+        let obstacleY = title2.y + title2.height + Const.MARGIN * 2;
         const obstacleRowGap = 70;
         // ノートの右端。説明文はここまでで折り返す(はみ出し防止)
         const noteRightX =
@@ -884,18 +790,6 @@ export class RuleState extends StateBase {
             text.x = textX;
             text.y = obstacle.y - obstacle.height / 2;
             this.pageInfos.push(text);
-
-            const textjp = new PIXI.Text({
-                text: obstacle.descriptionJP,
-                style: {
-                    ...this.defaultTextStyleJP,
-                    wordWrap: true,
-                    wordWrapWidth: wrapWidth,
-                },
-            });
-            textjp.x = text.x;
-            textjp.y = text.y + text.height * 1.1;
-            this.pageInfos.push(textjp);
         });
 
         // pageInfoを表示
