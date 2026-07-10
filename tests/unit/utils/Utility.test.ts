@@ -5,6 +5,7 @@ import {
     isTrueRandom,
     formatNumberWithCommas,
     getDistance,
+    isClickGesture,
     shuffleArray,
 } from "../../../src/scripts/utils/Utility";
 
@@ -173,6 +174,33 @@ describe("Utility Functions", () => {
             const p2 = new MockPoint(5, 12);
             const distance = getDistance(p1 as any, p2 as any);
             expect(distance).toBe(12);
+        });
+    });
+
+    describe("isClickGesture()", () => {
+        it("returns true when both distance and duration are within the default thresholds", () => {
+            expect(isClickGesture(0, 0)).toBe(true);
+            expect(isClickGesture(5, 200)).toBe(true);
+        });
+
+        it("returns true exactly at the default threshold boundaries", () => {
+            expect(isClickGesture(10, 500)).toBe(true);
+        });
+
+        it("returns false when the pointer moved too far (drag / loop drawing)", () => {
+            expect(isClickGesture(10.1, 100)).toBe(false);
+            expect(isClickGesture(300, 100)).toBe(false);
+        });
+
+        it("returns false when the press was held too long", () => {
+            expect(isClickGesture(0, 500.1)).toBe(false);
+            expect(isClickGesture(0, 2000)).toBe(false);
+        });
+
+        it("respects custom thresholds", () => {
+            expect(isClickGesture(20, 100, 30, 1000)).toBe(true);
+            expect(isClickGesture(40, 100, 30, 1000)).toBe(false);
+            expect(isClickGesture(20, 1500, 30, 1000)).toBe(false);
         });
     });
 

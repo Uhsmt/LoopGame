@@ -218,6 +218,25 @@ export class MockBitmapText extends MockContainer {
     }
 }
 
+export class MockText extends MockContainer {
+    public text: string = "";
+    public style: any = {};
+    public anchor = { x: 0, y: 0, set: vi.fn() };
+
+    constructor(options: any = {}) {
+        super();
+        this.text = options.text || "";
+        this.style = options.style || {};
+    }
+}
+
+export class MockTextStyle {
+    [key: string]: any;
+    constructor(options: any = {}) {
+        Object.assign(this, options);
+    }
+}
+
 export class MockPoint {
     constructor(
         public x: number = 0,
@@ -313,6 +332,8 @@ export const PIXIMock = {
     Graphics: MockGraphics,
     Texture: MockTexture,
     BitmapText: MockBitmapText,
+    Text: MockText,
+    TextStyle: MockTextStyle,
     Point: MockPoint,
     Rectangle: MockRectangle,
     utils: {

@@ -28,6 +28,12 @@ const CATALOG = {
     "button.next": { ja: "つぎへ", en: "Next" },
     "button.backToMenu": { ja: "めにゅーへ", en: "Back to\rMenu" },
 
+    // --- ヒント(StartState) ---
+    "hint.drawLoop": {
+        ja: "くりっく じゃなくて せんで かこんでね！",
+        en: "Draw a loop around it!",
+    },
+
     // --- 言語切替 ---
     "lang.english": { ja: "English", en: "English" },
     "lang.japanese": { ja: "にほんご", en: "にほんご" },

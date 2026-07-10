@@ -12,9 +12,13 @@ import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
 import { Button } from "../components/Button";
 import { SpecialButterfly } from "../components/SpecialButterfly";
-import { t, getLang, toggleLang } from "../utils/Language";
+import { t, getLang, toggleLang, isJapaneseText } from "../utils/Language";
 
 export class StartState extends StateBase {
+    // クリック(タップ)判定: これより短い移動・短い時間ならドラッグではなく「クリック」とみなす
+    private static readonly CLICK_MAX_DISTANCE = 10;
+    private static readonly CLICK_MAX_DURATION_MS = 500;
+
     private lineDrawer: LineDrawer;
     private startButton: Button;
     private ruleButton: Button;
@@ -23,6 +27,19 @@ export class StartState extends StateBase {
     private backgroundSprite: PIXI.Sprite;
     private title: PIXI.Text;
     debugFlowers: HelpFlower[] = [];
+
+    // ボタンをクリック/タップした際のヒントメッセージ表示用
+    private hintMessage: PIXI.Text;
+    private clickDownPoint: PIXI.Point | null = null;
+    private clickDownTime: number = 0;
+    // このジェスチャー中(pointerdown〜pointerup)にループが完成したか
+    private loopCompletedDuringGesture: boolean = false;
+    private stagePointerDownHandler:
+        | ((e: PIXI.FederatedPointerEvent) => void)
+        | null = null;
+    private stagePointerUpHandler:
+        | ((e: PIXI.FederatedPointerEvent) => void)
+        | null = null;
 
     constructor(manager: GameStateManager) {
         super(manager);
@@ -79,6 +96,22 @@ export class StartState extends StateBase {
         this.langButton.scale.set(0.5);
         this.container.addChild(this.langButton);
 
+        // ボタンをクリック/タップしてしまったユーザー向けのヒントメッセージ
+        this.hintMessage = new PIXI.Text({
+            text: "",
+            style: {
+                fontFamily: Const.FONT_ENGLISH,
+                fontSize: 24,
+                fill: "#ffffff",
+                align: "center",
+            },
+        });
+        this.hintMessage.anchor.set(0.5);
+        this.hintMessage.x = app.screen.width / 2;
+        this.hintMessage.y = app.screen.height * 0.9;
+        this.hintMessage.alpha = 0;
+        this.container.addChild(this.hintMessage);
+
         // Frame
         this.addFrameGraphic();
     }
@@ -106,6 +139,24 @@ export class StartState extends StateBase {
         this.lineDrawer.on(
             "loopAreaCompleted",
             this.handleLoopAreaCompleted.bind(this),
+        );
+
+        // ボタンをクリック/タップした際にヒントを出すためのハンドラを設定
+        this.stagePointerDownHandler = (e: PIXI.FederatedPointerEvent) => {
+            this.clickDownPoint = new PIXI.Point(e.global.x, e.global.y);
+            this.clickDownTime = Date.now();
+            this.loopCompletedDuringGesture = false;
+        };
+        this.stagePointerUpHandler = (e: PIXI.FederatedPointerEvent) => {
+            this.handlePointerUp(e);
+        };
+        this.manager.app.stage.addEventListener(
+            "pointerdown",
+            this.stagePointerDownHandler,
+        );
+        this.manager.app.stage.addEventListener(
+            "pointerup",
+            this.stagePointerUpHandler,
         );
 
         if (DEBUG_MODE) {
@@ -161,6 +212,11 @@ export class StartState extends StateBase {
             flower.spin(delta);
             flower.fall(delta);
         });
+
+        // ヒントメッセージのfade処理
+        if (this.hintMessage.alpha > 0) {
+            this.hintMessage.alpha -= delta / 2000;
+        }
     }
 
     render(): void {
@@ -168,6 +224,19 @@ export class StartState extends StateBase {
     }
 
     onExit(): void {
+        if (this.stagePointerDownHandler) {
+            this.manager.app.stage.removeEventListener(
+                "pointerdown",
+                this.stagePointerDownHandler,
+            );
+        }
+        if (this.stagePointerUpHandler) {
+            this.manager.app.stage.removeEventListener(
+                "pointerup",
+                this.stagePointerUpHandler,
+            );
+        }
+
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
 
@@ -200,6 +269,9 @@ export class StartState extends StateBase {
 
     // LineDrawerのループエリアが完成したときのハンドラ
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
+        // クリック判定と誤認しないよう、ジェスチャー中にループが完成したことを記録する
+        this.loopCompletedDuringGesture = true;
+
         if (this.langButton.isHit(loopArea)) {
             AudioManager.shared.playSe("se_select");
             this.langButton.selected();
@@ -266,21 +338,62 @@ export class StartState extends StateBase {
         this.manager.setState(new RuleState(this.manager));
     }
 
-    private async showButtomMessage(message: string): Promise<void> {
-        const bottomMessage = new PIXI.Text({
-            text: message,
-            style: {
-                fontFamily: Const.FONT_ENGLISH,
-                fontSize: 20,
-                fill: "#ffffff",
-                align: "center",
-            },
-        });
-        bottomMessage.anchor.set(0.5);
-        bottomMessage.x = this.manager.app.screen.width / 2;
-        bottomMessage.y = this.manager.app.screen.height * 0.9;
-        this.container.addChild(bottomMessage);
-        await this.wait(2000);
-        await this.fadeOut(bottomMessage);
+    /**
+     * ボタンをクリック/タップし終えたとき(pointerup)のハンドラ。
+     * 「線で囲む」操作ではなく「クリック」だったと判定できた場合、
+     * その位置がボタン上であればヒントメッセージを表示する。
+     */
+    private handlePointerUp(e: PIXI.FederatedPointerEvent): void {
+        if (!this.clickDownPoint) {
+            return;
+        }
+
+        const upPoint = new PIXI.Point(e.global.x, e.global.y);
+        const distance = Utility.getDistance(this.clickDownPoint, upPoint);
+        const duration = Date.now() - this.clickDownTime;
+        const loopCompleted = this.loopCompletedDuringGesture;
+
+        this.clickDownPoint = null;
+        this.loopCompletedDuringGesture = false;
+
+        // ループが完成した操作、またはドラッグ量・時間がクリックの範囲を超える操作は無視する
+        if (
+            loopCompleted ||
+            !Utility.isClickGesture(
+                distance,
+                duration,
+                StartState.CLICK_MAX_DISTANCE,
+                StartState.CLICK_MAX_DURATION_MS,
+            )
+        ) {
+            return;
+        }
+
+        const clickedButton = [
+            this.startButton,
+            this.ruleButton,
+            this.langButton,
+        ].some((button) => button.containsPoint(upPoint));
+
+        if (clickedButton) {
+            this.showHintMessage();
+        }
+    }
+
+    /**
+     * 「線で囲んでね」ヒントメッセージを表示する。
+     * 単一のTextを使い回すので、連打しても多重表示にはならず、表示時間が延長されるだけになる。
+     */
+    private showHintMessage(): void {
+        const message = t("hint.drawLoop");
+        this.hintMessage.text = message;
+        const isJa = isJapaneseText(message);
+        this.hintMessage.style.fontFamily = isJa
+            ? Const.FONT_JAPANESE
+            : Const.FONT_ENGLISH;
+        this.hintMessage.style.fontWeight = (
+            isJa ? Const.FONT_JAPANESE_BOLD : Const.FONT_ENGLISH_BOLD
+        ) as PIXI.TextStyleFontWeight;
+        this.hintMessage.alpha = 1;
     }
 }
