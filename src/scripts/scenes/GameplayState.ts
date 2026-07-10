@@ -20,6 +20,7 @@ import { Catapy } from "../components/Catapy";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
+import { BonusStageEffect } from "../components/BonusStageEffect";
 
 export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
@@ -54,6 +55,8 @@ export class GameplayState extends StateBase {
     private lastTickStep: number = -1;
     private sparkles!: SparkleEmitter;
     private trailElapsed: number = 0;
+    // ボーナスステージの導入・終了演出(通常ステージではnull)
+    private bonusEffect: BonusStageEffect | null = null;
 
     constructor(manager: GameStateManager, stageInfo: StageInformation) {
         super(manager);
@@ -181,6 +184,18 @@ export class GameplayState extends StateBase {
         // キラキラ用パーティクル(最前面に重ねる)
         this.sparkles = new SparkleEmitter(this.createStarTexture());
         this.container.addChild(this.sparkles);
+
+        // ボーナスステージのみ、導入・終了演出を最前面に用意する
+        // (キャラクターSprite(Issue #2)が用意できたらこのクラス側に登場演出を差し込む)
+        if (this.stageInfo.bonusFlag) {
+            this.bonusEffect = new BonusStageEffect(
+                app.screen.width,
+                app.screen.height,
+                this.sparkles,
+                this.fontColor,
+            );
+            this.container.addChild(this.bonusEffect);
+        }
 
         // PCはステージクリックでも一時停止できる。タッチ端末では線を引く
         // 操作と衝突するため無効 (#41)
@@ -445,11 +460,24 @@ export class GameplayState extends StateBase {
         }
 
         this.isRunning = false;
-        this.startMessage.alpha = 1;
         this.scoreMessage.alpha = 1;
 
+        // ボーナスステージは専用の導入演出を挟む。演出中はisRunning=falseの
+        // ままなのでタイマーは消費されず、演出完了(consumeIntroComplete)を
+        // update側で検知してからゲームを開始する
+        if (this.bonusEffect) {
+            this.bonusEffect.startIntro();
+            return;
+        }
+
+        this.startMessage.alpha = 1;
         await this.wait(1000);
         this.container.removeChild(this.startMessage);
+        this.startPlay();
+    }
+
+    /** 蝶を飛ばしてゲーム本編を開始する(通常フロー・ボーナス導入演出後で共通) */
+    private startPlay(): void {
         this.isRunning = true;
         this.butterflies.forEach((butterfly) => {
             butterfly.isFlapping = true;
@@ -526,6 +554,15 @@ export class GameplayState extends StateBase {
 
         // パーティクルはpause中も動かす(余韻が固まらないように)
         this.sparkles.update(delta);
+
+        // ボーナスステージの導入・終了演出(isRunning=false中でも進める)
+        if (this.bonusEffect) {
+            this.bonusEffect.update(delta);
+            // 導入演出が終わったらゲーム本編を開始する
+            if (this.bonusEffect.consumeIntroComplete()) {
+                this.startPlay();
+            }
+        }
 
         if (!this.isRunning) return;
 
@@ -673,6 +710,12 @@ export class GameplayState extends StateBase {
             obstacle.delete();
         });
         this.obstacles = [];
+
+        // ボーナスステージは締めの演出を再生する(リザルト遷移までの
+        // 3秒の待ち時間内に収まる。演出自体はupdate側で進む)
+        if (this.bonusEffect) {
+            this.bonusEffect.startOutro();
+        }
 
         // captureButterfliesの中にSpecialButterflyが含まれているかどうか
         const isGotBonusButterfly = this.caputuredButterflies.some(
