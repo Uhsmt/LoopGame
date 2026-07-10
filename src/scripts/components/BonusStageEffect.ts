@@ -115,7 +115,12 @@ export class BonusStageEffect extends PIXI.Container {
     }
 
     /**
-     * 終了演出が完了した瞬間に一度だけ true を返す(リザルト遷移トリガ)。
+     * 終了演出が完了した瞬間に一度だけ true を返す(リザルト遷移トリガ用のAPI)。
+     *
+     * NOTE: 現状GameplayStateは呼んでいない。終了演出はendGame内の既存の
+     * 3秒setTimeoutの範囲内に収まるようOUTRO_DURATION_MSを調整しているため。
+     * 将来これをリザルト遷移の条件に使う場合は、既存のsetTimeoutと
+     * 二重に遷移させないよう置き換える(併用しない)こと
      */
     consumeOutroComplete(): boolean {
         if (this._phase === "done" && !this.outroCompleteConsumed) {

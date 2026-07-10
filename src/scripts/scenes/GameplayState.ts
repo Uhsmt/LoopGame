@@ -252,6 +252,9 @@ export class GameplayState extends StateBase {
 
     private togglePause(): void {
         if (this.isFinish) return;
+        // ボーナス導入演出中はisRunning=falseのままタイマーを止めておく必要が
+        // あるため、ポーズ操作(ボタン/ステージクリック)を無視する
+        if (this.bonusEffect?.phase === "intro") return;
 
         this.isRunning = !this.isRunning;
         this.lineDrawer.clearAllSegments();
@@ -466,6 +469,9 @@ export class GameplayState extends StateBase {
         // ままなのでタイマーは消費されず、演出完了(consumeIntroComplete)を
         // update側で検知してからゲームを開始する
         if (this.bonusEffect) {
+            // 通常ステージ用のstartMessageは使わないので、通常経路と対称に
+            // なるようここで取り除いておく(alpha=0のまま残さない)
+            this.container.removeChild(this.startMessage);
             this.bonusEffect.startIntro();
             return;
         }
