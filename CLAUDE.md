@@ -89,6 +89,13 @@ The game uses a state machine pattern centered around:
 -   `stage-config-debug.json`: Debug mode stage configurations
 -   `Const.ts`: Game constants, colors, fonts, and asset definitions
 
+**Important**: Entries in `stage-config.json` / `stage-config-debug.json` must be
+kept sorted by `level` ascending. `StageInformation.setConfig` looks up entries
+by their `level` field, but the "extra band" overflow generator
+(`generateOverflowConfig`) takes the **last array entry** as the base config for
+levels beyond the final defined stage. If the entries are out of order, the
+overflow band's base level/needCount will be computed incorrectly.
+
 ### Asset Management
 
 All game assets are defined in `Const.ts` with BASE_URL prefix for deployment flexibility. Includes butterflies, backgrounds, UI elements, and effect sprites.

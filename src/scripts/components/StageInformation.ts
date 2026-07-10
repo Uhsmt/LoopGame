@@ -66,6 +66,12 @@ export class StageInformation {
      * 固定し、「本編を卒業した者だけが見る景色」という質的な一段を残す。
      * 全プレイヤーが同じレベルで同じ構成を走るため、ラン合計スコアの
      * 比較が公平になる。
+     *
+     * 注意: 呼び出し元(setConfig)は `configs[configs.length - 1]` を
+     * baseとして渡す。つまり「配列の最後のエントリ = 本編最終レベル」
+     * という前提に暗黙依存しているため、stage-config.json /
+     * stage-config-debug.json のエントリは必ずlevelの昇順で並べること。
+     * 順序が崩れるとエクストラ帯のneedCount・構成の起点がずれる。
      */
     private static generateOverflowConfig(
         level: number,
@@ -83,6 +89,8 @@ export class StageInformation {
         const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
         const config =
             configs.find((c) => c.level === level) ??
+            // 配列の最後のエントリを本編最終レベルとみなして渡す
+            // (エントリがlevel昇順である前提。generateOverflowConfigの注意書き参照)
             StageInformation.generateOverflowConfig(
                 level,
                 configs[configs.length - 1],
