@@ -351,6 +351,8 @@ export class GameplayState extends StateBase {
         }
         // 出現タイミングはステージ時間の等分割 + 3秒
         // (helpオブジェクトの出現タイミングと重ならないようにずらす)
+        // ただし、その種類が初めて登場するステージでは、教習ステージとして
+        // 機能させるため開始23秒固定で出す
         // デバッグモードでは動作確認しやすいよう10秒間隔で早めに出す
         const types = this.stageInfo.obstacles;
         types.forEach((type, index) => {
@@ -358,9 +360,12 @@ export class GameplayState extends StateBase {
                 type,
                 time: DEBUG_MODE
                     ? 10 * (index + 1)
-                    : Math.floor(
-                          (this.gameTimer / (types.length + 1)) * (index + 1),
-                      ) + 3,
+                    : Utility.calculateObstacleTiming(
+                          index,
+                          types.length,
+                          this.gameTimer,
+                          this.stageInfo.isFirstAppearanceStage(type),
+                      ),
             });
         });
     }
