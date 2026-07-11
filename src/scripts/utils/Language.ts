@@ -22,11 +22,11 @@ export interface CatalogEntry {
 /** メッセージカタログ: キー → { ja, en } */
 const CATALOG = {
     // --- ボタン ---
-    "button.start": { ja: "すたーと", en: "Start" },
+    "button.start": { ja: "スタート", en: "Start" },
     "button.howToPlay": { ja: "あそびかた", en: "How to\rplay" },
     "button.back": { ja: "もどる", en: "Back" },
     "button.next": { ja: "つぎへ", en: "Next" },
-    "button.backToMenu": { ja: "めにゅーへ", en: "Back to\rMenu" },
+    "button.backToMenu": { ja: "メニュー", en: "Menu" },
 
     // --- ヒント(StartState) ---
     "hint.drawLoop": {
@@ -48,12 +48,12 @@ const CATALOG = {
         en: "Capture many butterflies!",
     },
     "game.pause": { ja: "おやすみ", en: "Pause" },
-    "game.lineShortened": { ja: "せんが みじかい！", en: "Line shortened!" },
+    "game.lineShortened": { ja: "みじかい！", en: "Line shortened!" },
     "game.butterfliesFlee": {
-        ja: "ちょうちょが にげる！",
+        ja: "にげる！",
         en: "Butterflies flee!",
     },
-    "game.invalidLoop": { ja: "だめな ループ！", en: "Invalid loop!" },
+    "game.invalidLoop": { ja: "だめループ！", en: "Invalid loop!" },
     "game.timesUp": { ja: "じかんぎれ！", en: "Time's up!" },
     "game.badLoop": {
         ja: "だめループ！\r\n -20てん",
@@ -62,44 +62,44 @@ const CATALOG = {
     "game.points": { ja: "{calc}{points} てん", en: "{calc}{points} points" },
 
     // --- リザルト(ResultState) ---
-    "result.bonusStageBang": { ja: "ぼーなす すてーじ！", en: "Bonus stage!" },
-    "result.bonusStage": { ja: "ぼーなす すてーじ", en: "Bonus stage" },
-    "result.level": { ja: "れべる {n}", en: "Level {n}" },
+    "result.bonusStageBang": { ja: "ボーナスステージ", en: "Bonus stage!" },
+    "result.bonusStage": { ja: "ボーナスステージ", en: "Bonus stage" },
+    "result.level": { ja: "Level {n}", en: "Level {n}" },
     "result.yourTotalScore": {
-        ja: "きみの てんすう\r {score}",
+        ja: "Score \r {score}",
         en: "Your total score\r {score}",
     },
     "result.newRecord": { ja: "しんきろく！", en: "New Record!" },
     "result.best": { ja: "ベスト: {score}", en: "Best: {score}" },
     "result.need": {
-        ja: "ひつよう :         × {n} ",
+        ja: "Need :         × {n} ",
         en: "Need :         × {n} ",
     },
     "result.got": {
-        ja: "とれた :          × {n} ",
+        ja: "Got :          × {n} ",
         en: "Got :          × {n} ",
     },
     "result.baseScore": {
-        ja: "きほんてん : {score}",
+        ja: "base score : {score}",
         en: "base score : {score}",
     },
     "result.bonusScore": {
-        ja: "ぼーなす : {count} × 100 = {score}",
+        ja: "bonus score : {count} × 100 = {score}",
         en: "bonus score : {count} × 100 = {score}",
     },
     "result.stageScore": {
-        ja: "すてーじてん : {score}",
+        ja: "stage score : {score}",
         en: "stage score : {score}",
     },
     "result.totalScore": {
-        ja: "ごうけい : {score}",
+        ja: "total : {score}",
         en: "total score : {score}",
     },
 
     // --- あそびかた(RuleState) ---
     "rule.title.howToPlay": { ja: "あそびかた", en: "How to play" },
     "rule.p1.draw": {
-        ja: "せんをかいて　ちょうちょをつかまえて",
+        ja: "せんをかいてちょうちょをつかまえて",
         en: "Draw a loop to capture butterflies",
     },
     "rule.p1.morePoints": {
@@ -173,15 +173,15 @@ const CATALOG = {
 
     // --- おじゃまオブジェクト(Bee / Spider / Catapy) ---
     "obstacle.bee.description": {
-        ja: "ループせんが みじかくなる",
+        ja: "ループが みじかくなる",
         en: "Shortens your loop line",
     },
     "obstacle.spider.description": {
-        ja: "ちょうちょが えんぴつから にげる",
+        ja: "ちょうちょが にげる",
         en: "Butterflies flee from your pencil",
     },
     "obstacle.catapy.description": {
-        ja: "いっしょに かこむと ループむこう",
+        ja: "いっしょに かこむとだめ",
         en: "Voids any loop that contains it",
     },
 } satisfies Record<string, CatalogEntry>;

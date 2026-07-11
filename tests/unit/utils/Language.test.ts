@@ -122,7 +122,7 @@ describe("Language", () => {
             setLang("en");
             expect(t("button.start")).toBe("Start");
             setLang("ja");
-            expect(t("button.start")).toBe("すたーと");
+            expect(t("button.start")).toBe("スタート");
         });
 
         it("interpolates named parameters", () => {
