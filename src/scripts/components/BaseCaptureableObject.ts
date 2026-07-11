@@ -28,6 +28,21 @@ export abstract class BaseCaptureableObject extends PIXI.Container {
         return hits / points.length > this.hitRate;
     }
 
+    /**
+     * 指定した座標が当たり判定の円内にあるかを判定する
+     * (ループで囲む isHit とは異なり、クリック/タップ1点だけの判定に使う)
+     */
+    containsPoint(point: { x: number; y: number }): boolean {
+        if (this.alpha === 0) {
+            return false;
+        }
+        const center = this.getObjectCenter();
+        const radius = this.hitAreaSize * this.scale.y;
+        const dx = point.x - center.x;
+        const dy = point.y - center.y;
+        return dx * dx + dy * dy <= radius * radius;
+    }
+
     getDebugGraphics(): PIXI.Graphics {
         const points = this.hitAreaPoints();
         const graphics = new PIXI.Graphics();

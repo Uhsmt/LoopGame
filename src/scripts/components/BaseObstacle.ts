@@ -14,7 +14,7 @@ export abstract class BaseObstacle extends BaseCaptureableObject {
     /**
      * 単体で囲まれるとこの回数で消える。
      * note: この「3回囲むと消える」仕様は隠し要素として、How To Playの
-     * 説明文(description/descriptionJP)にはあえて書いていない
+     * 説明文(description)にはあえて書いていない
      */
     static readonly REQUIRED_LOOP_COUNT = 3;
     private loopedCount = 0;

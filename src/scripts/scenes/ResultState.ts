@@ -11,6 +11,7 @@ import { Button } from "../components/Button";
 import { LineDrawer } from "../components/LineDrawer";
 import { AudioManager } from "../utils/AudioManager";
 import { saveResult } from "../utils/ScoreStorage";
+import { t, getLang } from "../utils/Language";
 
 export class ResultState extends StateBase {
     private stageInfo: StageInformation;
@@ -79,13 +80,15 @@ export class ResultState extends StateBase {
 
         let messageText = "";
         if (this.stageInfo.isClear && this.isGotBonusButterfly) {
-            messageText = "Bonus stage!";
+            messageText = t("result.bonusStageBang");
         } else if (this.stageInfo.isClear) {
-            messageText = `Level ${this.stageInfo.level + 1}`;
+            messageText = t("result.level", { n: this.stageInfo.level + 1 });
         } else {
-            messageText =
-                "Your total score\r " +
-                Utility.formatNumberWithCommas(this.stageInfo.totalScore);
+            messageText = t("result.yourTotalScore", {
+                score: Utility.formatNumberWithCommas(
+                    this.stageInfo.totalScore,
+                ),
+            });
         }
         this.nextMessage = new Message(messageText, 40);
         this.nextMessage.anchor.set(0.5);
@@ -119,10 +122,12 @@ export class ResultState extends StateBase {
             );
             if (isNewRecord) {
                 AudioManager.shared.playSe("se_applause");
-                this.recordMessage = new Message("New Record!", 24);
+                this.recordMessage = new Message(t("result.newRecord"), 24);
             } else if (previousBest !== null) {
                 this.recordMessage = new Message(
-                    `Best: ${Utility.formatNumberWithCommas(previousBest)}`,
+                    t("result.best", {
+                        score: Utility.formatNumberWithCommas(previousBest),
+                    }),
                     20,
                 );
             }
@@ -144,7 +149,7 @@ export class ResultState extends StateBase {
                 this.handleLoopAreaCompleted.bind(this),
             );
             this.backToStartButton = new Button(
-                "Back to\rMenu",
+                t("button.backToMenu"),
                 this.manager.app.screen.width / 2,
                 this.manager.app.screen.height * 0.8,
             );
@@ -185,33 +190,52 @@ export class ResultState extends StateBase {
 
         const topMsg = new Message(
             this.stageInfo.bonusFlag
-                ? "Bonus stage"
-                : `Level ${this.stageInfo.level}`,
+                ? t("result.bonusStage")
+                : t("result.level", { n: this.stageInfo.level }),
             30,
         );
         const conditionMsg = new Message(
-            `Need :         × ${this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount} `,
+            t("result.need", {
+                n: this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount,
+            }),
             20,
         );
         const countMsg = new Message(
-            `Got :          × ${this.stageInfo.captureCount} `,
+            t("result.got", { n: this.stageInfo.captureCount }),
             20,
         );
         const lineMsg = new Message("----", 30);
         const baseScoreMsg = new Message(
-            `base score : ${Utility.formatNumberWithCommas(this.stageInfo.stagePoint)}`,
+            t("result.baseScore", {
+                score: Utility.formatNumberWithCommas(
+                    this.stageInfo.stagePoint,
+                ),
+            }),
             20,
         );
         const bonusMsg = new Message(
-            `bonus score : ${this.stageInfo.bonusCount} × 100 = ${Utility.formatNumberWithCommas(this.stageInfo.bonusPoint)}`,
+            t("result.bonusScore", {
+                count: this.stageInfo.bonusCount,
+                score: Utility.formatNumberWithCommas(
+                    this.stageInfo.bonusPoint,
+                ),
+            }),
             20,
         );
         const stageScoreMsg = new Message(
-            `stage score : ${Utility.formatNumberWithCommas(this.stageInfo.stageTotalScore)}`,
+            t("result.stageScore", {
+                score: Utility.formatNumberWithCommas(
+                    this.stageInfo.stageTotalScore,
+                ),
+            }),
             30,
         );
         const totalScoreMsg = new Message(
-            `total score : ${Utility.formatNumberWithCommas(this.stageInfo.totalScore)}`,
+            t("result.totalScore", {
+                score: Utility.formatNumberWithCommas(
+                    this.stageInfo.totalScore,
+                ),
+            }),
             30,
         );
 
@@ -313,9 +337,12 @@ export class ResultState extends StateBase {
 class Message extends PIXI.BitmapText {
     constructor(message: string, size: number) {
         super();
+        const isJa = getLang() === "ja";
         const style = new PIXI.TextStyle({
-            fontFamily: Const.FONT_ENGLISH,
-            fontWeight: Const.FONT_ENGLISH_BOLD,
+            fontFamily: isJa ? Const.FONT_JAPANESE : Const.FONT_ENGLISH,
+            fontWeight: isJa
+                ? Const.FONT_JAPANESE_BOLD
+                : Const.FONT_ENGLISH_BOLD,
             fontSize: size,
             align: "center",
             fill: 0x000000,
