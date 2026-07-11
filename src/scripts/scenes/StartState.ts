@@ -12,11 +12,13 @@ import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
 import { Button } from "../components/Button";
 import { SpecialButterfly } from "../components/SpecialButterfly";
+import { t, getLang, toggleLang } from "../utils/Language";
 
 export class StartState extends StateBase {
     private lineDrawer: LineDrawer;
     private startButton: Button;
     private ruleButton: Button;
+    private langButton: Button;
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
     private title: PIXI.Text;
@@ -55,12 +57,12 @@ export class StartState extends StateBase {
 
         // ボタン
         this.startButton = new Button(
-            "Start",
+            t("button.start"),
             app.screen.width / 4,
             app.screen.height * 0.65,
         );
         this.ruleButton = new Button(
-            "How to\rplay",
+            t("button.howToPlay"),
             (app.screen.width * 3) / 4,
             app.screen.height * 0.65,
         );
@@ -68,8 +70,32 @@ export class StartState extends StateBase {
         this.container.addChild(this.startButton);
         this.container.addChild(this.ruleButton);
 
+        // 言語切替トグル(押すと今と反対の言語に切り替わる)
+        // メインボタンより目立たないよう右下すみに配置する。
+        // ループで囲んで選択するボタンなので、判定円(hitAreaSize × scale)の
+        // 半径ぶん以上の余白を画面端(黒枠)との間に確保している。
+        this.langButton = new Button(
+            this.langLabel(),
+            app.screen.width * 0.92,
+            app.screen.height * 0.87,
+        );
+        this.langButton.scale.set(0.5);
+        this.container.addChild(this.langButton);
+
         // Frame
         this.addFrameGraphic();
+    }
+
+    /** 言語切替ボタンのラベル(切り替え先の言語名を表示する) */
+    private langLabel(): string {
+        return getLang() === "ja" ? t("lang.english") : t("lang.japanese");
+    }
+
+    /** 表示中のテキストを現在の言語で更新する */
+    private refreshTexts(): void {
+        this.startButton.setLabel(t("button.start"));
+        this.ruleButton.setLabel(t("button.howToPlay"));
+        this.langButton.setLabel(this.langLabel());
     }
 
     onEnter(): void {
@@ -177,6 +203,20 @@ export class StartState extends StateBase {
 
     // LineDrawerのループエリアが完成したときのハンドラ
     private handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
+        if (this.langButton.isHit(loopArea)) {
+            AudioManager.shared.playSe("se_select");
+            this.langButton.selected();
+            toggleLang();
+            this.refreshTexts();
+            this.wait(300)
+                .then(() => {
+                    this.langButton.releaseSelected();
+                })
+                .catch((error: unknown) => {
+                    console.error("Failed to toggle language:", error);
+                });
+            return;
+        }
         if (this.ruleButton.isHit(loopArea)) {
             AudioManager.shared.playSe("se_select");
             this.ruleButton.selected();

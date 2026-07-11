@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import * as Utility from "../utils/Utility";
+import { t } from "../utils/Language";
 import { BaseObstacle } from "./BaseObstacle";
 
 /**
@@ -11,8 +12,9 @@ import { BaseObstacle } from "./BaseObstacle";
  *   蝶と一緒に囲むとループ自体が無効になる(判定自体はGameplayState側で実装)
  */
 export class Catapy extends BaseObstacle {
-    readonly description: string = "Voids any loop that contains it";
-    readonly descriptionJP: string = "いっしょに かこむと ループむこう";
+    get description(): string {
+        return t("obstacle.catapy.description");
+    }
 
     constructor(screenSize: { x: number; y: number }) {
         super(["catapy1", "catapy2"], 0.192, screenSize);
