@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
 import * as Const from "../utils/Const";
 import { SparkleEmitter } from "./SparkleEmitter";
-import { t, isJapaneseText } from "../utils/Language";
+import { t, getLang } from "../utils/Language";
 
 /**
  * ボーナスステージ導入演出の進行フェーズ。
@@ -55,10 +55,9 @@ export class BonusStageEffect extends PIXI.Container {
         this.screenHeight = screenHeight;
         this.sparkles = sparkles;
 
-        const text = t("bonus.invitation");
-        const isJa = isJapaneseText(text);
+        const isJa = getLang() === "ja";
         this.message = new PIXI.BitmapText({
-            text,
+            text: t("bonus.invitation"),
             style: new PIXI.TextStyle({
                 fontFamily: isJa ? Const.FONT_JAPANESE : Const.FONT_ENGLISH,
                 fontWeight: isJa

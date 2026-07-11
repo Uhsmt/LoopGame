@@ -221,15 +221,27 @@ export class ResultState extends StateBase {
         // 少し余韻をおく(スペシャル蝶はこの間もふらふら飛んでいる)
         await this.wait(400);
 
-        // だんだん暗くなる(夜へ)。同時にリザルトの紙をそっと溶かす
+        // 背景の切り替わり(暗転)が始まる時点で、ボーナスBGMを先出しして
+        // 流し始める。実際にボーナスのGameplayStateへ入った時にも同じsrcで
+        // playBgmが呼ばれるが、AudioManagerは同一src再生中は何もしないので
+        // 二重再生にはならない
+        AudioManager.shared.playBgm(Const.bgmSrcs.bonus);
+
+        // だんだん暗くなる(夜へ)。従来の2倍(約4秒)かけてゆっくり切り替える。
+        // 同時にリザルトの紙は、入場アニメ(下からスライドイン)の逆再生として
+        // 下へスライドアウトさせる(フェードでは消さない)
         await Promise.all([
             this.nightBackground
-                ? this.fadeIn(this.nightBackground, 0.008)
+                ? this.fadeIn(this.nightBackground, 0.004)
                 : Promise.resolve(),
-            this.fadeOut(this.stickySprite, 0.01),
+            this.slideY(
+                this.stickySprite,
+                this.manager.app.screen.height + this.stickySprite.height,
+                0.5,
+            ),
         ]);
 
-        // スペシャル蝶が画面外(上)へ飛び去る
+        // スペシャル蝶が画面外へ飛び去る
         await this.flyAwayDreamButterfly();
 
         await this.wait(300);
@@ -238,17 +250,17 @@ export class ResultState extends StateBase {
         this.manager.setState(new GameplayState(this.manager, this.stageInfo));
     }
 
-    /** 夢へ誘うスペシャル蝶を、ふわりと上方向へ画面外まで飛ばして消す */
+    /**
+     * 夢へ誘うスペシャル蝶を、素早くふらふらと蛇行させながら画面外まで
+     * 飛ばして消す。フェードで消すのではなく「実際に飛んで出て行った」感を
+     * 優先するため、直線移動(slideY)ではなく、進行方向に対して垂直に
+     * サインカーブで揺れながら画面の外まで移動させる。
+     */
     private async flyAwayDreamButterfly(): Promise<void> {
         const butterfly = this.dreamButterfly;
         if (!butterfly) return;
 
-        // update() 側の徘徊(壁で跳ね返る挙動)を止めてから直線的に飛び去らせる
-        butterfly.isFlying = false;
-        await Promise.all([
-            this.slideY(butterfly, -butterfly.height * 2, 0.25),
-            this.fadeOut(butterfly, 0.02),
-        ]);
+        await this.flutterOffScreen(butterfly);
 
         if (!butterfly.destroyed) {
             this.container.removeChild(butterfly);
@@ -257,12 +269,81 @@ export class ResultState extends StateBase {
         this.dreamButterfly = undefined;
     }
 
+    /**
+     * 指定した蝶を、画面中心から現在位置への方向(=最も近い外周へ抜ける
+     * 自然な脱出方向)へ、蛇行(サインカーブ)を加えながら素早く移動させる。
+     * 画面外まで抜けたら解決する。update()側の壁バウンド徘徊(isFlying)は
+     * 呼び出し前に止めておくこと。
+     */
+    private flutterOffScreen(butterfly: SpecialButterfly): Promise<void> {
+        butterfly.isFlying = false;
+
+        const screenWidth = this.manager.app.screen.width;
+        const screenHeight = this.manager.app.screen.height;
+        const centerX = screenWidth / 2;
+        const centerY = screenHeight / 2;
+
+        // 画面中心から現在位置への方向 = もっとも近い外周へ向かう自然な脱出方向
+        let dirX = butterfly.x - centerX;
+        let dirY = butterfly.y - centerY;
+        let startDistance = Math.hypot(dirX, dirY);
+        if (startDistance < 1) {
+            // ほぼ中心にいて方向が定まらない場合のフォールバック(上方向へ)
+            dirX = 0;
+            dirY = -1;
+            startDistance = 0;
+        } else {
+            dirX /= startDistance;
+            dirY /= startDistance;
+        }
+        // 進行方向に直交する軸(蛇行の揺れはこちらへ加える)
+        const perpX = -dirY;
+        const perpY = dirX;
+
+        // どの角度でも確実に画面外まで抜けられる半径(半対角線+余白)
+        const targetRadius = Math.hypot(screenWidth, screenHeight) / 2 + 150;
+        // 少なくともこれだけは動いて見えるように最低距離を確保する
+        const remaining = Math.max(targetRadius - startDistance, 200);
+
+        // 従来のslideY(約250px/秒)よりずっと速く駆け抜ける
+        const speedPerMs = 1.1;
+        const wobbleAmplitude = 50;
+        const wobbleFrequency = 0.007;
+
+        return new Promise((resolve) => {
+            let traveled = 0;
+            const ticker = new PIXI.Ticker();
+            ticker.add(() => {
+                if (butterfly.destroyed) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                    return;
+                }
+                traveled += speedPerMs * ticker.deltaMS;
+                const wobble =
+                    Math.sin(traveled * wobbleFrequency) * wobbleAmplitude;
+                const radius = startDistance + traveled;
+                butterfly.x = centerX + dirX * radius + perpX * wobble;
+                butterfly.y = centerY + dirY * radius + perpY * wobble;
+                if (traveled >= remaining) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                }
+            });
+            ticker.start();
+        });
+    }
+
     update(delta: number): void {
         this.messageButterflies.forEach((butterfly) => {
             butterfly.update(delta, []);
         });
-        // 夢に誘うスペシャル蝶をふらふら飛ばす(飛び去る間は isFlying=false)
-        if (this.dreamButterfly && this.dreamButterfly.isFlying) {
+        // 夢に誘うスペシャル蝶を飛ばす。飛び去る間(isFlying=false)は
+        // flutterOffScreen側が位置を動かすが、羽ばたきアニメは
+        // update()(内部のflap)に任せ続ける
+        if (this.dreamButterfly) {
             this.dreamButterfly.update(delta, []);
         }
     }

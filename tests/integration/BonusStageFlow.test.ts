@@ -254,6 +254,8 @@ import { GameplayState } from "../../src/scripts/scenes/GameplayState";
 import { ResultState } from "../../src/scripts/scenes/ResultState";
 import { StageInformation } from "../../src/scripts/components/StageInformation";
 import { BonusStageEffect } from "../../src/scripts/components/BonusStageEffect";
+import { AudioManager } from "../../src/scripts/utils/AudioManager";
+import * as Const from "../../src/scripts/utils/Const";
 import type { GameStateManager } from "../../src/scripts/scenes/GameStateManager";
 
 function createMockApp() {
@@ -417,12 +419,18 @@ describe("Bonus (dream) stage flow", () => {
 
             const manager = createMockManager();
             const setStateSpy = vi.spyOn(manager, "setState");
+            const playBgmSpy = vi.spyOn(AudioManager.shared, "playBgm");
             const state = new ResultState(manager, stageInfo, true);
             const internal = state as any;
 
             // リザルト中はスペシャル蝶がふらふら飛んでいる
             expect(internal.dreamButterfly).toBeDefined();
             expect(internal.dreamButterfly.isFlying).toBe(true);
+            // 退場前の位置を控えておく(退場後、実際に画面外まで移動したことを見る)
+            const dreamButterfly = internal.dreamButterfly as {
+                x: number;
+                y: number;
+            };
             state.update(16);
             expect(internal.dreamButterfly.update).toHaveBeenCalled();
 
@@ -433,9 +441,23 @@ describe("Bonus (dream) stage flow", () => {
             await vi.advanceTimersByTimeAsync(30000);
             await done;
 
+            // 背景の切り替わり(暗転)が始まる時点で、ボーナスBGMが先出しされている
+            expect(playBgmSpy).toHaveBeenCalledWith(Const.bgmSrcs.bonus);
+
             // だんだん暗くなって夜になった
             expect(internal.nightBackground.alpha).toBeCloseTo(1, 1);
-            // 蝶は画面外へ飛び去って破棄された
+            // リザルトの紙はフェードではなく画面外へスライドアウトしている
+            expect(internal.stickySprite.y).toBeGreaterThan(
+                manager.app.screen.height,
+            );
+            // 蝶はフェードで消えたのではなく、実際に画面外まで飛んで消えた
+            const screen = manager.app.screen;
+            const isOffScreen =
+                dreamButterfly.x < 0 ||
+                dreamButterfly.x > screen.width ||
+                dreamButterfly.y < 0 ||
+                dreamButterfly.y > screen.height;
+            expect(isOffScreen).toBe(true);
             expect(internal.dreamButterfly).toBeUndefined();
             // 夢(ボーナス)へ入る: bonusStageが呼ばれ、次のステートへ一度だけ遷移
             expect(stageInfo.bonusFlag).toBe(true);
