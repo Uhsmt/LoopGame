@@ -131,7 +131,8 @@ describe("StartState click hint", () => {
     // ボタンの中心座標(app.screen 800x600時のStartStateのレイアウト計算と一致させる)
     const START_BUTTON = { x: 200, y: 390 };
     const RULE_BUTTON = { x: 600, y: 390 };
-    const LANG_BUTTON = { x: 400, y: 90 };
+    // 言語切替ボタンは画面右下すみ(app.screen比 0.92/0.87)に配置される
+    const LANG_BUTTON = { x: 800 * 0.92, y: 600 * 0.87 };
     const FAR_AWAY = { x: 10, y: 10 };
 
     beforeEach(() => {
