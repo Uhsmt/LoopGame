@@ -116,9 +116,11 @@ export class ResultState extends StateBase {
             special.appear(false);
             special.isFlapping = true;
             special.isFlying = false;
-            // スコアの紙・テキストより常に手前に見えるよう最前面に固定する
+            // 黒枠を含む全要素より常に手前(最前面)に見えるよう固定する。
+            // sortableChildren=trueによりzIndexソートが優先されるため、
+            // 挿入位置は描画順に影響しない(addChildで十分)
             special.zIndex = 1000;
-            this.addChildBelowFrame(special);
+            this.container.addChild(special);
             this.dreamButterfly = special;
             this.startDreamFlightChoreography(special);
         }
