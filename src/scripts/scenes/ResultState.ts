@@ -4,6 +4,7 @@ import * as PIXI from "pixi.js";
 import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
 import { Butterfly } from "../components/Butterfly";
+import { SpecialButterfly } from "../components/SpecialButterfly";
 import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
 import { StateBase } from "./BaseState";
@@ -23,6 +24,20 @@ export class ResultState extends StateBase {
     private recordMessage?: Message;
     private lineDrawer!: LineDrawer;
     private isGotBonusButterfly: boolean = false;
+    /**
+     * 夢に入る: スペシャル蝶を捕まえた通常ステージのリザルト。
+     * このあと暗転してボーナス(夢)へ入っていく。
+     */
+    private readonly isEnteringDream: boolean;
+    /**
+     * 夢から覚める: ボーナスステージのリザルト。
+     * 夜のまま結果を見せ、明転して通常ステージへ戻る。
+     */
+    private readonly isWakingDream: boolean;
+    /** 暗転/明転に使う夜背景(夢の演出があるときだけ用意する) */
+    private nightBackground?: PIXI.Sprite;
+    /** リザルト画面をふらふら飛ぶスペシャル蝶(夢に入るときだけ) */
+    private dreamButterfly?: SpecialButterfly;
 
     constructor(
         manager: GameStateManager,
@@ -33,13 +48,28 @@ export class ResultState extends StateBase {
 
         this.stageInfo = stageInfo;
         this.isGotBonusButterfly = isGotBonusButterfly;
+        this.isEnteringDream = stageInfo.isClear && isGotBonusButterfly;
+        this.isWakingDream = stageInfo.bonusFlag;
 
-        // background
+        // background(昼)
         const backgroundSprite = new PIXI.Sprite(
             PIXI.Texture.from("background"),
         );
         this.adjustBackGroundSprite(backgroundSprite);
         this.container.addChild(backgroundSprite);
+
+        // 夜背景(昼の上に重ねる)。夢の演出があるときだけ用意する。
+        // - 夢に入る:  alpha=0 で待機し、リザルト後にフェードインして暗転
+        // - 夢から覚める: alpha=1 で夜のまま結果を見せ、最後にフェードアウトして明転
+        if (this.isEnteringDream || this.isWakingDream) {
+            const nightSprite = new PIXI.Sprite(
+                PIXI.Texture.from("background_night"),
+            );
+            this.adjustBackGroundSprite(nightSprite);
+            nightSprite.alpha = this.isWakingDream ? 1 : 0;
+            this.container.addChild(nightSprite);
+            this.nightBackground = nightSprite;
+        }
 
         // sticky
         const stickySprite = new PIXI.Sprite(PIXI.Texture.from("sticky"));
@@ -53,6 +83,26 @@ export class ResultState extends StateBase {
 
         // frame
         this.addFrameGraphic();
+
+        // 夢に入るリザルトでは、スペシャル蝶が画面をふらふら飛んでいる
+        if (this.isEnteringDream) {
+            const special = new SpecialButterfly(
+                this.stageInfo.butterflyColors[0],
+                {
+                    x: this.manager.app.screen.width,
+                    y: this.manager.app.screen.height,
+                },
+            );
+            special.setRandomInitialPoistion(
+                this.manager.app.screen.width,
+                this.manager.app.screen.height,
+            );
+            special.appear(false);
+            special.isFlapping = true;
+            special.isFlying = true;
+            this.addChildBelowFrame(special);
+            this.dreamButterfly = special;
+        }
     }
 
     async onEnter(): Promise<void> {
@@ -78,10 +128,14 @@ export class ResultState extends StateBase {
         });
         this.messageButterflies = [];
 
+        // 夢に入る: 「BONUS STAGE!」とは出さず、静かに暗転してボーナスへ誘う
+        if (this.isEnteringDream) {
+            await this.enterDreamSequence();
+            return;
+        }
+
         let messageText = "";
-        if (this.stageInfo.isClear && this.isGotBonusButterfly) {
-            messageText = t("result.bonusStageBang");
-        } else if (this.stageInfo.isClear) {
+        if (this.stageInfo.isClear) {
             messageText = t("result.level", { n: this.stageInfo.level + 1 });
         } else {
             messageText = t("result.yourTotalScore", {
@@ -105,11 +159,12 @@ export class ResultState extends StateBase {
         );
 
         if (this.stageInfo.isClear) {
-            if (this.isGotBonusButterfly) {
-                this.stageInfo.bonusStage();
-            } else {
-                this.stageInfo.next();
+            // 夢から覚める: ボーナスのリザルトは夜のまま見せ、
+            // ここでじわじわ明るくして昼へ戻してから通常ステージへ遷移する
+            if (this.isWakingDream && this.nightBackground) {
+                await this.fadeOut(this.nightBackground, 0.008);
             }
+            this.stageInfo.next();
             this.manager.setState(
                 new GameplayState(this.manager, this.stageInfo),
             );
@@ -158,15 +213,68 @@ export class ResultState extends StateBase {
         }
     }
 
+    /**
+     * 夢に入る演出: リザルト表示のあと、画面がだんだん暗くなって夜へ向かい、
+     * 誘ってくれたスペシャル蝶が画面外へ飛び去ってから、ボーナス(夢)へ入る。
+     */
+    private async enterDreamSequence(): Promise<void> {
+        // 少し余韻をおく(スペシャル蝶はこの間もふらふら飛んでいる)
+        await this.wait(400);
+
+        // だんだん暗くなる(夜へ)。同時にリザルトの紙をそっと溶かす
+        await Promise.all([
+            this.nightBackground
+                ? this.fadeIn(this.nightBackground, 0.008)
+                : Promise.resolve(),
+            this.fadeOut(this.stickySprite, 0.01),
+        ]);
+
+        // スペシャル蝶が画面外(上)へ飛び去る
+        await this.flyAwayDreamButterfly();
+
+        await this.wait(300);
+
+        this.stageInfo.bonusStage();
+        this.manager.setState(new GameplayState(this.manager, this.stageInfo));
+    }
+
+    /** 夢へ誘うスペシャル蝶を、ふわりと上方向へ画面外まで飛ばして消す */
+    private async flyAwayDreamButterfly(): Promise<void> {
+        const butterfly = this.dreamButterfly;
+        if (!butterfly) return;
+
+        // update() 側の徘徊(壁で跳ね返る挙動)を止めてから直線的に飛び去らせる
+        butterfly.isFlying = false;
+        await Promise.all([
+            this.slideY(butterfly, -butterfly.height * 2, 0.25),
+            this.fadeOut(butterfly, 0.02),
+        ]);
+
+        if (!butterfly.destroyed) {
+            this.container.removeChild(butterfly);
+            butterfly.delete();
+        }
+        this.dreamButterfly = undefined;
+    }
+
     update(delta: number): void {
         this.messageButterflies.forEach((butterfly) => {
             butterfly.update(delta, []);
         });
+        // 夢に誘うスペシャル蝶をふらふら飛ばす(飛び去る間は isFlying=false)
+        if (this.dreamButterfly && this.dreamButterfly.isFlying) {
+            this.dreamButterfly.update(delta, []);
+        }
     }
 
     render(): void {}
 
     onExit(): void {
+        // 途中で遷移した場合に備え、飛び残ったスペシャル蝶を確実に破棄する
+        if (this.dreamButterfly && !this.dreamButterfly.destroyed) {
+            this.dreamButterfly.delete();
+            this.dreamButterfly = undefined;
+        }
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
         if (this.lineDrawer) {

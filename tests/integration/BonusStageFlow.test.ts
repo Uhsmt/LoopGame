@@ -1,21 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
- * GameplayStateとBonusStageEffectの結線(wiring)を検証する統合テスト。
+ * ボーナスステージ(=夢)の演出フローの結線(wiring)を検証する統合テスト。
  *
- * 目的:
- * - 導入演出中(isRunning=false)はポーズ操作を挟んでも制限時間
- *   (elapsedTime)が絶対に進まないこと(PR #64レビュー指摘の回帰防止)
- * - endGameで終了演出(outro)がちょうど1回だけ起動すること
- * - startPlay()切り出し後も、通常ステージの「1秒待ってから開始」という
- *   従来のフローが変わっていないこと
+ * 新コンセプト「夢の中に入っていく、そして夢から覚める」に沿って、
+ * 状態遷移を実オブジェクトの公開プロパティ・呼び出し回数で観測する。
  *
- * 実際のGameplayState/StageInformation/BonusStageEffect/LineDrawer/
- * SparkleEmitterはそのまま使い、描画が重いor無関係なコンポーネント
- * (PIXI.js自体・AudioManager・Sun/Moon・Butterfly/SpecialButterfly)
- * だけを軽量なダブルに差し替える。ロジックを再実装して検証する
- * マッチポンプにならないよう、観測点は実オブジェクトの公開プロパティ・
- * 呼び出し回数(スパイ)に限定する
+ * 検証する遷移:
+ * - 夢への誘い(導入)中は isRunning=false のまま制限時間(elapsedTime)が
+ *   絶対に進まないこと。ポーズ操作を挟んでも同じ(#64レビュー指摘の回帰防止)
+ * - 導入が終わるとゲーム本編が始まり、時間切れで一度だけリザルトへ遷移すること
+ * - 夢に入るリザルト(スペシャル蝶捕獲)は、暗転してからボーナスへ入ること
+ * - 夢から覚めるリザルト(ボーナス)は、夜のまま見せてから明転し通常ステージへ戻ること
+ *
+ * ロジックを再実装して検証するマッチポンプにならないよう、観測点は実
+ * オブジェクトの公開プロパティ・スパイに限定する。描画が重いor無関係な
+ * コンポーネントだけを軽量なダブルに差し替える。
  */
 
 vi.mock("pixi.js", () => {
@@ -49,6 +49,13 @@ vi.mock("pixi.js", () => {
         addChild(c: unknown) {
             this.children.push(c);
             return c;
+        }
+        addChildAt(c: unknown, index: number) {
+            this.children.splice(index, 0, c);
+            return c;
+        }
+        getChildIndex(c: unknown) {
+            return this.children.indexOf(c);
         }
         removeChild(c: unknown) {
             this.children = this.children.filter((x) => x !== c);
@@ -123,6 +130,28 @@ vi.mock("pixi.js", () => {
             return {};
         }
     }
+    // フェード/スライド用の Ticker。start() で完了まで同期的に回し、
+    // コールバック自身が stop()/destroy() を呼んだ時点でループを抜ける。
+    class Ticker {
+        deltaMS = 16;
+        private cbs: Array<() => void> = [];
+        add(cb: () => void) {
+            this.cbs.push(cb);
+            return this;
+        }
+        start() {
+            let guard = 0;
+            while (this.cbs.length > 0 && guard++ < 1_000_000) {
+                for (const cb of [...this.cbs]) cb();
+            }
+        }
+        stop() {
+            this.cbs = [];
+        }
+        destroy() {
+            this.cbs = [];
+        }
+    }
     return {
         Container,
         Graphics,
@@ -131,6 +160,7 @@ vi.mock("pixi.js", () => {
         TextStyle,
         Point,
         Texture,
+        Ticker,
     };
 });
 
@@ -169,6 +199,8 @@ vi.mock("../../src/scripts/components/Butterfly", () => {
         y = 0;
         width = 20;
         height = 20;
+        alpha = 1;
+        destroyed = false;
         color: number;
         multiplicationRate = 1;
         isFlapping = false;
@@ -189,13 +221,37 @@ vi.mock("../../src/scripts/components/Butterfly", () => {
 });
 
 vi.mock("../../src/scripts/components/SpecialButterfly", () => {
-    // このテストではhasBonusButterflyが常にfalseなので実際には生成されない。
-    // GameplayState側のinstanceof判定が壊れないようクラスだけ用意する
-    class SpecialButterfly {}
+    // GameplayState側の instanceof 判定に加え、ResultStateが「夢に誘う蝶」
+    // として生成・徘徊・飛び去りに使うため、必要な公開メンバを備える
+    class SpecialButterfly {
+        x = 500;
+        y = 300;
+        width = 20;
+        height = 20;
+        alpha = 1;
+        destroyed = false;
+        isFlapping = false;
+        isFlying = false;
+        constructor(
+            public color?: number,
+            public screenSize?: unknown,
+        ) {}
+        setRandomInitialPoistion = vi.fn();
+        appear = vi.fn();
+        update = vi.fn();
+        delete = vi.fn(() => {
+            this.destroyed = true;
+        });
+        isHit = () => false;
+        switchColor = vi.fn();
+        setGatherPoint = vi.fn();
+        deleteGatherPoint = vi.fn();
+    }
     return { SpecialButterfly };
 });
 
 import { GameplayState } from "../../src/scripts/scenes/GameplayState";
+import { ResultState } from "../../src/scripts/scenes/ResultState";
 import { StageInformation } from "../../src/scripts/components/StageInformation";
 import { BonusStageEffect } from "../../src/scripts/components/BonusStageEffect";
 import type { GameStateManager } from "../../src/scripts/scenes/GameStateManager";
@@ -203,10 +259,10 @@ import type { GameStateManager } from "../../src/scripts/scenes/GameStateManager
 function createMockApp() {
     return {
         screen: { width: 1150, height: 650 },
-        // renderer.width/height はGameplayState内のメッセージ配置計算で参照される。
+        // renderer.width/height はメッセージ配置計算で参照される。
         // renderer.generateTextureは意図的に用意しない
-        // (SparkleEmitter.createStarTextureが例外を投げ、GameplayState側の
-        // フォールバックでTexture.WHITEが使われる経路をそのまま通す)
+        // (SparkleEmitter.createStarTextureが例外を投げ、フォールバックで
+        // Texture.WHITEが使われる経路をそのまま通す)
         renderer: { width: 1150, height: 650 },
         stage: {
             addChild: vi.fn(),
@@ -235,7 +291,7 @@ function clickPauseButton(): void {
         .dispatchEvent(new MouseEvent("click", { bubbles: true }));
 }
 
-describe("GameplayState + BonusStageEffect wiring", () => {
+describe("Bonus (dream) stage flow", () => {
     beforeEach(() => {
         vi.useFakeTimers();
         setupPauseButton();
@@ -248,7 +304,7 @@ describe("GameplayState + BonusStageEffect wiring", () => {
         vi.restoreAllMocks();
     });
 
-    describe("bonus intro: pause must not consume the bonus timer", () => {
+    describe("dream invitation (intro): pause must not consume the bonus timer", () => {
         it("keeps elapsedTime at 0 through the whole intro, even if the pause button is clicked", async () => {
             const stageInfo = new StageInformation();
             stageInfo.bonusStage();
@@ -262,7 +318,7 @@ describe("GameplayState + BonusStageEffect wiring", () => {
 
             // 導入演出の途中まで進める(まだ intro のはず)
             for (let i = 0; i < 5; i++) {
-                state.update(100); // 合計500ms < INTRO_DURATION_MS(1800ms)
+                state.update(100);
             }
             expect(internal.bonusEffect.phase).toBe("intro");
             expect(internal.isRunning).toBe(false);
@@ -317,16 +373,12 @@ describe("GameplayState + BonusStageEffect wiring", () => {
         });
     });
 
-    describe("endGame outro trigger", () => {
-        it("starts the outro exactly once when the bonus timer runs out, even if update() is called again", async () => {
-            const startOutroSpy = vi.spyOn(
-                BonusStageEffect.prototype,
-                "startOutro",
-            );
-
+    describe("bonus timeout transitions to the result exactly once", () => {
+        it("moves to a ResultState 3s after time runs out, and does not re-fire on further updates", async () => {
             const stageInfo = new StageInformation();
             stageInfo.bonusStage();
             const manager = createMockManager();
+            const setStateSpy = vi.spyOn(manager, "setState");
             const state = new GameplayState(manager, stageInfo);
 
             await state.onEnter();
@@ -337,46 +389,89 @@ describe("GameplayState + BonusStageEffect wiring", () => {
                 state.update(100);
                 total += 100;
             }
-            expect(startOutroSpy).not.toHaveBeenCalled();
+            expect(setStateSpy).not.toHaveBeenCalled();
 
-            // 制限時間(60秒)を一気に使い切る = 時間切れでendGame()が呼ばれる
+            // 制限時間(60秒)を一気に使い切る = 時間切れでendGame()が走る
             state.update(stageInfo.stageTime * 1000 + 1000);
-            expect(startOutroSpy).toHaveBeenCalledTimes(1);
+            // リザルト遷移は3秒後
+            await vi.advanceTimersByTimeAsync(3000);
+            expect(setStateSpy).toHaveBeenCalledTimes(1);
+            expect(setStateSpy).toHaveBeenCalledWith(expect.any(ResultState));
 
-            // 終了後にupdate()を重ねてもendGame/outroは再発火しない
-            // (isRunning=falseで早期returnするため)
+            // 終了後にupdate()を重ねても再遷移しない
             state.update(1000);
             state.update(1000);
-            expect(startOutroSpy).toHaveBeenCalledTimes(1);
+            await vi.advanceTimersByTimeAsync(3000);
+            expect(setStateSpy).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe("normal stage flow (non-bonus) is unaffected by the startPlay() extraction", () => {
-        it("shows the start message for 1s, then starts the game and removes it", async () => {
-            const stageInfo = new StageInformation(); // level 1, not bonus
+    describe("entering the dream: special-butterfly result darkens, then leads into the bonus", () => {
+        it("keeps the special butterfly fluttering, fades to night, then starts the bonus stage", async () => {
+            const stageInfo = new StageInformation();
+            // スペシャル蝶を捕まえてクリアした通常ステージのリザルト
+            stageInfo.captureCount = stageInfo.needCount;
+            stageInfo.calcScore();
+            expect(stageInfo.isClear).toBe(true);
+            expect(stageInfo.bonusFlag).toBe(false);
+
             const manager = createMockManager();
-            const state = new GameplayState(manager, stageInfo);
-
-            const onEnterPromise = state.onEnter();
-
+            const setStateSpy = vi.spyOn(manager, "setState");
+            const state = new ResultState(manager, stageInfo, true);
             const internal = state as any;
-            expect(internal.isRunning).toBe(false);
-            expect(internal.startMessage.alpha).toBe(1);
-            expect(internal.bonusEffect).toBeNull();
 
-            // 1秒経つまではまだ開始しない
-            await vi.advanceTimersByTimeAsync(900);
-            expect(internal.isRunning).toBe(false);
+            // リザルト中はスペシャル蝶がふらふら飛んでいる
+            expect(internal.dreamButterfly).toBeDefined();
+            expect(internal.dreamButterfly.isFlying).toBe(true);
+            state.update(16);
+            expect(internal.dreamButterfly.update).toHaveBeenCalled();
 
-            await vi.advanceTimersByTimeAsync(200);
-            await onEnterPromise;
+            // 夜背景はまだ暗くない(昼のまま)
+            expect(internal.nightBackground.alpha).toBe(0);
 
-            expect(internal.isRunning).toBe(true);
-            expect(internal.container.children).not.toContain(
-                internal.startMessage,
-            );
-            expect(internal.butterflies[0].isFlapping).toBe(true);
-            expect(internal.butterflies[0].isFlying).toBe(true);
+            const done = state.onEnter();
+            await vi.advanceTimersByTimeAsync(30000);
+            await done;
+
+            // だんだん暗くなって夜になった
+            expect(internal.nightBackground.alpha).toBeCloseTo(1, 1);
+            // 蝶は画面外へ飛び去って破棄された
+            expect(internal.dreamButterfly).toBeUndefined();
+            // 夢(ボーナス)へ入る: bonusStageが呼ばれ、次のステートへ一度だけ遷移
+            expect(stageInfo.bonusFlag).toBe(true);
+            expect(setStateSpy).toHaveBeenCalledTimes(1);
+            expect(setStateSpy).toHaveBeenCalledWith(expect.any(GameplayState));
+        });
+    });
+
+    describe("waking from the dream: bonus result stays night, then brightens to day", () => {
+        it("shows the result on the night background, then fades back to day and advances to the next stage", async () => {
+            const stageInfo = new StageInformation();
+            stageInfo.bonusStage(); // 夢(ボーナス)ステージ
+            stageInfo.calcScore(); // bonusFlag により isClear
+            const levelBefore = stageInfo.level;
+
+            const manager = createMockManager();
+            const setStateSpy = vi.spyOn(manager, "setState");
+            const state = new ResultState(manager, stageInfo, false);
+            const internal = state as any;
+
+            // 夢から覚めるリザルトは夜のまま見せる
+            expect(internal.nightBackground.alpha).toBe(1);
+            // 夢に誘う蝶は出さない(入るときだけの演出)
+            expect(internal.dreamButterfly).toBeUndefined();
+
+            const done = state.onEnter();
+            await vi.advanceTimersByTimeAsync(30000);
+            await done;
+
+            // じわじわ明るくなって昼へ戻った
+            expect(internal.nightBackground.alpha).toBeCloseTo(0, 1);
+            // 通常ステージへ: 次のレベルへ進み、一度だけ遷移
+            expect(stageInfo.level).toBe(levelBefore + 1);
+            expect(stageInfo.bonusFlag).toBe(false);
+            expect(setStateSpy).toHaveBeenCalledTimes(1);
+            expect(setStateSpy).toHaveBeenCalledWith(expect.any(GameplayState));
         });
     });
 });

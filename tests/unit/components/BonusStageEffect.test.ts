@@ -56,8 +56,24 @@ vi.mock("pixi.js", () => {
 
 import { BonusStageEffect } from "../../../src/scripts/components/BonusStageEffect";
 import { SparkleEmitter } from "../../../src/scripts/components/SparkleEmitter";
+import { t } from "../../../src/scripts/utils/Language";
 
 const fakeTexture = { fake: "star" };
+
+interface TextChild {
+    text: string;
+    alpha: number;
+}
+
+/** 誘いメッセージ用に追加された BitmapText を取り出す */
+function invitationChild(effect: BonusStageEffect): TextChild {
+    const children = (effect as unknown as { children: TextChild[] }).children;
+    const child = children.find(
+        (c) => typeof c.text === "string" && c.text.length > 0,
+    );
+    if (!child) throw new Error("invitation message child not found");
+    return child;
+}
 
 describe("BonusStageEffect", () => {
     let sparkles: SparkleEmitter;
@@ -76,7 +92,13 @@ describe("BonusStageEffect", () => {
         expect(effect.consumeIntroComplete()).toBe(false);
     });
 
-    describe("intro", () => {
+    it("shows the quiet invitation message, not a festive BONUS STAGE banner", () => {
+        const child = invitationChild(effect);
+        expect(child.text).toBe(t("bonus.invitation"));
+        expect(child.text).not.toMatch(/bonus stage/i);
+    });
+
+    describe("intro (dream invitation)", () => {
         it("enters the intro phase and stays there until the duration elapses", () => {
             effect.startIntro();
             expect(effect.phase).toBe("intro");
@@ -87,7 +109,17 @@ describe("BonusStageEffect", () => {
             expect(effect.consumeIntroComplete()).toBe(false);
         });
 
-        it("emits celebratory sparkles while the intro plays", () => {
+        it("fades the invitation in softly (starts invisible, becomes visible mid-intro)", () => {
+            const child = invitationChild(effect);
+            effect.startIntro();
+            expect(child.alpha).toBe(0);
+
+            // 導入の中盤ではっきり見えている
+            effect.update(BonusStageEffect.INTRO_DURATION_MS * 0.5);
+            expect(child.alpha).toBeGreaterThan(0.5);
+        });
+
+        it("emits sparse, non-festive sparkles while the intro plays", () => {
             effect.startIntro();
             effect.update(600);
             expect(sparkles.particleCount).toBeGreaterThan(0);
@@ -97,6 +129,8 @@ describe("BonusStageEffect", () => {
             effect.startIntro();
             effect.update(BonusStageEffect.INTRO_DURATION_MS + 50);
             expect(effect.phase).toBe("playing");
+            // 誘いメッセージは消えている
+            expect(invitationChild(effect).alpha).toBe(0);
         });
 
         it("signals intro completion exactly once (frame-safe trigger)", () => {
@@ -125,33 +159,6 @@ describe("BonusStageEffect", () => {
 
             expect(coarse.phase).toBe(fine.phase);
             expect(coarse.phase).toBe("playing");
-        });
-    });
-
-    describe("outro", () => {
-        it("enters the outro phase and finishes after its duration", () => {
-            effect.startOutro();
-            expect(effect.phase).toBe("outro");
-
-            effect.update(BonusStageEffect.OUTRO_DURATION_MS - 100);
-            expect(effect.phase).toBe("outro");
-            expect(effect.consumeOutroComplete()).toBe(false);
-
-            effect.update(200);
-            expect(effect.phase).toBe("done");
-        });
-
-        it("signals outro completion exactly once", () => {
-            effect.startOutro();
-            effect.update(BonusStageEffect.OUTRO_DURATION_MS + 50);
-            expect(effect.consumeOutroComplete()).toBe(true);
-            expect(effect.consumeOutroComplete()).toBe(false);
-        });
-
-        it("emits sparkles during the outro", () => {
-            effect.startOutro();
-            effect.update(500);
-            expect(sparkles.particleCount).toBeGreaterThan(0);
         });
     });
 });

@@ -195,8 +195,7 @@ export class GameplayState extends StateBase {
         this.sparkles = new SparkleEmitter(this.createStarTexture());
         this.container.addChild(this.sparkles);
 
-        // ボーナスステージのみ、導入・終了演出を最前面に用意する
-        // (キャラクターSprite(Issue #2)が用意できたらこのクラス側に登場演出を差し込む)
+        // ボーナスステージのみ、「夢への誘い」導入演出を最前面に用意する
         if (this.stageInfo.bonusFlag) {
             this.bonusEffect = new BonusStageEffect(
                 app.screen.width,
@@ -732,11 +731,8 @@ export class GameplayState extends StateBase {
         });
         this.obstacles = [];
 
-        // ボーナスステージは締めの演出を再生する(リザルト遷移までの
-        // 3秒の待ち時間内に収まる。演出自体はupdate側で進む)
-        if (this.bonusEffect) {
-            this.bonusEffect.startOutro();
-        }
+        // ボーナス終了時の締め演出(バナー)は出さない。
+        // 「夢から覚める」明転はボーナスのリザルト(ResultState)側が担う。
 
         // captureButterfliesの中にSpecialButterflyが含まれているかどうか
         const isGotBonusButterfly = this.caputuredButterflies.some(
