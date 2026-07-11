@@ -49,6 +49,19 @@ export function getDistance(p1: PIXI.Point, p2: PIXI.Point): number {
 }
 
 /**
+ * ポインタの押下〜離上が「クリック(タップ)」とみなせるかを判定する。
+ * 移動距離・経過時間がともに閾値以内であれば true (ループを描くドラッグ操作ではない)
+ */
+export function isClickGesture(
+    distance: number,
+    durationMs: number,
+    maxDistance: number = 10,
+    maxDurationMs: number = 500,
+): boolean {
+    return distance <= maxDistance && durationMs <= maxDurationMs;
+}
+
+/**
  * 配列をランダムにシャッフルして返却
  * @param _array
  */
