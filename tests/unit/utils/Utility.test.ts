@@ -256,10 +256,21 @@ describe("Utility Functions", () => {
             expect(calculateObstacleTiming(1, 2, 90, false)).toBe(63); // floor(90/3*2)+3
         });
 
-        it("should not depend on typesCount or index when isFirstAppearance is true", () => {
+        it("should return the same 23s regardless of typesCount or index, as long as the equal-split value exceeds 23", () => {
             expect(calculateObstacleTiming(0, 1, 60, true)).toBe(
                 calculateObstacleTiming(3, 5, 45, true),
             );
+        });
+
+        it("should clamp the first-appearance timing to the equal-split value on a short stage (gameTimeSec=20)", () => {
+            // 23秒はgameTimeSecを考慮しない固定値のため、stageTime < 23の
+            // ステージでは等分+3秒の式にクランプする(お邪魔が一切出現しない
+            // 静かな不具合を防ぐ)。20秒ステージ・1種構成なら
+            // floor(20/2*1)+3 = 13秒 となり、23にはならない
+            const timing = calculateObstacleTiming(0, 1, 20, true);
+            expect(timing).not.toBe(23);
+            expect(timing).toBe(13);
+            expect(timing).toBeLessThan(20);
         });
     });
 });

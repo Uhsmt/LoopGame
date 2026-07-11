@@ -64,6 +64,14 @@ export function shuffleArray<T>(array: T[]): T[] {
  * お邪魔オブジェクトの出現タイミング(秒)を計算する。
  * 初登場ステージ(isFirstAppearance)は教習目的で固定23秒、
  * それ以外はステージ時間を種類数+1で等分したタイミング+3秒。
+ * ただし固定23秒は gameTimeSec を考慮しない値のため、23秒未満の短いステージ
+ * (現行configには存在しないが将来追加された場合に備えて)では等分+3秒の式に
+ * フォールバックするようクランプする。これを怠ると、出現時刻が
+ * ステージ終了までに一度も訪れず(spawnObstaclesIfNeededのtiming.time >
+ * nowSecが常に真のまま)お邪魔が一切出現しない静かな不具合になる。
+ * なお、現行config(初登場ステージは常にobstacles 1種のみ)では23秒と
+ * 花の出現タイミング(15/30/45秒)が衝突しないが、これはconfigの値に
+ * 依存した性質であり、本関数の仕様として保証されたものではない。
  * @param index obstacles配列内でのインデックス
  * @param typesCount そのステージのお邪魔の種類数
  * @param gameTimeSec ステージ時間(秒)
@@ -76,8 +84,13 @@ export function calculateObstacleTiming(
     gameTimeSec: number,
     isFirstAppearance: boolean,
 ): number {
+    const equalSplitTiming =
+        Math.floor((gameTimeSec / (typesCount + 1)) * (index + 1)) + 3;
     if (isFirstAppearance) {
-        return Const.FIRST_APPEARANCE_OBSTACLE_TIME_SEC;
+        return Math.min(
+            Const.FIRST_APPEARANCE_OBSTACLE_TIME_SEC,
+            equalSplitTiming,
+        );
     }
-    return Math.floor((gameTimeSec / (typesCount + 1)) * (index + 1)) + 3;
+    return equalSplitTiming;
 }
