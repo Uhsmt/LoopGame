@@ -63,7 +63,7 @@ export class BonusStageEffect extends PIXI.Container {
                 fontWeight: isJa
                     ? Const.FONT_JAPANESE_BOLD
                     : Const.FONT_ENGLISH_BOLD,
-                fontSize: 40,
+                fontSize: 33,
                 fill: fontColor,
                 align: "center",
             }),

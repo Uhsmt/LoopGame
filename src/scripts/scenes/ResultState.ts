@@ -250,9 +250,9 @@ export class ResultState extends StateBase {
         // スコアの紙はスライドやフェードではなく、パッと非表示にする
         this.stickySprite.visible = false;
 
-        // だんだん暗くなる(夜へ)。従来の2倍(約4秒)かけてゆっくり切り替える
+        // だんだん暗くなる(夜へ)。約3.2秒かけてゆっくり切り替える
         if (this.nightBackground) {
-            await this.fadeIn(this.nightBackground, 0.004);
+            await this.fadeIn(this.nightBackground, 0.005);
         }
 
         // 暗転が完了したら、蝶の退場(振り付けの完了)は待たずにボーナスへ
