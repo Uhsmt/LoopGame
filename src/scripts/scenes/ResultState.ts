@@ -13,8 +13,14 @@ import { LineDrawer } from "../components/LineDrawer";
 import { AudioManager } from "../utils/AudioManager";
 import { saveResult } from "../utils/ScoreStorage";
 import { t, getLang } from "../utils/Language";
+import { DreamFlightPath } from "../utils/DreamFlightPath";
 
 export class ResultState extends StateBase {
+    // 夢に誘う蝶が出現する位置(画面中心からのオフセット、px)。
+    // 軌道の形状そのもの(円の半径・速さ・退場のなじませ方など)は
+    // DreamFlightPath側に集約している
+    private static readonly DREAM_SPAWN_RADIUS = 15;
+
     private stageInfo: StageInformation;
     private messages: Message[] = [];
     private messageButterflies: Butterfly[] = [];
@@ -36,8 +42,13 @@ export class ResultState extends StateBase {
     private readonly isWakingDream: boolean;
     /** 暗転/明転に使う夜背景(夢の演出があるときだけ用意する) */
     private nightBackground?: PIXI.Sprite;
-    /** リザルト画面をふらふら飛ぶスペシャル蝶(夢に入るときだけ) */
+    /** リザルト画面で振り付けモーションを行うスペシャル蝶(夢に入るときだけ) */
     private dreamButterfly?: SpecialButterfly;
+    /**
+     * 夢に誘う蝶の振り付け(出現→円→退場)が画面外まで完了したら解決する
+     * Promise。生成と同時に自走を始め、リザルト表示中もずっと進行する
+     */
+    private dreamFlightDone?: Promise<void>;
 
     constructor(
         manager: GameStateManager,
@@ -84,7 +95,12 @@ export class ResultState extends StateBase {
         // frame
         this.addFrameGraphic();
 
-        // 夢に入るリザルトでは、スペシャル蝶が画面をふらふら飛んでいる
+        // 夢に入るリザルトでは、スペシャル蝶が「画面のど真ん中あたりに現れる
+        // →軽く円を描く→そのまま画面外へ」という振り付けモーションを行う
+        // (ランダムな徘徊はしない)。update()側の壁バウンド徘徊(isFlying)は
+        // 使わず、専用の振り付け(startDreamFlightChoreography)で動かすため、
+        // isFlying は false のままにする。振り付けは生成と同時に自走を始め、
+        // リザルト表示中もずっと進行する
         if (this.isEnteringDream) {
             const special = new SpecialButterfly(
                 this.stageInfo.butterflyColors[0],
@@ -93,19 +109,27 @@ export class ResultState extends StateBase {
                     y: this.manager.app.screen.height,
                 },
             );
-            special.setRandomInitialPoistion(
-                this.manager.app.screen.width,
-                this.manager.app.screen.height,
-            );
+            special.x =
+                this.manager.app.screen.width / 2 +
+                ResultState.DREAM_SPAWN_RADIUS;
+            special.y = this.manager.app.screen.height / 2;
             special.appear(false);
             special.isFlapping = true;
-            special.isFlying = true;
+            special.isFlying = false;
             this.addChildBelowFrame(special);
             this.dreamButterfly = special;
+            this.dreamFlightDone = this.startDreamFlightChoreography(special);
         }
     }
 
     async onEnter(): Promise<void> {
+        // 夢から覚める(ボーナスのリザルト)は、明転(夜→昼)をスコア表示の
+        // 完了を待たずに、ほぼ同時に始める(明転は裏で進み、あとで待ち合わせる)
+        const brightenPromise =
+            this.isWakingDream && this.nightBackground
+                ? this.fadeOut(this.nightBackground, 0.008)
+                : Promise.resolve();
+
         // disp result
         await this.displayStageResult();
 
@@ -159,11 +183,9 @@ export class ResultState extends StateBase {
         );
 
         if (this.stageInfo.isClear) {
-            // 夢から覚める: ボーナスのリザルトは夜のまま見せ、
-            // ここでじわじわ明るくして昼へ戻してから通常ステージへ遷移する
-            if (this.isWakingDream && this.nightBackground) {
-                await this.fadeOut(this.nightBackground, 0.008);
-            }
+            // 夢から覚める: 明転はonEnterの冒頭で開始済み(スコア表示と
+            // ほぼ同時進行)なので、ここでは完了を待ち合わせるだけ
+            await brightenPromise;
             this.stageInfo.next();
             this.manager.setState(
                 new GameplayState(this.manager, this.stageInfo),
@@ -251,67 +273,26 @@ export class ResultState extends StateBase {
     }
 
     /**
-     * 夢へ誘うスペシャル蝶を、素早くふらふらと蛇行させながら画面外まで
-     * 飛ばして消す。フェードで消すのではなく「実際に飛んで出て行った」感を
-     * 優先するため、直線移動(slideY)ではなく、進行方向に対して垂直に
-     * サインカーブで揺れながら画面の外まで移動させる。
+     * 夢に誘うスペシャル蝶の振り付けモーションを開始する。
+     * 「画面中央あたりに現れる → 軽く円を描く(だいたい1周) → そのまま
+     * 同じ速さで画面外へ抜ける」という軌道の計算自体は DreamFlightPath
+     * (PIXI非依存の純粋なステッパー)に任せ、ここでは毎フレームその結果を
+     * butterflyの座標へ反映するだけにする。画面外まで抜けたら解決する。
+     * 生成と同時に自走を始め、リザルト表示中もずっと進行する
+     * (delta駆動、専用Tickerで動く)。
      */
-    private async flyAwayDreamButterfly(): Promise<void> {
-        const butterfly = this.dreamButterfly;
-        if (!butterfly) return;
-
-        await this.flutterOffScreen(butterfly);
-
-        if (!butterfly.destroyed) {
-            this.container.removeChild(butterfly);
-            butterfly.delete();
-        }
-        this.dreamButterfly = undefined;
-    }
-
-    /**
-     * 指定した蝶を、画面中心から現在位置への方向(=最も近い外周へ抜ける
-     * 自然な脱出方向)へ、蛇行(サインカーブ)を加えながら素早く移動させる。
-     * 画面外まで抜けたら解決する。update()側の壁バウンド徘徊(isFlying)は
-     * 呼び出し前に止めておくこと。
-     */
-    private flutterOffScreen(butterfly: SpecialButterfly): Promise<void> {
-        butterfly.isFlying = false;
-
-        const screenWidth = this.manager.app.screen.width;
-        const screenHeight = this.manager.app.screen.height;
-        const centerX = screenWidth / 2;
-        const centerY = screenHeight / 2;
-
-        // 画面中心から現在位置への方向 = もっとも近い外周へ向かう自然な脱出方向
-        let dirX = butterfly.x - centerX;
-        let dirY = butterfly.y - centerY;
-        let startDistance = Math.hypot(dirX, dirY);
-        if (startDistance < 1) {
-            // ほぼ中心にいて方向が定まらない場合のフォールバック(上方向へ)
-            dirX = 0;
-            dirY = -1;
-            startDistance = 0;
-        } else {
-            dirX /= startDistance;
-            dirY /= startDistance;
-        }
-        // 進行方向に直交する軸(蛇行の揺れはこちらへ加える)
-        const perpX = -dirY;
-        const perpY = dirX;
-
-        // どの角度でも確実に画面外まで抜けられる半径(半対角線+余白)
-        const targetRadius = Math.hypot(screenWidth, screenHeight) / 2 + 150;
-        // 少なくともこれだけは動いて見えるように最低距離を確保する
-        const remaining = Math.max(targetRadius - startDistance, 200);
-
-        // 従来のslideY(約250px/秒)よりずっと速く駆け抜ける
-        const speedPerMs = 1.1;
-        const wobbleAmplitude = 50;
-        const wobbleFrequency = 0.007;
+    private startDreamFlightChoreography(
+        butterfly: SpecialButterfly,
+    ): Promise<void> {
+        const path = new DreamFlightPath({
+            centerX: this.manager.app.screen.width / 2,
+            centerY: this.manager.app.screen.height / 2,
+            screenWidth: this.manager.app.screen.width,
+            screenHeight: this.manager.app.screen.height,
+            spawnRadius: ResultState.DREAM_SPAWN_RADIUS,
+        });
 
         return new Promise((resolve) => {
-            let traveled = 0;
             const ticker = new PIXI.Ticker();
             ticker.add(() => {
                 if (butterfly.destroyed) {
@@ -320,13 +301,10 @@ export class ResultState extends StateBase {
                     resolve();
                     return;
                 }
-                traveled += speedPerMs * ticker.deltaMS;
-                const wobble =
-                    Math.sin(traveled * wobbleFrequency) * wobbleAmplitude;
-                const radius = startDistance + traveled;
-                butterfly.x = centerX + dirX * radius + perpX * wobble;
-                butterfly.y = centerY + dirY * radius + perpY * wobble;
-                if (traveled >= remaining) {
+                path.step(ticker.deltaMS);
+                butterfly.x = path.x;
+                butterfly.y = path.y;
+                if (path.done) {
                     ticker.stop();
                     ticker.destroy();
                     resolve();
@@ -336,14 +314,34 @@ export class ResultState extends StateBase {
         });
     }
 
+    /**
+     * 夢へ誘うスペシャル蝶が、振り付けモーション(円→退場)を経て
+     * 画面外まで抜けきるのを待ち、消す。フェードでは消さず、
+     * 「円を描いていた蝶がそのままどこかへ行ってしまった」ように、
+     * 実際に画面外まで移動させたことで見えなくする。
+     */
+    private async flyAwayDreamButterfly(): Promise<void> {
+        const butterfly = this.dreamButterfly;
+        if (!butterfly || !this.dreamFlightDone) return;
+
+        await this.dreamFlightDone;
+
+        if (!butterfly.destroyed) {
+            this.container.removeChild(butterfly);
+            butterfly.delete();
+        }
+        this.dreamButterfly = undefined;
+        this.dreamFlightDone = undefined;
+    }
+
     update(delta: number): void {
         this.messageButterflies.forEach((butterfly) => {
             butterfly.update(delta, []);
         });
-        // 夢に誘うスペシャル蝶を飛ばす。飛び去る間(isFlying=false)は
-        // flutterOffScreen側が位置を動かすが、羽ばたきアニメは
-        // update()(内部のflap)に任せ続ける
         if (this.dreamButterfly) {
+            // isFlying=falseなのでButterfly.update内のfly()は何もしない。
+            // 羽ばたきアニメ(flap())だけをここに任せる。位置は
+            // startDreamFlightChoreographyの専用Tickerが動かす
             this.dreamButterfly.update(delta, []);
         }
     }

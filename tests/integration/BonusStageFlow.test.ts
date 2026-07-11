@@ -409,7 +409,7 @@ describe("Bonus (dream) stage flow", () => {
     });
 
     describe("entering the dream: special-butterfly result darkens, then leads into the bonus", () => {
-        it("keeps the special butterfly fluttering, fades to night, then starts the bonus stage", async () => {
+        it("gives the special butterfly a choreographed flight (not the wander-based fly()), fades to night, then starts the bonus stage", async () => {
             const stageInfo = new StageInformation();
             // スペシャル蝶を捕まえてクリアした通常ステージのリザルト
             stageInfo.captureCount = stageInfo.needCount;
@@ -423,10 +423,13 @@ describe("Bonus (dream) stage flow", () => {
             const state = new ResultState(manager, stageInfo, true);
             const internal = state as any;
 
-            // リザルト中はスペシャル蝶がふらふら飛んでいる
+            // リザルト中はスペシャル蝶が振り付けモーション(円→退場)で動く。
+            // 位置は専用の DreamFlightPath が動かすため、Butterfly.fly()側の
+            // 壁バウンド徘徊(isFlying)は使わない
             expect(internal.dreamButterfly).toBeDefined();
-            expect(internal.dreamButterfly.isFlying).toBe(true);
-            // 退場前の位置を控えておく(退場後、実際に画面外まで移動したことを見る)
+            expect(internal.dreamButterfly.isFlying).toBe(false);
+            // 退場後に画面外へ実際に移動したことを見るため、同じ参照を保持しておく
+            // (dreamButterflyフィールド自体はクリーンアップ時にundefinedへ戻る)
             const dreamButterfly = internal.dreamButterfly as {
                 x: number;
                 y: number;
