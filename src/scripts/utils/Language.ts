@@ -103,7 +103,7 @@ const CATALOG = {
         en: "Draw a loop to capture butterflies",
     },
     "rule.p1.morePoints": {
-        ja: "おおいほど　たくさんてん",
+        ja: "おおいほど　こうとくてん",
         en: "More butterflies, more points",
     },
     "rule.p1.beforeSunset": {
@@ -112,19 +112,19 @@ const CATALOG = {
     },
     "rule.title.combinations": { ja: "くみあわせ", en: "Combinations" },
     "rule.p2.sameColor": {
-        ja: "おなじいろ 2ひきいじょう…OK",
+        ja: "おなじいろ 2ひきいじょう",
         en: "Same color 2 or more: OK",
     },
     "rule.p2.eachDifferent": {
-        ja: "ちがういろを1ひきずつ　3ひきいじょう…OK",
+        ja: "ちがういろ1ひきずつ　3ひきいじょう",
         en: "Each different color 3 or more: OK",
     },
     "rule.p2.onlyOne": {
-        ja: "1ひきだけ…いろをかえる",
+        ja: "1ひきだけはいろをかえる",
         en: "Only one butterfly: Change color",
     },
     "rule.p2.other": {
-        ja: "それいがい…だめループ",
+        ja: "それいがいはだめループ",
         en: "Other combinations: Bad Loop",
     },
     "rule.title.tryLoop": {
