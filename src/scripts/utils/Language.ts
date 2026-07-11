@@ -30,7 +30,7 @@ const CATALOG = {
 
     // --- ヒント(StartState) ---
     "hint.drawLoop": {
-        ja: "くりっく じゃなくて せんで かこんでね！",
+        ja: "ループして！",
         en: "Draw a loop around it!",
     },
 
