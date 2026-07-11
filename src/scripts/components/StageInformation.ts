@@ -142,6 +142,35 @@ export class StageInformation {
         this.bonusFlag = false;
     }
 
+    /**
+     * 現在のステージが、指定したお邪魔オブジェクトの種類の「初登場ステージ」かを判定する。
+     * 「初登場」はレベル番号のハードコードではなく、stage-configから動的に算出する:
+     * その種類をobstaclesに含む最小のlevelと現在のlevelが一致する場合にtrue。
+     * エクストラ帯(本編最終レベルを超える生成ステージ)はconfigs配列に実体が
+     * 存在しないため、必ずfalseになる(本編で全種登場済みという設計と整合)。
+     */
+    isFirstAppearanceStage(type: string): boolean {
+        const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
+        return (
+            StageInformation.findFirstAppearanceLevel(configs, type) ===
+            this.level
+        );
+    }
+
+    private static findFirstAppearanceLevel(
+        configs: StageConfig[],
+        type: string,
+    ): number | undefined {
+        return configs.reduce<number | undefined>((minLevel, config) => {
+            if (!config.obstacles?.includes(type)) {
+                return minLevel;
+            }
+            return minLevel === undefined
+                ? config.level
+                : Math.min(minLevel, config.level);
+        }, undefined);
+    }
+
     bonusStage(): void {
         this.bonusFlag = true;
         this.captureCount = 0;

@@ -225,6 +225,59 @@ describe("StageInformation", () => {
         });
     });
 
+    describe("isFirstAppearanceStage", () => {
+        it("should be true for catapy at Lv9 (its first stage-config appearance)", () => {
+            const si = new StageInformation();
+            while (si.level < 9) {
+                si.next();
+            }
+            expect(si.level).toBe(9);
+            expect(si.isFirstAppearanceStage("catapy")).toBe(true);
+        });
+
+        it("should be true for bee at Lv11 and spider at Lv13 (their first appearances)", () => {
+            const si = new StageInformation();
+            while (si.level < 11) {
+                si.next();
+            }
+            expect(si.isFirstAppearanceStage("bee")).toBe(true);
+
+            while (si.level < 13) {
+                si.next();
+            }
+            expect(si.isFirstAppearanceStage("spider")).toBe(true);
+        });
+
+        it("should be false for catapy at Lv12, even though catapy is present again", () => {
+            const si = new StageInformation();
+            while (si.level < 12) {
+                si.next();
+            }
+            expect(si.obstacles).toContain("catapy");
+            expect(si.isFirstAppearanceStage("catapy")).toBe(false);
+        });
+
+        it("should be false for every obstacle type in the extra band (Lv21+)", () => {
+            const si = new StageInformation();
+            while (si.level < 21) {
+                si.next();
+            }
+            expect(si.level).toBe(21);
+            expect(si.obstacles).toEqual(["catapy", "bee", "spider"]);
+            expect(si.isFirstAppearanceStage("catapy")).toBe(false);
+            expect(si.isFirstAppearanceStage("bee")).toBe(false);
+            expect(si.isFirstAppearanceStage("spider")).toBe(false);
+        });
+
+        it("should be false for a type not present in the stage's obstacles at all", () => {
+            const si = new StageInformation();
+            while (si.level < 9) {
+                si.next();
+            }
+            expect(si.isFirstAppearanceStage("bee")).toBe(false);
+        });
+    });
+
     describe("calcScore", () => {
         it("should mark clear and add bonus when captureCount exceeds needCount", () => {
             const si = new StageInformation();

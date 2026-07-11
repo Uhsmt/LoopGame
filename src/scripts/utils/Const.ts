@@ -42,6 +42,9 @@ export const AVOID_PENCIL_EFFECT_TIME_MS = 6000;
 export const LINE_SHORTEN_COLOR = 0xff0000;
 // 鉛筆から逃げるときの速さ(px/16ms、小蝶と同じ。サイズによらず共通)
 export const AVOID_PENCIL_SPEED = 0.6;
+// その種類のお邪魔オブジェクトが初めて登場するステージでの出現タイミング(秒)
+// 教習ステージとして機能させるため、通常の等分割+3秒より早く出す
+export const FIRST_APPEARANCE_OBSTACLE_TIME_SEC = 23;
 
 export const seSrcs = [
     { alias: "se_switch", src: `${BASE_URL}assets/sounds/se_switch.m4a` },

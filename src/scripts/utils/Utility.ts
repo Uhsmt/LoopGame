@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import * as Const from "./Const";
 
 /**
  * 範囲内のランダム整数を返す
@@ -57,4 +58,26 @@ export function shuffleArray<T>(array: T[]): T[] {
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
+}
+
+/**
+ * お邪魔オブジェクトの出現タイミング(秒)を計算する。
+ * 初登場ステージ(isFirstAppearance)は教習目的で固定23秒、
+ * それ以外はステージ時間を種類数+1で等分したタイミング+3秒。
+ * @param index obstacles配列内でのインデックス
+ * @param typesCount そのステージのお邪魔の種類数
+ * @param gameTimeSec ステージ時間(秒)
+ * @param isFirstAppearance その種類が初めて登場するステージか
+ * @returns number 出現タイミング(秒)
+ */
+export function calculateObstacleTiming(
+    index: number,
+    typesCount: number,
+    gameTimeSec: number,
+    isFirstAppearance: boolean,
+): number {
+    if (isFirstAppearance) {
+        return Const.FIRST_APPEARANCE_OBSTACLE_TIME_SEC;
+    }
+    return Math.floor((gameTimeSec / (typesCount + 1)) * (index + 1)) + 3;
 }
