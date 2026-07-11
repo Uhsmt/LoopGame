@@ -28,6 +28,8 @@ vi.mock("pixi.js", () => {
         interactive = false;
         destroyed = false;
         visible = true;
+        sortableChildren = false;
+        zIndex = 0;
         width = 100;
         height = 20;
         anchor = { set: vi.fn() };
@@ -233,6 +235,7 @@ vi.mock("../../src/scripts/components/SpecialButterfly", () => {
         destroyed = false;
         isFlapping = false;
         isFlying = false;
+        zIndex = 0;
         constructor(
             public color?: number,
             public screenSize?: unknown,
@@ -429,6 +432,10 @@ describe("Bonus (dream) stage flow", () => {
             // 壁バウンド徘徊(isFlying)は使わない
             expect(internal.dreamButterfly).toBeDefined();
             expect(internal.dreamButterfly.isFlying).toBe(false);
+            // スコアの紙・テキストより手前(最前面)に描画されるよう、
+            // コンテナのzIndexソートが有効で、蝶に高いzIndexが付いている
+            expect(internal.container.sortableChildren).toBe(true);
+            expect(internal.dreamButterfly.zIndex).toBeGreaterThan(0);
             // クリーンアップ後の状態を見るため、同じ参照を保持しておく
             // (dreamButterflyフィールド自体はクリーンアップ時にundefinedへ戻る)
             const dreamButterfly = internal.dreamButterfly as {

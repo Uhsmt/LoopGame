@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
     DreamFlightPath,
     DREAM_FLIGHT_DEFAULT_SPEED_PER_MS,
+    type DreamFlightPathOptions,
 } from "../../../src/scripts/utils/DreamFlightPath";
 
 /**
@@ -23,7 +24,14 @@ const CENTER_X = SCREEN_WIDTH / 2;
 const CENTER_Y = SCREEN_HEIGHT / 2;
 const DT = 16; // ms、60fps相当
 
-function createPath(overrides: Partial<Record<string, number>> = {}) {
+function createPath(
+    overrides: Partial<
+        Omit<
+            DreamFlightPathOptions,
+            "centerX" | "centerY" | "screenWidth" | "screenHeight"
+        >
+    > = {},
+) {
     return new DreamFlightPath({
         centerX: CENTER_X,
         centerY: CENTER_Y,
@@ -142,6 +150,71 @@ describe("DreamFlightPath", () => {
             path.y < 0 ||
             path.y > SCREEN_HEIGHT;
         expect(isOffScreen).toBe(true);
+    });
+
+    it("exits toward the fixed upper-right direction, not the nearest edge", () => {
+        const path = createPath();
+        const frames = run(path);
+
+        const exitStart = frames.find((f) => f.mode === "exiting");
+        const final = frames[frames.length - 1];
+        expect(exitStart).toBeDefined();
+
+        // 退場後は右へ、そして上へ動いている(x座標系は右が+、y座標系は下が+)
+        expect(final.x).toBeGreaterThan(exitStart!.x);
+        expect(final.y).toBeLessThan(exitStart!.y);
+
+        // 退場全体の正味の移動方向が右上45度から大きくは外れていない
+        // (円の接線からのブレンドで、直進とほぼ同じ向きに収束していること)
+        const dx = final.x - exitStart!.x;
+        const dy = final.y - exitStart!.y;
+        const angleFromUpRight = Math.abs(
+            Math.atan2(dy, dx) - Math.atan2(-1, 1),
+        );
+        expect(angleFromUpRight).toBeLessThan((30 * Math.PI) / 180);
+    });
+
+    it("connects the circle's tangent to the fixed exit direction smoothly (no sharp turn at the growing/holding/exiting boundaries)", () => {
+        const path = createPath();
+        const frames = run(path);
+
+        // モード境界の前後1フレームの旋回角も、全体の品質基準
+        // (1フレームあたり15度未満)を超えないことを確認する
+        let maxTurnAtBoundary = 0;
+        for (let i = 2; i < frames.length; i++) {
+            if (frames[i].mode === frames[i - 1].mode) continue;
+            const prevDx = frames[i - 1].x - frames[i - 2].x;
+            const prevDy = frames[i - 1].y - frames[i - 2].y;
+            const dx = frames[i].x - frames[i - 1].x;
+            const dy = frames[i].y - frames[i - 1].y;
+            const prevLen = Math.hypot(prevDx, prevDy) || 1;
+            const len = Math.hypot(dx, dy) || 1;
+            const dot = Math.min(
+                1,
+                Math.max(
+                    -1,
+                    (prevDx / prevLen) * (dx / len) +
+                        (prevDy / prevLen) * (dy / len),
+                ),
+            );
+            const turnDeg = (Math.acos(dot) * 180) / Math.PI;
+            maxTurnAtBoundary = Math.max(maxTurnAtBoundary, turnDeg);
+        }
+        expect(maxTurnAtBoundary).toBeLessThan(15);
+    });
+
+    it("respects a custom exitDirection option (e.g. straight down)", () => {
+        const path = createPath({ exitDirection: { x: 0, y: 1 } });
+        const frames = run(path);
+
+        const exitStart = frames.find((f) => f.mode === "exiting");
+        const final = frames[frames.length - 1];
+        expect(exitStart).toBeDefined();
+
+        // 下方向を指定した場合は、右上に固定した既定値とは違い
+        // 下(yが増える方向)へ抜けていく
+        expect(final.y).toBeGreaterThan(exitStart!.y);
+        expect(final.y).toBeGreaterThan(SCREEN_HEIGHT);
     });
 
     it("reaches the same phase and stays off-screen regardless of frame step size (delta-driven)", () => {

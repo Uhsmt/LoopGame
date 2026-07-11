@@ -3,22 +3,23 @@
  * PIXIに依存しない純粋なステッパー。
  *
  * 「画面中央あたりに現れる → 軽く円を描く(だいたい1周) → そのまま同じ速さで
- * 画面外へ抜ける」という一連の動きを、進行方向を(接線方向, 半径方向)の
+ * 画面右上方向へ抜ける」という一連の動きを、進行方向を(接線方向, 目標方向)の
  * ブレンドとして毎フレーム計算することで作る。
  *
- * outwardness(0〜1)が「どれだけ半径方向(外向き)に進むか」を表す:
+ * outwardness(0〜1)が「どれだけ目標方向(退場方向)に進むか」を表す:
  * - 0 = 純粋な接線方向(真円)
- * - 1 = 純粋な半径方向(直進)
+ * - 1 = 純粋な目標方向(直進)
  * どのフェーズでも速さ(speedPerMs)は一定なので、速度そのものが変わって
  * 見えることはない(向きだけが滑らかに変化する)。
  *
- * - growing: 出現位置(中心付近)から円軌道の半径へ丸め込む。半径が目標半径に
- *   近づくほどoutwardnessを滑らかに0へ収束させるので、自然に純粋な円運動へ
- *   落ち着く
+ * - growing: 出現位置(中心付近)から円軌道の半径へ丸め込む。ここでの目標方向は
+ *   半径方向(中心から外向き)で、半径が目標半径に近づくほどoutwardnessを
+ *   滑らかに0へ収束させるので、自然に純粋な円運動へ落ち着く
  * - holding: outwardness=0の純粋な円運動を約1周ぶん続ける
- * - exiting: outwardnessを0から目標値へ滑らかに立ち上げていく。円の接線
- *   方向を保ったまま半径方向の成分を少しずつ足していくため、円→退場の
- *   繋ぎが唐突な方向転換にならず、螺旋を広げるように自然に画面外へ抜けていく
+ * - exiting: 目標方向を「画面右上」に固定した上で、outwardnessを0から
+ *   目標値へ滑らかに立ち上げていく。円の接線方向を保ったまま右上方向の
+ *   成分を少しずつ足していくため、円→退場の繋ぎが唐突な方向転換にならず、
+ *   自然に右上へ向きを変えながら画面外へ抜けていく
  *
  * ResultStateはPIXI.Tickerからdelta駆動でstep()を呼び、返る座標を
  * butterflyへ反映する。ロジックをここに切り出すことで、Tickerやモックに
@@ -54,6 +55,8 @@ export interface DreamFlightPathOptions {
     exitOutwardness?: number;
     /** 退場完了(画面外)と判定する余白(px) */
     exitScreenMargin?: number;
+    /** 退場方向(単位ベクトルでなくてよい。内部で正規化する)。既定は右上 */
+    exitDirection?: { x: number; y: number };
 }
 
 /** small蝶(Butterfly.ts の xDiretion/yDiretion = 0.6)を参照した対角移動
@@ -74,6 +77,8 @@ export class DreamFlightPath {
     private readonly exitRampDistance: number;
     private readonly exitOutwardness: number;
     private readonly exitScreenMargin: number;
+    private readonly exitDirX: number;
+    private readonly exitDirY: number;
 
     private _mode: DreamFlightMode = "growing";
     private holdLapProgress = 0;
@@ -95,6 +100,12 @@ export class DreamFlightPath {
         this.exitRampDistance = options.exitRampDistance ?? 150;
         this.exitOutwardness = options.exitOutwardness ?? 0.95;
         this.exitScreenMargin = options.exitScreenMargin ?? 90;
+
+        // 退場方向。既定は画面右上(x:+1, y:-1)。内部で単位ベクトルへ正規化する
+        const exitDirection = options.exitDirection ?? { x: 1, y: -1 };
+        const exitDirLen = Math.hypot(exitDirection.x, exitDirection.y) || 1;
+        this.exitDirX = exitDirection.x / exitDirLen;
+        this.exitDirY = exitDirection.y / exitDirLen;
 
         const spawnRadius = options.spawnRadius ?? 15;
         this._x = this.centerX + spawnRadius;
@@ -131,6 +142,11 @@ export class DreamFlightPath {
         const tangentX = -radialY;
         const tangentY = radialX;
 
+        // outwardnessでブレンドする「目標方向」。growing/holdingは半径方向
+        // (中心から外向き)、exitingは固定の退場方向(既定: 右上)
+        let targetX = radialX;
+        let targetY = radialY;
+
         let outwardness: number;
         if (this._mode === "growing") {
             const progress = Math.min(1, radius / this.loopRadius);
@@ -149,6 +165,8 @@ export class DreamFlightPath {
                 this.exitDistance = 0;
             }
         } else {
+            targetX = this.exitDirX;
+            targetY = this.exitDirY;
             const progress = smoothstep(
                 0,
                 this.exitRampDistance,
@@ -158,8 +176,8 @@ export class DreamFlightPath {
             this.exitDistance += this.speedPerMs * deltaMS;
         }
 
-        let dirX = tangentX * (1 - outwardness) + radialX * outwardness;
-        let dirY = tangentY * (1 - outwardness) + radialY * outwardness;
+        let dirX = tangentX * (1 - outwardness) + targetX * outwardness;
+        let dirY = tangentY * (1 - outwardness) + targetY * outwardness;
         const dirLen = Math.hypot(dirX, dirY) || 1;
         dirX /= dirLen;
         dirY /= dirLen;

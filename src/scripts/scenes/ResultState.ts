@@ -57,6 +57,11 @@ export class ResultState extends StateBase {
         this.isEnteringDream = stageInfo.isClear && isGotBonusButterfly;
         this.isWakingDream = stageInfo.bonusFlag;
 
+        // 夢に誘う蝶をスコアの紙・テキストより常に手前(最前面)に描画するため、
+        // zIndexでの並べ替えを有効にしておく(スコアテキストはdisplayStageResult
+        // 内で後から追加されるが、addChildの順序に関係なく前面に保てる)
+        this.container.sortableChildren = true;
+
         // background(昼)
         const backgroundSprite = new PIXI.Sprite(
             PIXI.Texture.from("background"),
@@ -111,6 +116,8 @@ export class ResultState extends StateBase {
             special.appear(false);
             special.isFlapping = true;
             special.isFlying = false;
+            // スコアの紙・テキストより常に手前に見えるよう最前面に固定する
+            special.zIndex = 1000;
             this.addChildBelowFrame(special);
             this.dreamButterfly = special;
             this.startDreamFlightChoreography(special);
