@@ -44,11 +44,6 @@ export class ResultState extends StateBase {
     private nightBackground?: PIXI.Sprite;
     /** リザルト画面で振り付けモーションを行うスペシャル蝶(夢に入るときだけ) */
     private dreamButterfly?: SpecialButterfly;
-    /**
-     * 夢に誘う蝶の振り付け(出現→円→退場)が画面外まで完了したら解決する
-     * Promise。生成と同時に自走を始め、リザルト表示中もずっと進行する
-     */
-    private dreamFlightDone?: Promise<void>;
 
     constructor(
         manager: GameStateManager,
@@ -118,7 +113,7 @@ export class ResultState extends StateBase {
             special.isFlying = false;
             this.addChildBelowFrame(special);
             this.dreamButterfly = special;
-            this.dreamFlightDone = this.startDreamFlightChoreography(special);
+            this.startDreamFlightChoreography(special);
         }
     }
 
@@ -236,8 +231,11 @@ export class ResultState extends StateBase {
     }
 
     /**
-     * 夢に入る演出: リザルト表示のあと、画面がだんだん暗くなって夜へ向かい、
-     * 誘ってくれたスペシャル蝶が画面外へ飛び去ってから、ボーナス(夢)へ入る。
+     * 夢に入る演出: リザルト表示のあと、画面がだんだん暗くなって夜へ向かう。
+     * 遷移のゲートは暗転完了のみ(オーナー了承済み)で、誘ってくれた
+     * スペシャル蝶の振り付け(円→退場)完了は待たない。画面切り替えで
+     * 蝶が唐突に消えて見えないよう、暗転が終わったら短くフェードアウト
+     * させてからボーナス(夢)へ入る。
      */
     private async enterDreamSequence(): Promise<void> {
         // 少し余韻をおく(スペシャル蝶はこの間もふらふら飛んでいる)
@@ -249,24 +247,18 @@ export class ResultState extends StateBase {
         // 二重再生にはならない
         AudioManager.shared.playBgm(Const.bgmSrcs.bonus);
 
-        // だんだん暗くなる(夜へ)。従来の2倍(約4秒)かけてゆっくり切り替える。
-        // 同時にリザルトの紙は、入場アニメ(下からスライドイン)の逆再生として
-        // 下へスライドアウトさせる(フェードでは消さない)
-        await Promise.all([
-            this.nightBackground
-                ? this.fadeIn(this.nightBackground, 0.004)
-                : Promise.resolve(),
-            this.slideY(
-                this.stickySprite,
-                this.manager.app.screen.height + this.stickySprite.height,
-                0.5,
-            ),
-        ]);
+        // スコアの紙はスライドやフェードではなく、パッと非表示にする
+        this.stickySprite.visible = false;
 
-        // スペシャル蝶が画面外へ飛び去る
-        await this.flyAwayDreamButterfly();
+        // だんだん暗くなる(夜へ)。従来の2倍(約4秒)かけてゆっくり切り替える
+        if (this.nightBackground) {
+            await this.fadeIn(this.nightBackground, 0.004);
+        }
 
-        await this.wait(300);
+        // 暗転が完了したら、蝶の退場(振り付けの完了)は待たずにボーナスへ
+        // 進む。ただし画面切り替えで蝶が唐突に消えて見えないよう、
+        // 遷移直前に短くフェードアウトしてから消す
+        await this.fadeOutDreamButterfly();
 
         this.stageInfo.bonusStage();
         this.manager.setState(new GameplayState(this.manager, this.stageInfo));
@@ -277,13 +269,16 @@ export class ResultState extends StateBase {
      * 「画面中央あたりに現れる → 軽く円を描く(だいたい1周) → そのまま
      * 同じ速さで画面外へ抜ける」という軌道の計算自体は DreamFlightPath
      * (PIXI非依存の純粋なステッパー)に任せ、ここでは毎フレームその結果を
-     * butterflyの座標へ反映するだけにする。画面外まで抜けたら解決する。
-     * 生成と同時に自走を始め、リザルト表示中もずっと進行する
-     * (delta駆動、専用Tickerで動く)。
+     * butterflyの座標へ反映するだけにする。生成と同時に自走を始め、
+     * リザルト表示中もずっと進行する(delta駆動、専用Tickerで動く)。
+     *
+     * 遷移(enterDreamSequence)は暗転完了だけをゲートにしており、この
+     * 振り付けの完了(画面外まで抜けきること)は待たない。そのため
+     * butterfly.destroyed(=fadeOutDreamButterflyによる破棄)か、
+     * まれに振り付け自体が最後まで完了した場合のどちらかでTickerを
+     * 止める(自然完了は安全弁で、通常はdestroyedの方が先に来る)。
      */
-    private startDreamFlightChoreography(
-        butterfly: SpecialButterfly,
-    ): Promise<void> {
+    private startDreamFlightChoreography(butterfly: SpecialButterfly): void {
         const path = new DreamFlightPath({
             centerX: this.manager.app.screen.width / 2,
             centerY: this.manager.app.screen.height / 2,
@@ -292,46 +287,42 @@ export class ResultState extends StateBase {
             spawnRadius: ResultState.DREAM_SPAWN_RADIUS,
         });
 
-        return new Promise((resolve) => {
-            const ticker = new PIXI.Ticker();
-            ticker.add(() => {
-                if (butterfly.destroyed) {
-                    ticker.stop();
-                    ticker.destroy();
-                    resolve();
-                    return;
-                }
-                path.step(ticker.deltaMS);
-                butterfly.x = path.x;
-                butterfly.y = path.y;
-                if (path.done) {
-                    ticker.stop();
-                    ticker.destroy();
-                    resolve();
-                }
-            });
-            ticker.start();
+        const ticker = new PIXI.Ticker();
+        ticker.add(() => {
+            if (butterfly.destroyed) {
+                ticker.stop();
+                ticker.destroy();
+                return;
+            }
+            path.step(ticker.deltaMS);
+            butterfly.x = path.x;
+            butterfly.y = path.y;
+            if (path.done) {
+                ticker.stop();
+                ticker.destroy();
+            }
         });
+        ticker.start();
     }
 
     /**
-     * 夢へ誘うスペシャル蝶が、振り付けモーション(円→退場)を経て
-     * 画面外まで抜けきるのを待ち、消す。フェードでは消さず、
-     * 「円を描いていた蝶がそのままどこかへ行ってしまった」ように、
-     * 実際に画面外まで移動させたことで見えなくする。
+     * 夢へ誘うスペシャル蝶を短くフェードアウトしてから消す。
+     * enterDreamSequenceは暗転完了だけをゲートに次のシーンへ進むため、
+     * 振り付け(円→退場)の途中で画面が切り替わり得る。画面切り替えで
+     * 蝶が唐突に消えて見えないよう、遷移直前にひと呼吸フェードさせておく
+     * (フェード中も振り付け自体は自然に動き続ける)。
      */
-    private async flyAwayDreamButterfly(): Promise<void> {
+    private async fadeOutDreamButterfly(): Promise<void> {
         const butterfly = this.dreamButterfly;
-        if (!butterfly || !this.dreamFlightDone) return;
+        if (!butterfly) return;
 
-        await this.dreamFlightDone;
+        await this.fadeOut(butterfly, 0.05);
 
         if (!butterfly.destroyed) {
             this.container.removeChild(butterfly);
             butterfly.delete();
         }
         this.dreamButterfly = undefined;
-        this.dreamFlightDone = undefined;
     }
 
     update(delta: number): void {

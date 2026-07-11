@@ -57,10 +57,10 @@ export interface DreamFlightPathOptions {
 }
 
 /** small蝶(Butterfly.ts の xDiretion/yDiretion = 0.6)を参照した対角移動
- * 相当の速さ(px/ms)。演出としてやや軽快さを持たせるため1.3倍にしているが、
+ * 相当の速さ(px/ms)。演出としてキビキビ感を持たせるため1.8倍にしているが、
  * 従来の退場(約1100px/秒)のような爆速には程遠い */
 export const DREAM_FLIGHT_DEFAULT_SPEED_PER_MS =
-    (Math.hypot(0.6, 0.6) / 16) * 1.3;
+    (Math.hypot(0.6, 0.6) / 16) * 1.8;
 
 export class DreamFlightPath {
     private readonly centerX: number;
