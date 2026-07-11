@@ -6,6 +6,7 @@ import {
     formatNumberWithCommas,
     getDistance,
     shuffleArray,
+    calculateObstacleTiming,
 } from "../../../src/scripts/utils/Utility";
 
 // Create a simple Point-like object for testing
@@ -225,6 +226,51 @@ describe("Utility Functions", () => {
             // Check that we get different arrangements (not all the same)
             const uniqueResults = new Set(results);
             expect(uniqueResults.size).toBeGreaterThan(1);
+        });
+    });
+
+    describe("calculateObstacleTiming()", () => {
+        it("should return the fixed 23 seconds for a first-appearance obstacle regardless of split math", () => {
+            expect(calculateObstacleTiming(0, 1, 60, true)).toBe(23);
+            expect(calculateObstacleTiming(2, 3, 60, true)).toBe(23);
+        });
+
+        it("should return the fixed timing that is earlier than the equal-split formula in a single-obstacle stage", () => {
+            // 現行configの初登場ステージ(Lv9/11/13)はいずれもobstacles 1種のみ。
+            // 等分式(60秒 ÷ 2 × 1 + 3 = 33秒)より23秒の方が早いことを保証する
+            const equalSplitTiming = calculateObstacleTiming(0, 1, 60, false);
+            expect(equalSplitTiming).toBe(33);
+
+            const firstAppearanceTiming = calculateObstacleTiming(
+                0,
+                1,
+                60,
+                true,
+            );
+            expect(firstAppearanceTiming).toBeLessThan(equalSplitTiming);
+        });
+
+        it("should follow the equal-split + 3s formula when not a first appearance", () => {
+            // 90秒を(種類数+1)で等分し、+3秒。花の出現タイミングとずらす仕様
+            expect(calculateObstacleTiming(0, 2, 90, false)).toBe(33); // floor(90/3*1)+3
+            expect(calculateObstacleTiming(1, 2, 90, false)).toBe(63); // floor(90/3*2)+3
+        });
+
+        it("should return the same 23s regardless of typesCount or index, as long as the equal-split value exceeds 23", () => {
+            expect(calculateObstacleTiming(0, 1, 60, true)).toBe(
+                calculateObstacleTiming(3, 5, 45, true),
+            );
+        });
+
+        it("should clamp the first-appearance timing to the equal-split value on a short stage (gameTimeSec=20)", () => {
+            // 23秒はgameTimeSecを考慮しない固定値のため、stageTime < 23の
+            // ステージでは等分+3秒の式にクランプする(お邪魔が一切出現しない
+            // 静かな不具合を防ぐ)。20秒ステージ・1種構成なら
+            // floor(20/2*1)+3 = 13秒 となり、23にはならない
+            const timing = calculateObstacleTiming(0, 1, 20, true);
+            expect(timing).not.toBe(23);
+            expect(timing).toBe(13);
+            expect(timing).toBeLessThan(20);
         });
     });
 });
