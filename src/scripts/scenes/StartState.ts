@@ -117,7 +117,7 @@ export class StartState extends StateBase {
         });
         this.hintMessage.anchor.set(0.5);
         this.hintMessage.x = app.screen.width / 2;
-        this.hintMessage.y = app.screen.height * 0.9;
+        this.hintMessage.y = app.screen.height * 0.78;
         this.hintMessage.alpha = 0;
         this.container.addChild(this.hintMessage);
 
