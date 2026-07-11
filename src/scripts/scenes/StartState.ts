@@ -71,10 +71,13 @@ export class StartState extends StateBase {
         this.container.addChild(this.ruleButton);
 
         // 言語切替トグル(押すと今と反対の言語に切り替わる)
+        // メインボタンより目立たないよう右下すみに配置する。
+        // ループで囲んで選択するボタンなので、判定円(hitAreaSize × scale)の
+        // 半径ぶん以上の余白を画面端(黒枠)との間に確保している。
         this.langButton = new Button(
             this.langLabel(),
-            app.screen.width / 2,
-            app.screen.height * 0.15,
+            app.screen.width * 0.92,
+            app.screen.height * 0.87,
         );
         this.langButton.scale.set(0.5);
         this.container.addChild(this.langButton);
