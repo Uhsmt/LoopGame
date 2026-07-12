@@ -76,7 +76,12 @@ vi.mock("../../../src/scripts/scenes/RuleState", () => ({
     RuleState: vi.fn(),
 }));
 
+vi.mock("../../../src/scripts/scenes/PracticeSelectState", () => ({
+    PracticeSelectState: vi.fn(),
+}));
+
 import { StartState } from "../../../src/scripts/scenes/StartState";
+import { PracticeSelectState } from "../../../src/scripts/scenes/PracticeSelectState";
 import {
     setLang,
     resetLangCache,
@@ -129,8 +134,10 @@ describe("StartState click hint", () => {
     let startState: StartState;
 
     // ボタンの中心座標(app.screen 800x600時のStartStateのレイアウト計算と一致させる)
-    const START_BUTTON = { x: 200, y: 390 };
-    const RULE_BUTTON = { x: 600, y: 390 };
+    // あそびかた(左: width/4)・スタート(中央: width/2)・れんしゅう(右: 3*width/4)
+    const RULE_BUTTON = { x: 200, y: 390 };
+    const START_BUTTON = { x: 400, y: 390 };
+    const PRACTICE_BUTTON = { x: 600, y: 390 };
     // 言語切替ボタンは画面右下すみ(app.screen比 0.92/0.87)に配置される
     const LANG_BUTTON = { x: 800 * 0.92, y: 600 * 0.87 };
     const FAR_AWAY = { x: 10, y: 10 };
@@ -229,6 +236,13 @@ describe("StartState click hint", () => {
         it("shows the hint message when the how-to-play button is clicked", () => {
             startState.onEnter();
             click(RULE_BUTTON);
+
+            expect((startState as any).hintMessage.alpha).toBe(1);
+        });
+
+        it("shows the hint message when the practice button is clicked", () => {
+            startState.onEnter();
+            click(PRACTICE_BUTTON);
 
             expect((startState as any).hintMessage.alpha).toBe(1);
         });
@@ -438,6 +452,68 @@ describe("StartState click hint", () => {
             startState.update(1000);
             // fade処理はalpha>0のときだけ発生するため、一度0以下になったら変化しない
             expect(hintMessage.alpha).toBe(alphaAfterFade);
+        });
+    });
+
+    describe("practice button", () => {
+        // ボタン中心の周囲(半径50px)を囲むループ。当たり判定円(半径40)の
+        // 全サンプル点を含むため、そのボタンだけがヒットする
+        const loopAround = (center: { x: number; y: number }) => ({
+            containsPoint: (p: { x: number; y: number }) =>
+                (p.x - center.x) ** 2 + (p.y - center.y) ** 2 <= 50 * 50,
+        });
+
+        it("exists and is labeled with the practice catalog text", () => {
+            const practiceButton = (startState as any).practiceButton;
+            expect(practiceButton).toBeDefined();
+            expect(practiceButton.buttonText.text).toBe(t("button.practice"));
+        });
+
+        it("refreshes its label when the language is toggled via the lang button", () => {
+            startState.onEnter();
+            const practiceButton = (startState as any).practiceButton;
+            expect(practiceButton.buttonText.text).toBe("れんしゅう");
+
+            (startState as any).lineDrawer.emit(
+                "loopAreaCompleted",
+                loopAround(LANG_BUTTON),
+            );
+
+            expect(practiceButton.buttonText.text).toBe("Practice");
+        });
+
+        it("transitions to PracticeSelectState when the practice button is loop-selected", async () => {
+            startState.onEnter();
+            // fadeOut/waitはPIXI.Tickerと実時間に依存するため、遷移確認用に即時解決に差し替える
+            (startState as any).fadeOut = vi.fn().mockResolvedValue(undefined);
+            (startState as any).wait = vi.fn().mockResolvedValue(undefined);
+
+            (startState as any).lineDrawer.emit(
+                "loopAreaCompleted",
+                loopAround(PRACTICE_BUTTON),
+            );
+
+            await vi.waitFor(() => {
+                expect(manager.setState).toHaveBeenCalledTimes(1);
+            });
+            expect(PracticeSelectState).toHaveBeenCalledWith(manager);
+            expect(manager.setState).toHaveBeenCalledWith(
+                expect.any(PracticeSelectState),
+            );
+        });
+
+        it("does not transition when the loop encloses empty space", async () => {
+            startState.onEnter();
+            (startState as any).fadeOut = vi.fn().mockResolvedValue(undefined);
+            (startState as any).wait = vi.fn().mockResolvedValue(undefined);
+
+            (startState as any).lineDrawer.emit(
+                "loopAreaCompleted",
+                loopAround(FAR_AWAY),
+            );
+
+            await Promise.resolve();
+            expect(manager.setState).not.toHaveBeenCalled();
         });
     });
 

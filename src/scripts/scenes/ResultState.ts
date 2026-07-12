@@ -116,20 +116,23 @@ export class ResultState extends StateBase {
         } else {
             // ゲームオーバーの場合はスタート画面に戻る
 
-            // 個人記録(ハイスコア・前回スコア)をlocalStorageに保存し、結果を表示する
-            const { isNewRecord, previousBest } = saveResult(
-                this.stageInfo.totalScore,
-            );
-            if (isNewRecord) {
-                AudioManager.shared.playSe("se_applause");
-                this.recordMessage = new Message(t("result.newRecord"), 24);
-            } else if (previousBest !== null) {
-                this.recordMessage = new Message(
-                    t("result.best", {
-                        score: Utility.formatNumberWithCommas(previousBest),
-                    }),
-                    20,
+            // プラクティスモードでは個人記録(ハイスコア・前回スコア)を保存しない
+            if (!this.stageInfo.isPractice) {
+                // 個人記録(ハイスコア・前回スコア)をlocalStorageに保存し、結果を表示する
+                const { isNewRecord, previousBest } = saveResult(
+                    this.stageInfo.totalScore,
                 );
+                if (isNewRecord) {
+                    AudioManager.shared.playSe("se_applause");
+                    this.recordMessage = new Message(t("result.newRecord"), 24);
+                } else if (previousBest !== null) {
+                    this.recordMessage = new Message(
+                        t("result.best", {
+                            score: Utility.formatNumberWithCommas(previousBest),
+                        }),
+                        20,
+                    );
+                }
             }
             if (this.recordMessage) {
                 this.recordMessage.anchor.set(0.5);

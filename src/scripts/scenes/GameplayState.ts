@@ -21,6 +21,7 @@ import { SpecialButterfly } from "../components/SpecialButterfly";
 import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
 import { t, getLang } from "../utils/Language";
+import { recordProgress } from "../utils/ScoreStorage";
 
 export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
@@ -60,6 +61,11 @@ export class GameplayState extends StateBase {
         super(manager);
 
         this.stageInfo = stageInfo;
+
+        // プラクティスモードでは進行状況(最高到達レベル・到達済みボーナス)を記録しない
+        if (!this.stageInfo.isPractice) {
+            recordProgress(this.stageInfo.level, this.stageInfo.bonusFlag);
+        }
 
         this.lineDrawer = new LineDrawer(
             this.manager.app,

@@ -25,6 +25,46 @@ describe("StageInformation", () => {
             expect(si.helpObjectNum).toBe(0);
             expect(si.obstacles).toEqual([]);
         });
+
+        it("should default isPractice to false", () => {
+            const si = new StageInformation();
+
+            expect(si.isPractice).toBe(false);
+        });
+
+        it("should accept a custom startLevel and load that level's config directly", () => {
+            const si = new StageInformation(5);
+
+            expect(si.level).toBe(5);
+            expect(si.needCount).toBe(12);
+            expect(si.stageButterflyCount).toBe(14);
+            expect(si.butterflySize).toBe("random");
+            expect(si.isButterflyColorChange).toBe(false);
+            expect(si.multipleButterflyRate).toBeCloseTo(0.1);
+            expect(si.maxMultipleRate).toBe(2);
+            expect(si.helpObjectNum).toBe(2);
+        });
+
+        it("should produce the same config for a custom startLevel as reaching it via next()", () => {
+            const viaNext = new StageInformation();
+            while (viaNext.level < 9) {
+                viaNext.next();
+            }
+
+            const viaStartLevel = new StageInformation(9);
+
+            expect(viaStartLevel.level).toBe(viaNext.level);
+            expect(viaStartLevel.needCount).toBe(viaNext.needCount);
+            expect(viaStartLevel.stageButterflyCount).toBe(
+                viaNext.stageButterflyCount,
+            );
+            expect(viaStartLevel.butterflySize).toBe(viaNext.butterflySize);
+            expect(viaStartLevel.isButterflyColorChange).toBe(
+                viaNext.isButterflyColorChange,
+            );
+            expect(viaStartLevel.obstacles).toEqual(viaNext.obstacles);
+            expect(viaStartLevel.helpObjectNum).toBe(viaNext.helpObjectNum);
+        });
     });
 
     describe("next", () => {

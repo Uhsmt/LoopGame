@@ -27,6 +27,15 @@ const CATALOG = {
     "button.back": { ja: "もどる", en: "Back" },
     "button.next": { ja: "つぎへ", en: "Next" },
     "button.backToMenu": { ja: "メニュー", en: "Menu" },
+    "button.practice": { ja: "れんしゅう", en: "Practice" },
+
+    // --- れんしゅうモード(PracticeSelectState) ---
+    "practice.title": { ja: "れんしゅうモード", en: "Practice Mode" },
+    "practice.bonusLabel": { ja: "ボーナス", en: "Bonus" },
+    "practice.empty": {
+        ja: "まだ あそんだステージがないよ\rまずは スタートから あそんでみてね！",
+        en: "No stages to practice yet.\rPlay the game first!",
+    },
 
     // --- ヒント(StartState) ---
     "hint.drawLoop": {
