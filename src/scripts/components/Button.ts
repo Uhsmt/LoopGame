@@ -7,9 +7,20 @@ export class Button extends BaseCaptureableObject {
     private buttonText: PIXI.Text;
     private leafSprite: PIXI.Sprite;
     isSelected: boolean = false;
-    constructor(text: string, x: number, y: number) {
+    /**
+     * @param textureAlias 葉の絵柄。既定は "leaf"(通常の緑色の葉、tintは
+     *   色調を少し変える程度にしか効かない)。鮮やかな色で塗り分けたい場合は
+     *   白抜きの "leaf_white" を渡す(butterfly_*と同じく、白地なのでtintが
+     *   そのまま発色する)
+     */
+    constructor(
+        text: string,
+        x: number,
+        y: number,
+        textureAlias: string = "leaf",
+    ) {
         super();
-        this.leafSprite = new PIXI.Sprite(PIXI.Texture.from("leaf"));
+        this.leafSprite = new PIXI.Sprite(PIXI.Texture.from(textureAlias));
         this.leafSprite.scale.set(0.5);
         this.addChild(this.leafSprite);
 
@@ -58,6 +69,15 @@ export class Button extends BaseCaptureableObject {
         const font = Button.fontStyleFor(text);
         this.buttonText.style.fontFamily = font.fontFamily;
         this.buttonText.style.fontWeight = font.fontWeight;
+    }
+
+    /**
+     * 葉(ボタン本体)の色味を変える。バリエーション表示に使う
+     * (例: れんしゅうモードのボーナスステージボタンを見分けやすくする)。
+     * selected()/releaseSelected() はこのtintを一時的に上書きする。
+     */
+    setTint(color: number): void {
+        this.leafSprite.tint = color;
     }
 
     protected getObjectCenter(): { x: number; y: number } {

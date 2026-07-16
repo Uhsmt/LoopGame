@@ -27,6 +27,15 @@ const CATALOG = {
     "button.back": { ja: "もどる", en: "Back" },
     "button.next": { ja: "つぎへ", en: "Next" },
     "button.backToMenu": { ja: "メニュー", en: "Menu" },
+    "button.practice": { ja: "れんしゅう", en: "Practice" },
+
+    // --- れんしゅうモード(PracticeSelectState) ---
+    "practice.title": { ja: "れんしゅうモード", en: "Practice Mode" },
+    "practice.bonusLabel": { ja: "ボーナス", en: "Bonus" },
+    "practice.empty": {
+        ja: "まだ あそんだステージがないよ\rまずは スタートから あそんでみてね！",
+        en: "No stages to practice yet.\rPlay the game first!",
+    },
 
     // --- ヒント(StartState) ---
     "hint.drawLoop": {
@@ -61,8 +70,13 @@ const CATALOG = {
     },
     "game.points": { ja: "{calc}{points} てん", en: "{calc}{points} points" },
 
+    // --- ボーナスステージ(夢のなかへの誘い) ---
+    "bonus.invitation": {
+        ja: "ちょうを できるだけ つかまえて",
+        en: "Catch as many butterflies as you can",
+    },
+
     // --- リザルト(ResultState) ---
-    "result.bonusStageBang": { ja: "ボーナスステージ", en: "Bonus stage!" },
     "result.bonusStage": { ja: "ボーナスステージ", en: "Bonus stage" },
     "result.level": { ja: "Level {n}", en: "Level {n}" },
     "result.yourTotalScore": {
