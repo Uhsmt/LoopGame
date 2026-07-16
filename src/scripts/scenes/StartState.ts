@@ -14,6 +14,7 @@ import { HelpFlower } from "../components/HelpFlower";
 import { Button } from "../components/Button";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import { t, getLang, toggleLang, isJapaneseText } from "../utils/Language";
+import { getMaxLevel } from "../utils/ScoreStorage";
 
 export class StartState extends StateBase {
     // クリック(タップ)判定: これより短い移動・短い時間ならドラッグではなく「クリック」とみなす
@@ -23,7 +24,8 @@ export class StartState extends StateBase {
     private lineDrawer: LineDrawer;
     private startButton: Button;
     private ruleButton: Button;
-    private practiceButton: Button;
+    // 練習できるレベルが1つ(=Lv.1のみ)以下の場合は選ぶ意味が無いため表示しない
+    private practiceButton: Button | null = null;
     private langButton: Button;
     butterflies: Butterfly[] = [];
     private backgroundSprite: PIXI.Sprite;
@@ -80,7 +82,10 @@ export class StartState extends StateBase {
         this.title.y = app.screen.height * 0.4;
         this.container.addChild(this.title);
 
-        // ボタン(スタートを主役として中央に、左右に「あそびかた」と「れんしゅう」を並べる)
+        // ボタン: 練習できるレベルが2つ以上あるときだけ「れんしゅう」を出す。
+        // ある場合はスタートを主役として中央に、左右に「あそびかた」と
+        // 「れんしゅう」を並べる。無い場合は元の2ボタンレイアウトに戻す
+        const canPractice = getMaxLevel() > 1;
         this.ruleButton = new Button(
             t("button.howToPlay"),
             app.screen.width / 4,
@@ -88,18 +93,21 @@ export class StartState extends StateBase {
         );
         this.startButton = new Button(
             t("button.start"),
-            app.screen.width / 2,
-            app.screen.height * 0.65,
-        );
-        this.practiceButton = new Button(
-            t("button.practice"),
-            (app.screen.width * 3) / 4,
+            canPractice ? app.screen.width / 2 : (app.screen.width * 3) / 4,
             app.screen.height * 0.65,
         );
 
         this.container.addChild(this.ruleButton);
         this.container.addChild(this.startButton);
-        this.container.addChild(this.practiceButton);
+
+        if (canPractice) {
+            this.practiceButton = new Button(
+                t("button.practice"),
+                (app.screen.width * 3) / 4,
+                app.screen.height * 0.65,
+            );
+            this.container.addChild(this.practiceButton);
+        }
 
         // 言語切替トグル(押すと今と反対の言語に切り替わる)
         // メインボタンより目立たないよう右下すみに配置する。
@@ -142,7 +150,7 @@ export class StartState extends StateBase {
     private refreshTexts(): void {
         this.startButton.setLabel(t("button.start"));
         this.ruleButton.setLabel(t("button.howToPlay"));
-        this.practiceButton.setLabel(t("button.practice"));
+        this.practiceButton?.setLabel(t("button.practice"));
         this.langButton.setLabel(this.langLabel());
     }
 
@@ -347,7 +355,7 @@ export class StartState extends StateBase {
             this.onStartGameSelected().catch((error: unknown) => {
                 console.error("Failed to start game:", error);
             });
-        } else if (this.practiceButton.isHit(loopArea)) {
+        } else if (this.practiceButton?.isHit(loopArea)) {
             AudioManager.shared.playSe("se_select");
             this.practiceButton.selected();
             this.onPracticeSelected().catch((error: unknown) => {
@@ -366,7 +374,9 @@ export class StartState extends StateBase {
 
         await Promise.all([
             this.fadeOut(this.ruleButton, 0.05),
-            this.fadeOut(this.practiceButton, 0.05),
+            ...(this.practiceButton
+                ? [this.fadeOut(this.practiceButton, 0.05)]
+                : []),
             this.fadeOut(this.title, 0.05),
             this.butterflies.map((butterfly) => butterfly.delete()),
             this.wait(300).then(() => {
@@ -385,7 +395,9 @@ export class StartState extends StateBase {
         this.butterflies.map((butterfly) => (butterfly.isFlying = false));
         await Promise.all([
             this.fadeOut(this.startButton, 0.05),
-            this.fadeOut(this.practiceButton, 0.05),
+            ...(this.practiceButton
+                ? [this.fadeOut(this.practiceButton, 0.05)]
+                : []),
             this.fadeOut(this.title, 0.05),
             this.butterflies.map((butterfly) => butterfly.delete()),
             this.wait(300).then(() => {
@@ -403,7 +415,9 @@ export class StartState extends StateBase {
             this.fadeOut(this.title, 0.05),
             this.butterflies.map((butterfly) => butterfly.delete()),
             this.wait(300).then(() => {
-                return this.fadeOut(this.practiceButton, 0.05);
+                return this.practiceButton
+                    ? this.fadeOut(this.practiceButton, 0.05)
+                    : Promise.resolve();
             }),
         ]);
         this.manager.setState(new PracticeSelectState(this.manager));
@@ -450,7 +464,9 @@ export class StartState extends StateBase {
             this.ruleButton,
             this.practiceButton,
             this.langButton,
-        ].some((button) => button.containsPoint(upPoint));
+        ]
+            .filter((button): button is Button => button !== null)
+            .some((button) => button.containsPoint(upPoint));
 
         if (clickedButton) {
             this.showHintMessage();
