@@ -60,6 +60,15 @@ export class Button extends BaseCaptureableObject {
         this.buttonText.style.fontWeight = font.fontWeight;
     }
 
+    /**
+     * 葉(ボタン本体)の色味を変える。バリエーション表示に使う
+     * (例: れんしゅうモードのボーナスステージボタンを見分けやすくする)。
+     * selected()/releaseSelected() はこのtintを一時的に上書きする。
+     */
+    setTint(color: number): void {
+        this.leafSprite.tint = color;
+    }
+
     protected getObjectCenter(): { x: number; y: number } {
         return {
             x: this.x,

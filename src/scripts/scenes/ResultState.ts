@@ -3,6 +3,7 @@ import { GameStateManager } from "./GameStateManager";
 import * as PIXI from "pixi.js";
 import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
+import { PracticeSelectState } from "./PracticeSelectState";
 import { Butterfly } from "../components/Butterfly";
 import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
@@ -104,7 +105,8 @@ export class ResultState extends StateBase {
             }, 2000),
         );
 
-        if (this.stageInfo.isClear) {
+        if (this.stageInfo.isClear && !this.stageInfo.isPractice) {
+            // 通常プレイでクリアした場合は、そのまま次のステージへ進む
             if (this.isGotBonusButterfly) {
                 this.stageInfo.bonusStage();
             } else {
@@ -114,7 +116,8 @@ export class ResultState extends StateBase {
                 new GameplayState(this.manager, this.stageInfo),
             );
         } else {
-            // ゲームオーバーの場合はスタート画面に戻る
+            // ゲームオーバー、またはプラクティスモードでのクリアの場合は
+            // 次のステージへは進めず、メニューへ戻るボタンを表示する
 
             // プラクティスモードでは個人記録(ハイスコア・前回スコア)を保存しない
             if (!this.stageInfo.isPractice) {
@@ -331,8 +334,12 @@ export class ResultState extends StateBase {
                     ? [this.fadeOut(this.recordMessage)]
                     : []),
             ]);
-            const startState = new StartState(this.manager);
-            this.manager.setState(startState);
+            // プラクティスモードはステージ選択画面へ、通常プレイはスタート画面へ戻る
+            this.manager.setState(
+                this.stageInfo.isPractice
+                    ? new PracticeSelectState(this.manager)
+                    : new StartState(this.manager),
+            );
         }
     }
 }

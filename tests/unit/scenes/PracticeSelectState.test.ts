@@ -159,10 +159,12 @@ describe("PracticeSelectState", () => {
             expect(
                 stageButtons.map((sb: any) => sb.button.buttonText.text),
             ).toEqual(["1", "2", "3"]);
-            // すべて通常ステージなのでボーナスマーカーは無い
-            expect(stageButtons.every((sb: any) => sb.marker === null)).toBe(
-                true,
-            );
+            // すべて通常ステージなので葉の色は既定のまま(ボーナス色に変更されていない)
+            expect(
+                stageButtons.every(
+                    (sb: any) => sb.button.leafSprite.tint === 0xffffff,
+                ),
+            ).toBe(true);
             // ボタンはコンテナに追加されている
             const container = (state as any).container;
             stageButtons.forEach((sb: any) => {
@@ -170,7 +172,7 @@ describe("PracticeSelectState", () => {
             });
         });
 
-        it("marks reached bonus stages with a bonus label marker", () => {
+        it("marks reached bonus stages with a distinct label and leaf color", () => {
             vi.mocked(getMaxLevel).mockReturnValue(5);
             vi.mocked(getReachedBonusLevels).mockReturnValue([3]);
             const state = createState();
@@ -184,12 +186,18 @@ describe("PracticeSelectState", () => {
             );
             expect(bonusEntries).toHaveLength(1);
             expect(bonusEntries[0].entry.level).toBe(3);
-            expect(bonusEntries[0].button.buttonText.text).toBe("3");
-            expect(bonusEntries[0].marker).not.toBeNull();
-            expect(bonusEntries[0].marker.text).toBe(t("practice.bonusLabel"));
-            expect((state as any).container.children).toContain(
-                bonusEntries[0].marker,
+            // ラベルは数字ではなく「ボーナス」、葉の色は既定(白=無着色)から変わる
+            expect(bonusEntries[0].button.buttonText.text).toBe(
+                t("practice.bonusLabel"),
             );
+            expect(bonusEntries[0].button.leafSprite.tint).not.toBe(0xffffff);
+
+            // 同じレベルの通常ステージボタンは数字のまま・既定の葉の色のまま
+            const normalLevel3 = stageButtons.find(
+                (sb: any) => sb.entry.level === 3 && !sb.entry.isBonus,
+            );
+            expect(normalLevel3.button.buttonText.text).toBe("3");
+            expect(normalLevel3.button.leafSprite.tint).toBe(0xffffff);
         });
 
         it("trims to MAX_STAGE_COUNT by dropping the lowest levels", () => {

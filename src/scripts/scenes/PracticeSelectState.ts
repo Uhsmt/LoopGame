@@ -15,12 +15,14 @@ import {
     PracticeStageEntry,
 } from "../utils/PracticeStages";
 
-/** ステージ選択ボタン1つ分の表示要素(ボーナスにはマーカーが付く) */
+/** ステージ選択ボタン1つ分の表示要素 */
 interface StageButtonEntry {
     entry: PracticeStageEntry;
     button: Button;
-    marker: PIXI.Text | null;
 }
+
+/** ボーナスステージボタンの葉の色(通常ステージの緑と区別する) */
+const BONUS_BUTTON_TINT = 0xffd700;
 
 /**
  * プラクティスモードのステージ選択画面。
@@ -176,35 +178,19 @@ export class PracticeSelectState extends StateBase {
             const x = width / 2 + (col - (rowCount - 1) / 2) * colSpacing;
             const y = gridTop + row * rowGap;
 
-            const button = new Button(String(entry.level), x, y);
+            // ボーナスステージは同じレベル数字の通常ステージと並ぶと見分けづらいため、
+            // ラベルを数字ではなく「ボーナス」にし、葉の色も変えて区別する
+            const label = entry.isBonus
+                ? t("practice.bonusLabel")
+                : String(entry.level);
+            const button = new Button(label, x, y);
             button.scale.set(0.5);
+            if (entry.isBonus) {
+                button.setTint(BONUS_BUTTON_TINT);
+            }
             this.addChildBelowFrame(button);
 
-            // ボーナスステージには金色の「ボーナス」マーカーをボタンの上に添える
-            let marker: PIXI.Text | null = null;
-            if (entry.isBonus) {
-                marker = new PIXI.Text({
-                    text: t("practice.bonusLabel"),
-                    style: {
-                        fontFamily:
-                            getLang() === "ja"
-                                ? Const.FONT_JAPANESE
-                                : Const.FONT_ENGLISH,
-                        fontWeight: (getLang() === "ja"
-                            ? Const.FONT_JAPANESE_BOLD
-                            : Const.FONT_ENGLISH_BOLD) as PIXI.TextStyleFontWeight,
-                        fontSize: 16,
-                        fill: "#ffd700",
-                        align: "center",
-                    },
-                });
-                marker.anchor.set(0.5);
-                marker.x = x;
-                marker.y = y - height * 0.075;
-                this.addChildBelowFrame(marker);
-            }
-
-            this.stageButtons.push({ entry, button, marker });
+            this.stageButtons.push({ entry, button });
         });
     }
 
@@ -245,12 +231,9 @@ export class PracticeSelectState extends StateBase {
         this.container.addChildAt(nextBGSprite, 0);
 
         const others: PIXI.Container[] = [this.title, this.backButton];
-        this.stageButtons.forEach(({ button, marker }) => {
+        this.stageButtons.forEach(({ button }) => {
             if (button !== selected.button) {
                 others.push(button);
-            }
-            if (marker) {
-                others.push(marker);
             }
         });
 
@@ -277,11 +260,8 @@ export class PracticeSelectState extends StateBase {
         this.isTransitioning = true;
 
         const targets: PIXI.Container[] = [this.title];
-        this.stageButtons.forEach(({ button, marker }) => {
+        this.stageButtons.forEach(({ button }) => {
             targets.push(button);
-            if (marker) {
-                targets.push(marker);
-            }
         });
         if (this.emptyMessage) {
             targets.push(this.emptyMessage);
