@@ -22,6 +22,7 @@ import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
 import { BonusStageEffect } from "../components/BonusStageEffect";
 import { t, getLang } from "../utils/Language";
+import { recordProgress } from "../utils/ScoreStorage";
 
 export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
@@ -63,6 +64,11 @@ export class GameplayState extends StateBase {
         super(manager);
 
         this.stageInfo = stageInfo;
+
+        // プラクティスモードでは進行状況(最高到達レベル・到達済みボーナス)を記録しない
+        if (!this.stageInfo.isPractice) {
+            recordProgress(this.stageInfo.level, this.stageInfo.bonusFlag);
+        }
 
         this.lineDrawer = new LineDrawer(
             this.manager.app,
@@ -544,8 +550,10 @@ export class GameplayState extends StateBase {
         });
 
         // 10秒経ったら special butterfly を出現させる
+        // (プラクティスモードでは、そのステージだけで完結させるためボーナスへは誘わない)
         if (
             this.stageInfo.hasBonusButterfly &&
+            !this.stageInfo.isPractice &&
             this.elapsedTime >= 10000 &&
             !this.isAddBonusButterfly
         ) {

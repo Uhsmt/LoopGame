@@ -258,6 +258,7 @@ import { GameplayState } from "../../src/scripts/scenes/GameplayState";
 import { ResultState } from "../../src/scripts/scenes/ResultState";
 import { StageInformation } from "../../src/scripts/components/StageInformation";
 import { BonusStageEffect } from "../../src/scripts/components/BonusStageEffect";
+import { SpecialButterfly } from "../../src/scripts/components/SpecialButterfly";
 import { AudioManager } from "../../src/scripts/utils/AudioManager";
 import * as Const from "../../src/scripts/utils/Const";
 import type { GameStateManager } from "../../src/scripts/scenes/GameStateManager";
@@ -409,6 +410,39 @@ describe("Bonus (dream) stage flow", () => {
             state.update(1000);
             await vi.advanceTimersByTimeAsync(3000);
             expect(setStateSpy).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("practice mode never invites into the dream/bonus stage", () => {
+        it("does not spawn the special butterfly on a level that normally has one", async () => {
+            // level 5 は本来 hasBonusButterfly=true (5の倍数) だが、
+            // プラクティスモードでは「そのステージだけで完結させる」ため
+            // スペシャル蝶を出さない
+            const stageInfo = new StageInformation(5);
+            stageInfo.isPractice = true;
+            expect(stageInfo.hasBonusButterfly).toBe(true);
+
+            const manager = createMockManager();
+            const state = new GameplayState(manager, stageInfo);
+
+            const entered = state.onEnter();
+            await vi.advanceTimersByTimeAsync(1000);
+            await entered;
+
+            const internal = state as any;
+            // スペシャル蝶が出るタイミング(10秒経過)を大きく超えて進める
+            let total = 0;
+            while (total < 15000) {
+                state.update(200);
+                total += 200;
+            }
+
+            expect(internal.isAddBonusButterfly).toBe(false);
+            expect(
+                internal.butterflies.some(
+                    (b: unknown) => b instanceof SpecialButterfly,
+                ),
+            ).toBe(false);
         });
     });
 

@@ -51,10 +51,12 @@ export class StageInformation {
     //status
     isClear: boolean = false;
     bonusFlag: boolean = false;
+    // プラクティスモード(記録・スコア保存を行わない再挑戦プレイ)かどうか
+    isPractice: boolean = false;
 
-    constructor() {
-        // initial level
-        this.setConfig(1);
+    constructor(startLevel: number = 1) {
+        // initial level (プラクティスモードでは任意のレベルから開始できる)
+        this.setConfig(startLevel);
         this.captureCount = 0;
         this.stagePoint = 0;
     }

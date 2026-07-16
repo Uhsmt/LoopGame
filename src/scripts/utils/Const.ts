@@ -91,6 +91,10 @@ export const imageSrcs = [
     // prettier-ignore
     { alias: "butterfly_special", src: `${BASE_URL}assets/butterfly_special.png` },
     { alias: "leaf", src: `${BASE_URL}assets/leaf.png` },
+    // leafの白抜き版(アルファのみ流用)。tintで自由な色を乗せられる
+    // (butterfly_*と同じ手法。leaf自体は暗い緑の絵柄なのでtintでは
+    // 明るい色を出せないため、れんしゅうモードのボーナスボタン等で使う)
+    { alias: "leaf_white", src: `${BASE_URL}assets/leaf_white.png` },
     { alias: "moon", src: `${BASE_URL}assets/moon.png` },
     { alias: "pencil", src: `${BASE_URL}assets/pencil.png` },
     { alias: "sticky", src: `${BASE_URL}assets/sticky.png` },

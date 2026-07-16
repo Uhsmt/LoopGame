@@ -3,6 +3,7 @@ import { GameStateManager } from "./GameStateManager";
 import * as PIXI from "pixi.js";
 import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
+import { PracticeSelectState } from "./PracticeSelectState";
 import { Butterfly } from "../components/Butterfly";
 import { SpecialButterfly } from "../components/SpecialButterfly";
 import * as Utility from "../utils/Utility";
@@ -54,7 +55,9 @@ export class ResultState extends StateBase {
 
         this.stageInfo = stageInfo;
         this.isGotBonusButterfly = isGotBonusButterfly;
-        this.isEnteringDream = stageInfo.isClear && isGotBonusButterfly;
+        // プラクティスモードでは夢(ボーナス)演出には入らない(そのステージだけで完結させる)
+        this.isEnteringDream =
+            stageInfo.isClear && isGotBonusButterfly && !stageInfo.isPractice;
         this.isWakingDream = stageInfo.bonusFlag;
 
         // 夢に誘う蝶をスコアの紙・テキストより常に手前(最前面)に描画するため、
@@ -162,8 +165,11 @@ export class ResultState extends StateBase {
             return;
         }
 
+        // プラクティスモードのクリアは次のステージへ進まないため、
+        // 「Level N+1」という次面への案内は出さず、ゲームオーバーと同じく
+        // スコアだけを見せる(このあとメニューへ戻るボタンが出る)
         let messageText = "";
-        if (this.stageInfo.isClear) {
+        if (this.stageInfo.isClear && !this.stageInfo.isPractice) {
             messageText = t("result.level", { n: this.stageInfo.level + 1 });
         } else {
             messageText = t("result.yourTotalScore", {
@@ -186,8 +192,9 @@ export class ResultState extends StateBase {
             }, 2000),
         );
 
-        if (this.stageInfo.isClear) {
-            // 夢から覚める: 明転はonEnterの冒頭で開始済み(スコア表示と
+        if (this.stageInfo.isClear && !this.stageInfo.isPractice) {
+            // 通常プレイでクリアした場合は、そのまま次のステージへ進む。
+            // 夢から覚める場合は、明転はonEnterの冒頭で開始済み(スコア表示と
             // ほぼ同時進行)なので、ここでは完了を待ち合わせるだけ
             await brightenPromise;
             this.stageInfo.next();
@@ -195,22 +202,26 @@ export class ResultState extends StateBase {
                 new GameplayState(this.manager, this.stageInfo),
             );
         } else {
-            // ゲームオーバーの場合はスタート画面に戻る
+            // ゲームオーバー、またはプラクティスモードでのクリアの場合は
+            // 次のステージへは進めず、メニューへ戻るボタンを表示する
 
-            // 個人記録(ハイスコア・前回スコア)をlocalStorageに保存し、結果を表示する
-            const { isNewRecord, previousBest } = saveResult(
-                this.stageInfo.totalScore,
-            );
-            if (isNewRecord) {
-                AudioManager.shared.playSe("se_applause");
-                this.recordMessage = new Message(t("result.newRecord"), 24);
-            } else if (previousBest !== null) {
-                this.recordMessage = new Message(
-                    t("result.best", {
-                        score: Utility.formatNumberWithCommas(previousBest),
-                    }),
-                    20,
+            // プラクティスモードでは個人記録(ハイスコア・前回スコア)を保存しない
+            if (!this.stageInfo.isPractice) {
+                // 個人記録(ハイスコア・前回スコア)をlocalStorageに保存し、結果を表示する
+                const { isNewRecord, previousBest } = saveResult(
+                    this.stageInfo.totalScore,
                 );
+                if (isNewRecord) {
+                    AudioManager.shared.playSe("se_applause");
+                    this.recordMessage = new Message(t("result.newRecord"), 24);
+                } else if (previousBest !== null) {
+                    this.recordMessage = new Message(
+                        t("result.best", {
+                            score: Utility.formatNumberWithCommas(previousBest),
+                        }),
+                        20,
+                    );
+                }
             }
             if (this.recordMessage) {
                 this.recordMessage.anchor.set(0.5);
@@ -515,8 +526,12 @@ export class ResultState extends StateBase {
                     ? [this.fadeOut(this.recordMessage)]
                     : []),
             ]);
-            const startState = new StartState(this.manager);
-            this.manager.setState(startState);
+            // プラクティスモードはステージ選択画面へ、通常プレイはスタート画面へ戻る
+            this.manager.setState(
+                this.stageInfo.isPractice
+                    ? new PracticeSelectState(this.manager)
+                    : new StartState(this.manager),
+            );
         }
     }
 }
