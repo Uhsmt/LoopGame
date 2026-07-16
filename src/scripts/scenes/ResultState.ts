@@ -29,6 +29,8 @@ export class ResultState extends StateBase {
     private backToStartButton!: Button;
     // 失敗直後、まだリトライが残っている場合だけ生成される
     private retryButton?: Button;
+    // 「1回だけ」であることを伝える、retryButtonと同時にのみ表示するヒント
+    private retryHintMessage?: Message;
     private nextMessage!: Message;
     private recordMessage?: Message;
     private lineDrawer!: LineDrawer;
@@ -230,6 +232,14 @@ export class ResultState extends StateBase {
             );
             this.container.addChild(this.retryButton);
             this.container.addChild(this.backToStartButton);
+
+            // ボタンだけでは「1回だけ」だと伝わらないため、一言添える
+            this.retryHintMessage = new Message(t("result.retryHint"), 18);
+            this.retryHintMessage.anchor.set(0.5);
+            this.retryHintMessage.x = this.manager.app.screen.width / 2;
+            this.retryHintMessage.y = this.manager.app.screen.height * 0.68;
+            this.container.addChild(this.retryHintMessage);
+            this.retryHintMessage.show();
         } else {
             // ゲームオーバー(リトライを使い切った、または元々対象外)、
             // またはプラクティスモードでのクリアの場合は、次のステージへは
@@ -553,6 +563,9 @@ export class ResultState extends StateBase {
                 this.fadeOut(this.backToStartButton),
                 this.fadeOut(this.nextMessage),
                 this.fadeOut(this.stickySprite),
+                ...(this.retryHintMessage
+                    ? [this.fadeOut(this.retryHintMessage)]
+                    : []),
             ]);
             // 同じレベルを最初からやり直す(このランはまだ確定していないので保存しない)
             this.stageInfo.retry();
@@ -584,6 +597,9 @@ export class ResultState extends StateBase {
                 this.fadeOut(this.stickySprite),
                 ...(this.recordMessage
                     ? [this.fadeOut(this.recordMessage)]
+                    : []),
+                ...(this.retryHintMessage
+                    ? [this.fadeOut(this.retryHintMessage)]
                     : []),
             ]);
             // プラクティスモードはステージ選択画面へ、通常プレイはスタート画面へ戻る

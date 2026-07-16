@@ -84,6 +84,10 @@ const CATALOG = {
         ja: "Score \r {score}",
         en: "Your total score\r {score}",
     },
+    "result.retryHint": {
+        ja: "1回だけ復活できます",
+        en: "You can retry once",
+    },
     "result.newRecord": { ja: "しんきろく！", en: "New Record!" },
     "result.best": { ja: "ベスト: {score}", en: "Best: {score}" },
     "result.need": {

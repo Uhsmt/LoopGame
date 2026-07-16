@@ -249,6 +249,7 @@ describe("ResultState", () => {
 
             expect(saveResultMock).toHaveBeenCalledWith(stageInfo.totalScore);
             expect((state as any).retryButton).toBeUndefined();
+            expect((state as any).retryHintMessage).toBeUndefined();
 
             (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
             (state as any).wait = vi.fn().mockResolvedValue(undefined);
@@ -288,6 +289,11 @@ describe("ResultState", () => {
             expect(saveResultMock).not.toHaveBeenCalled();
             expect((state as any).retryButton).toBeDefined();
             expect((state as any).backToStartButton).toBeDefined();
+            // 「1回だけ」であることが伝わるヒントを添える
+            expect((state as any).retryHintMessage).toBeDefined();
+            expect((state as any).retryHintMessage.text).toBe(
+                t("result.retryHint"),
+            );
         });
 
         it("never offers a retry in practice mode, even before retryUsed is set", async () => {
@@ -298,6 +304,7 @@ describe("ResultState", () => {
 
             expect((state as any).retryButton).toBeUndefined();
             expect((state as any).backToStartButton).toBeDefined();
+            expect((state as any).retryHintMessage).toBeUndefined();
         });
 
         it("restarts the same level and does not save the score when retry is chosen", async () => {
