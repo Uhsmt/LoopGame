@@ -200,6 +200,25 @@ describe("PracticeSelectState", () => {
             expect(normalLevel3.button.leafSprite.tint).toBe(0xffffff);
         });
 
+        it("adds a distinct glow behind bonus buttons only", () => {
+            vi.mocked(getMaxLevel).mockReturnValue(5);
+            vi.mocked(getReachedBonusLevels).mockReturnValue([3]);
+            const state = createState();
+            state.onEnter();
+
+            const stageButtons = (state as any).stageButtons;
+            const bonusEntry = stageButtons.find((sb: any) => sb.entry.isBonus);
+            const normalEntry = stageButtons.find(
+                (sb: any) => sb.entry.level === 3 && !sb.entry.isBonus,
+            );
+
+            expect(bonusEntry.glow).not.toBeNull();
+            expect((state as any).container.children).toContain(
+                bonusEntry.glow,
+            );
+            expect(normalEntry.glow).toBeNull();
+        });
+
         it("trims to MAX_STAGE_COUNT by dropping the lowest levels", () => {
             vi.mocked(getMaxLevel).mockReturnValue(30);
             const state = createState();

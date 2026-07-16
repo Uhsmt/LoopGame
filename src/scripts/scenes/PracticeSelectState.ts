@@ -19,10 +19,18 @@ import {
 interface StageButtonEntry {
     entry: PracticeStageEntry;
     button: Button;
+    /** ボーナスボタンの背後に敷く紅葉色のグロー(通常ステージには無い) */
+    glow: PIXI.Graphics | null;
 }
 
-/** ボーナスステージボタンの葉の色(通常ステージの緑と区別する) */
-const BONUS_BUTTON_TINT = 0xffd700;
+// ボーナスステージの葉は、他が緑一色の中で「紅葉した葉っぱ」のように
+// ひと目でわかるよう区別する。葉のテクスチャ自体は暗めの緑(乗算tintでは
+// 明るい赤/オレンジまでは出せない)なので、tintで少し暖色寄りにしつつ、
+// 背後にオレンジ〜赤の紅葉色グローを敷いて視認性を確保する
+/** ボーナスステージボタンの葉のtint(通常ステージの緑から少し暖色へ寄せる) */
+const BONUS_BUTTON_TINT = 0xffcc80;
+/** ボーナスステージボタンの背後に敷く紅葉色グローの色 */
+const BONUS_GLOW_COLOR = 0xff5a1f;
 
 /**
  * プラクティスモードのステージ選択画面。
@@ -35,6 +43,8 @@ export class PracticeSelectState extends StateBase {
     private static readonly GRID_COLUMNS = 6;
     /** グリッドの行数 */
     private static readonly GRID_ROWS = 3;
+    /** ボーナスボタンの背後に敷く紅葉色グローの半径(ボタン(scale 0.5)より一回り大きい) */
+    private static readonly BONUS_GLOW_RADIUS = 48;
     /** 表示するステージ数の上限(列数×行数) */
     static readonly MAX_STAGE_COUNT =
         PracticeSelectState.GRID_COLUMNS * PracticeSelectState.GRID_ROWS;
@@ -179,7 +189,19 @@ export class PracticeSelectState extends StateBase {
             const y = gridTop + row * rowGap;
 
             // ボーナスステージは同じレベル数字の通常ステージと並ぶと見分けづらいため、
-            // ラベルを数字ではなく「ボーナス」にし、葉の色も変えて区別する
+            // ラベルを数字ではなく「ボーナス」にし、葉の色と背後のグローで
+            // 紅葉した葉っぱのように区別する
+            let glow: PIXI.Graphics | null = null;
+            if (entry.isBonus) {
+                glow = new PIXI.Graphics();
+                glow.circle(0, 0, PracticeSelectState.BONUS_GLOW_RADIUS);
+                glow.fill({ color: BONUS_GLOW_COLOR, alpha: 0.55 });
+                glow.x = x;
+                glow.y = y;
+                // 先に敷いてからボタンを追加することで、ボタンより背後に来る
+                this.addChildBelowFrame(glow);
+            }
+
             const label = entry.isBonus
                 ? t("practice.bonusLabel")
                 : String(entry.level);
@@ -190,7 +212,7 @@ export class PracticeSelectState extends StateBase {
             }
             this.addChildBelowFrame(button);
 
-            this.stageButtons.push({ entry, button });
+            this.stageButtons.push({ entry, button, glow });
         });
     }
 
@@ -231,9 +253,12 @@ export class PracticeSelectState extends StateBase {
         this.container.addChildAt(nextBGSprite, 0);
 
         const others: PIXI.Container[] = [this.title, this.backButton];
-        this.stageButtons.forEach(({ button }) => {
+        this.stageButtons.forEach(({ button, glow }) => {
             if (button !== selected.button) {
                 others.push(button);
+            }
+            if (glow) {
+                others.push(glow);
             }
         });
 
@@ -260,8 +285,11 @@ export class PracticeSelectState extends StateBase {
         this.isTransitioning = true;
 
         const targets: PIXI.Container[] = [this.title];
-        this.stageButtons.forEach(({ button }) => {
+        this.stageButtons.forEach(({ button, glow }) => {
             targets.push(button);
+            if (glow) {
+                targets.push(glow);
+            }
         });
         if (this.emptyMessage) {
             targets.push(this.emptyMessage);

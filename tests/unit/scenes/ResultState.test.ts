@@ -148,12 +148,19 @@ describe("ResultState", () => {
             );
         });
 
-        it("enters the bonus stage instead when a special butterfly was captured", async () => {
+        it("enters the dream/bonus sequence instead when a special butterfly was captured", async () => {
             const stageInfo = makeClearStageInfo({ isPractice: false });
             const state = new ResultState(manager as any, stageInfo, true);
             stubResultDisplay(state);
+            // enterDreamSequence()はPIXI.Tickerの実アニメーション(暗転・蝶のフェード)
+            // を経由するため、この検証範囲外として即時解決に差し替える
+            (state as any).wait = vi.fn().mockResolvedValue(undefined);
+            (state as any).fadeIn = vi.fn().mockResolvedValue(undefined);
+            (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
 
-            await runOnEnter(state);
+            const promise = state.onEnter();
+            await vi.advanceTimersByTimeAsync(5000);
+            await promise;
 
             expect(stageInfo.bonusFlag).toBe(true);
             expect(GameplayState).toHaveBeenCalledWith(manager, stageInfo);
@@ -191,6 +198,22 @@ describe("ResultState", () => {
             expect(manager.setState).toHaveBeenCalledWith(
                 expect.any(PracticeSelectState),
             );
+        });
+
+        it("never enters the dream/bonus sequence even if a special butterfly was captured", async () => {
+            // GameplayState側でスペシャル蝶の出現自体を止めているため通常は
+            // 起こらないが、万一isGotBonusButterfly=trueで渡ってきても
+            // プラクティスモードでは夢演出・ボーナス突入をしないことを保証する
+            const stageInfo = makeClearStageInfo({ isPractice: true });
+            const state = new ResultState(manager as any, stageInfo, true);
+            stubResultDisplay(state);
+
+            await runOnEnter(state);
+
+            expect(stageInfo.bonusFlag).toBe(false);
+            expect(GameplayState).not.toHaveBeenCalled();
+            expect(manager.setState).not.toHaveBeenCalled();
+            expect((state as any).backToStartButton).toBeDefined();
         });
     });
 
