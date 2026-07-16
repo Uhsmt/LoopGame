@@ -152,6 +152,11 @@ export class MockGraphics extends MockContainer {
             return this;
         });
 
+    poly = vi.fn().mockImplementation((points: number[]) => {
+        this._currentPath.push({ type: "poly", points });
+        return this;
+    });
+
     fill = vi.fn().mockImplementation((style?: any) => {
         if (style) this._fillStyle = style;
         return this;

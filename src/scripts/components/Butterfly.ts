@@ -5,6 +5,7 @@ import { BaseCaptureableObject } from "./BaseCaptureableObject";
 
 export class Butterfly extends BaseCaptureableObject {
     private ellipse: PIXI.Graphics;
+    private mark: PIXI.Graphics;
     protected sprite: PIXI.Sprite;
     private xDiretion: number; // x方向の進行距離（1フレームあたり）
     private yDiretion: number; // y方向の進行距離（1フレームあたり）
@@ -99,6 +100,13 @@ export class Butterfly extends BaseCaptureableObject {
             this.ellipse.alpha = 0;
         }
         this.addChild(ellipse);
+
+        // 色覚特性があっても色以外の手がかりで同色判定できるよう、
+        // 体の上に色ごとの形状マークを重ねる(白地に黒縁取りでどの羽色でも視認できるようにする)
+        const mark = new PIXI.Graphics();
+        this.mark = mark;
+        this.drawMark(color);
+        this.addChild(mark);
 
         // for multiplications
         this.multiplicationRate = multiplicationRate;
@@ -314,6 +322,9 @@ export class Butterfly extends BaseCaptureableObject {
         if (this.ellipse) {
             this.ellipse.scale.x = scale;
         }
+        if (this.mark) {
+            this.mark.scale.x = scale;
+        }
 
         // Update flappingProgress
         this.flappingProgress += this.flappingSpeed * 8 * delta;
@@ -330,6 +341,21 @@ export class Butterfly extends BaseCaptureableObject {
         this.sprite.tint = subColor;
         this.ellipse.tint = mainColor;
         this.color = subColor;
+        this.drawMark(subColor);
+    }
+
+    /**
+     * 現在の色に対応する形状マークを(白地に黒縁取りで)描き直す
+     */
+    private drawMark(color: number): void {
+        if (!this.mark) return;
+        const shape = Utility.getColorMarkShape(color);
+        const scale = this.sprite.scale.x;
+        this.mark.clear();
+        drawMarkShapePath(this.mark, shape, 24 * scale);
+        this.mark.fill(0x000000);
+        drawMarkShapePath(this.mark, shape, 18 * scale);
+        this.mark.fill(0xffffff);
     }
 
     setRandomInitialPoistion(screenWidth: number, screenHeight: number): void {
@@ -375,6 +401,68 @@ export class Butterfly extends BaseCaptureableObject {
 
     getSubColor(): number {
         return this.ellipse.tint;
+    }
+}
+
+/**
+ * 正多角形の頂点座標を [x0, y0, x1, y1, ...] の形式で返す(PIXI.Graphics.polyの入力形式)
+ */
+function regularPolygonPoints(
+    sides: number,
+    radius: number,
+    rotationDeg: number,
+): number[] {
+    const points: number[] = [];
+    for (let i = 0; i < sides; i++) {
+        const angle = (rotationDeg + (360 / sides) * i) * (Math.PI / 180);
+        points.push(radius * Math.cos(angle), radius * Math.sin(angle));
+    }
+    return points;
+}
+
+/**
+ * 星型の頂点座標を返す(外側/内側の半径を交互に配置する)
+ */
+function starPolygonPoints(
+    spikes: number,
+    outerRadius: number,
+    innerRadius: number,
+    rotationDeg: number,
+): number[] {
+    const points: number[] = [];
+    for (let i = 0; i < spikes * 2; i++) {
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const angle = (rotationDeg + (180 / spikes) * i) * (Math.PI / 180);
+        points.push(radius * Math.cos(angle), radius * Math.sin(angle));
+    }
+    return points;
+}
+
+/**
+ * 色ごとの形状マーク(Const.MarkShape)を graphics 上にパスとして構築する。
+ * 呼び出し側で fill()/stroke() を実行するまでは描画されない。
+ */
+function drawMarkShapePath(
+    graphics: PIXI.Graphics,
+    shape: Const.MarkShape,
+    radius: number,
+): void {
+    switch (shape) {
+        case "circle":
+            graphics.circle(0, 0, radius);
+            break;
+        case "square":
+            graphics.poly(regularPolygonPoints(4, radius, -45));
+            break;
+        case "triangle":
+            graphics.poly(regularPolygonPoints(3, radius, -90));
+            break;
+        case "diamond":
+            graphics.poly(regularPolygonPoints(4, radius, -90));
+            break;
+        case "star":
+            graphics.poly(starPolygonPoints(4, radius, radius * 0.42, -90));
+            break;
     }
 }
 
