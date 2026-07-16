@@ -27,6 +27,7 @@ const CATALOG = {
     "button.back": { ja: "もどる", en: "Back" },
     "button.next": { ja: "つぎへ", en: "Next" },
     "button.backToMenu": { ja: "メニュー", en: "Menu" },
+    "button.retry": { ja: "もう一度", en: "Retry" },
     "button.practice": { ja: "れんしゅう", en: "Practice" },
 
     // --- れんしゅうモード(PracticeSelectState) ---

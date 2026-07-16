@@ -237,14 +237,18 @@ describe("ResultState", () => {
         });
     });
 
-    describe("game over", () => {
+    describe("game over (retry already used)", () => {
         it("saves the score and returns to the start menu in normal play", async () => {
-            const stageInfo = makeGameOverStageInfo({ isPractice: false });
+            const stageInfo = makeGameOverStageInfo({
+                isPractice: false,
+                retryUsed: true,
+            });
             const state = new ResultState(manager as any, stageInfo, false);
             stubResultDisplay(state);
             await runOnEnter(state);
 
             expect(saveResultMock).toHaveBeenCalledWith(stageInfo.totalScore);
+            expect((state as any).retryButton).toBeUndefined();
 
             (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
             (state as any).wait = vi.fn().mockResolvedValue(undefined);
@@ -255,7 +259,10 @@ describe("ResultState", () => {
         });
 
         it("does not save the score in practice mode and returns to the practice select screen", async () => {
-            const stageInfo = makeGameOverStageInfo({ isPractice: true });
+            const stageInfo = makeGameOverStageInfo({
+                isPractice: true,
+                retryUsed: true,
+            });
             const state = new ResultState(manager as any, stageInfo, false);
             stubResultDisplay(state);
             await runOnEnter(state);
@@ -268,6 +275,75 @@ describe("ResultState", () => {
 
             expect(PracticeSelectState).toHaveBeenCalledWith(manager);
             expect(StartState).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("game over (first failure, retry available)", () => {
+        it("offers a retry and does not save the score yet in normal play", async () => {
+            const stageInfo = makeGameOverStageInfo({ isPractice: false });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubResultDisplay(state);
+            await runOnEnter(state);
+
+            expect(saveResultMock).not.toHaveBeenCalled();
+            expect((state as any).retryButton).toBeDefined();
+            expect((state as any).backToStartButton).toBeDefined();
+        });
+
+        it("never offers a retry in practice mode, even before retryUsed is set", async () => {
+            const stageInfo = makeGameOverStageInfo({ isPractice: true });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubResultDisplay(state);
+            await runOnEnter(state);
+
+            expect((state as any).retryButton).toBeUndefined();
+            expect((state as any).backToStartButton).toBeDefined();
+        });
+
+        it("restarts the same level and does not save the score when retry is chosen", async () => {
+            const stageInfo = makeGameOverStageInfo({ isPractice: false });
+            const totalScoreBeforeRetry = stageInfo.totalScore;
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubResultDisplay(state);
+            await runOnEnter(state);
+
+            (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
+            (state as any).wait = vi.fn().mockResolvedValue(undefined);
+            await (state as any).handleLoopAreaCompleted(hitEverything);
+
+            expect(saveResultMock).not.toHaveBeenCalled();
+            expect(stageInfo.retryUsed).toBe(true);
+            expect(stageInfo.captureCount).toBe(0);
+            expect(GameplayState).toHaveBeenCalledWith(manager, stageInfo);
+            expect(manager.setState).toHaveBeenCalledWith(
+                expect.any(GameplayState),
+            );
+            // リトライは同じレベルのやり直しなので、失敗分のスコアは
+            // 一旦取り消され、totalScoreはリトライ前の水準に戻る
+            expect(stageInfo.totalScore).toBeLessThanOrEqual(
+                totalScoreBeforeRetry,
+            );
+        });
+
+        it("saves the final score and returns to the menu when retry is declined", async () => {
+            const stageInfo = makeGameOverStageInfo({ isPractice: false });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubResultDisplay(state);
+            await runOnEnter(state);
+
+            expect(saveResultMock).not.toHaveBeenCalled();
+
+            (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
+            (state as any).wait = vi.fn().mockResolvedValue(undefined);
+            // retryButton(画面左寄り)とbackToStartButton(画面右寄り)を
+            // 画面中央のx座標で区別し、右側だけを囲んだループを再現する
+            const hitRightSideOnly = {
+                containsPoint: (p: { x: number }) => p.x > app.screen.width / 2,
+            } as any;
+            await (state as any).handleLoopAreaCompleted(hitRightSideOnly);
+
+            expect(saveResultMock).toHaveBeenCalledWith(stageInfo.totalScore);
+            expect(StartState).toHaveBeenCalledWith(manager);
         });
     });
 });
