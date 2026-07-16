@@ -212,7 +212,6 @@ export class ResultState extends StateBase {
                     this.stageInfo.totalScore,
                 );
                 if (isNewRecord) {
-                    AudioManager.shared.playSe("se_applause");
                     this.recordMessage = new Message(t("result.newRecord"), 24);
                 } else if (previousBest !== null) {
                     this.recordMessage = new Message(

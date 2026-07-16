@@ -164,7 +164,12 @@ npm run test:e2e:debug     # Debug E2E tests step-by-step
     - When working on GitHub Issues, create a Pull Request after completing tasks. Include "close: #{issue}" in the PR description to auto-close the issue when merged
 
 4. **多言語対応**: IssueやPullRequestは日本語と英語を併記しておくこと
+
     - Write Issues and Pull Requests in both Japanese and English
+
+5. **作業終了後は開発サーバーを起動しておく**: 見た目や挙動に関わる作業が終わったら、`npm start` で開発サーバーを起動した状態で終了し、ユーザーがすぐ `http://localhost:1234/` で最新の成果物を確認できるようにすること。ポート1234が既に使用中の場合は、そのプロセスをkillしてから起動してよい
+
+    - After finishing work that affects appearance or behavior, leave `npm start` running so the user can immediately check the latest result at `http://localhost:1234/`. If port 1234 is already in use, it's fine to kill that process and start a fresh dev server
 
 ### MANDATORY: Pre-Commit and Pre-Push Workflow
 
