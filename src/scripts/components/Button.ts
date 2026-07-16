@@ -7,9 +7,20 @@ export class Button extends BaseCaptureableObject {
     private buttonText: PIXI.Text;
     private leafSprite: PIXI.Sprite;
     isSelected: boolean = false;
-    constructor(text: string, x: number, y: number) {
+    /**
+     * @param textureAlias 葉の絵柄。既定は "leaf"(通常の緑色の葉、tintは
+     *   色調を少し変える程度にしか効かない)。鮮やかな色で塗り分けたい場合は
+     *   白抜きの "leaf_white" を渡す(butterfly_*と同じく、白地なのでtintが
+     *   そのまま発色する)
+     */
+    constructor(
+        text: string,
+        x: number,
+        y: number,
+        textureAlias: string = "leaf",
+    ) {
         super();
-        this.leafSprite = new PIXI.Sprite(PIXI.Texture.from("leaf"));
+        this.leafSprite = new PIXI.Sprite(PIXI.Texture.from(textureAlias));
         this.leafSprite.scale.set(0.5);
         this.addChild(this.leafSprite);
 

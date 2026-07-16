@@ -51,6 +51,8 @@ import { StageInformation } from "../../../src/scripts/components/StageInformati
 import { GameplayState } from "../../../src/scripts/scenes/GameplayState";
 import { StartState } from "../../../src/scripts/scenes/StartState";
 import { PracticeSelectState } from "../../../src/scripts/scenes/PracticeSelectState";
+import { t } from "../../../src/scripts/utils/Language";
+import * as Utility from "../../../src/scripts/utils/Utility";
 
 // Button/BaseCaptureableObject/StageInformationは実物を使う
 // (pixi.jsはグローバルモック: tests/setup/pixi-mock.ts)。
@@ -181,6 +183,24 @@ describe("ResultState", () => {
             // next()が呼ばれていないのでレベルはそのまま
             expect(stageInfo.level).toBe(3);
             expect((state as any).backToStartButton).toBeDefined();
+        });
+
+        it("shows the score message instead of a misleading 'next level' announcement", async () => {
+            const stageInfo = makeClearStageInfo({ isPractice: true });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubResultDisplay(state);
+
+            await runOnEnter(state);
+
+            const nextMessage = (state as any).nextMessage;
+            expect(nextMessage.text).not.toBe(
+                t("result.level", { n: stageInfo.level + 1 }),
+            );
+            expect(nextMessage.text).toBe(
+                t("result.yourTotalScore", {
+                    score: Utility.formatNumberWithCommas(stageInfo.totalScore),
+                }),
+            );
         });
 
         it("returns to the practice select screen (not the start menu) via the back button", async () => {

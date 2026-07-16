@@ -200,7 +200,9 @@ describe("PracticeSelectState", () => {
             expect(normalLevel3.button.leafSprite.tint).toBe(0xffffff);
         });
 
-        it("adds a distinct glow behind bonus buttons only", () => {
+        it("uses the tintable white leaf texture for bonus buttons only", () => {
+            // 通常の"leaf"は絵柄自体が暗い緑でtintでは明るい色を出せないため、
+            // ボーナスボタンだけ白抜きの"leaf_white"を使う(butterflyと同じ手法)
             vi.mocked(getMaxLevel).mockReturnValue(5);
             vi.mocked(getReachedBonusLevels).mockReturnValue([3]);
             const state = createState();
@@ -212,11 +214,10 @@ describe("PracticeSelectState", () => {
                 (sb: any) => sb.entry.level === 3 && !sb.entry.isBonus,
             );
 
-            expect(bonusEntry.glow).not.toBeNull();
-            expect((state as any).container.children).toContain(
-                bonusEntry.glow,
+            expect(bonusEntry.button.leafSprite.texture.source).toBe(
+                "leaf_white",
             );
-            expect(normalEntry.glow).toBeNull();
+            expect(normalEntry.button.leafSprite.texture.source).toBe("leaf");
         });
 
         it("trims to MAX_STAGE_COUNT by dropping the lowest levels", () => {

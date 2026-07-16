@@ -165,8 +165,11 @@ export class ResultState extends StateBase {
             return;
         }
 
+        // プラクティスモードのクリアは次のステージへ進まないため、
+        // 「Level N+1」という次面への案内は出さず、ゲームオーバーと同じく
+        // スコアだけを見せる(このあとメニューへ戻るボタンが出る)
         let messageText = "";
-        if (this.stageInfo.isClear) {
+        if (this.stageInfo.isClear && !this.stageInfo.isPractice) {
             messageText = t("result.level", { n: this.stageInfo.level + 1 });
         } else {
             messageText = t("result.yourTotalScore", {
