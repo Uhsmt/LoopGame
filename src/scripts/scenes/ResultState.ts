@@ -22,9 +22,11 @@ import { layoutSpecimens } from "../utils/SpecimenLayout";
 // 標本を並べる固定セルサイズ(px)で構成する。数値はモックアップでの
 // 実測を元にした初期値で、実機で見ながら微調整してよい
 const NOTEBOOK_Y_RATIO = 0.5;
+// ノートの出現/退場は、スライドではなくごく一瞬のフェードにする
+const NOTEBOOK_FADE_SPEED = 0.35;
 const PAGE_LEFT_X_RATIO = 0.064;
 const PAGE_LEFT_W_RATIO = 0.405;
-const PAGE_RIGHT_X_RATIO = 0.536;
+const PAGE_RIGHT_X_RATIO = 0.56;
 const PAGE_RIGHT_W_RATIO = 0.4;
 const PAGE_TOP_RATIO = 0.085;
 const PAGE_BOTTOM_MARGIN_RATIO = 0.11;
@@ -190,13 +192,9 @@ export class ResultState extends StateBase {
         }
 
         // ノートの中央に次面の案内を重ねると読みづらいため、ノート型リザルト
-        // では先にノートを画面下へスライドアウトさせてから次のメッセージを出す
+        // では先にノートをごく一瞬でフェードアウトさせてから次のメッセージを出す
         if (this.notebookSprite) {
-            await this.slideY(
-                this.notebookSprite,
-                this.manager.app.screen.height + this.notebookSprite.height / 2,
-                0.8,
-            );
+            await this.fadeOut(this.notebookSprite, NOTEBOOK_FADE_SPEED);
             this.container.removeChild(this.notebookSprite);
             this.notebookSprite.destroy();
             this.notebookSprite = undefined;
@@ -483,13 +481,12 @@ export class ResultState extends StateBase {
         const notebookSprite = new PIXI.Sprite(PIXI.Texture.from("notebook"));
         notebookSprite.anchor.set(0.5);
         notebookSprite.x = screenSize.x / 2;
-        const notebookRestY = screenSize.y * NOTEBOOK_Y_RATIO;
-        // 画面下から現れるように、開始位置は画面外(下)にしておく
-        notebookSprite.y = screenSize.y + notebookSprite.height / 2;
+        notebookSprite.y = screenSize.y * NOTEBOOK_Y_RATIO;
+        notebookSprite.alpha = 0;
         this.container.addChild(notebookSprite);
         this.notebookSprite = notebookSprite;
 
-        await this.slideY(notebookSprite, notebookRestY, 0.8);
+        await this.fadeIn(notebookSprite, NOTEBOOK_FADE_SPEED, 1);
 
         const notebookLeft = notebookSprite.x - notebookSprite.width / 2;
         const notebookTop = notebookSprite.y - notebookSprite.height / 2;
