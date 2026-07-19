@@ -83,13 +83,12 @@ export class Butterfly extends BaseCaptureableObject {
         this.spriteWith = this.sprite.width;
 
         // color change用のobject
-        // (色変え中にsubColorの色が判別しやすいよう、通常よりひと回り大きくしている)
         const ellipse = new PIXI.Graphics();
         ellipse.ellipse(
             0,
             0,
-            46 * this.sprite.scale.x,
-            58 * this.sprite.scale.x,
+            30 * this.sprite.scale.x,
+            40 * this.sprite.scale.x,
         );
         ellipse.fill(0xffffff);
         ellipse.x = 0;
