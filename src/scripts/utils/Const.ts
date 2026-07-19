@@ -1,24 +1,15 @@
 /* eslint @typescript-eslint/no-namespace: 0 */
 // 色覚特性(P型/D型など)があっても互いに見分けやすいよう、
-// Wong (2011) の色覚配慮パレットをベースに色相・明度を離して選定
+// IBM Design Languageの色覚配慮パレットをベースに選定。
+// Wongパレットも試したが彩度が低くくすんで見えるとのレビューがあったため、
+// より鮮やかで見分けやすいIBM版に変更した
 export const COLOR_LIST = [
-    0xe69f00, // orange
-    0x56b4e9, // sky blue
-    0x009e73, // bluish green
-    0xf0e442, // yellow
-    0xcc79a7, // reddish purple
+    0x648fff, // blue
+    0x785ef0, // purple
+    0xdc267f, // magenta
+    0xfe6100, // orange
+    0xffb000, // gold
 ] as const;
-
-// COLOR_LISTの各色に対応する形状マーク(色以外の手がかりを持たせ、
-// 色の弁別が難しい場合でも同色判定ができるようにする)
-export const MARK_SHAPES = [
-    "circle",
-    "square",
-    "triangle",
-    "diamond",
-    "star",
-] as const;
-export type MarkShape = (typeof MARK_SHAPES)[number];
 
 export const SIZE_LIST = ["small", "medium", "large"] as const;
 

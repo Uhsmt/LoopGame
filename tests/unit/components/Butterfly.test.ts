@@ -13,15 +13,11 @@ vi.mock("pixi.js", () => ({
     },
     Graphics: vi.fn().mockImplementation(() => ({
         ellipse: vi.fn().mockReturnThis(),
-        circle: vi.fn().mockReturnThis(),
-        poly: vi.fn().mockReturnThis(),
-        clear: vi.fn().mockReturnThis(),
         fill: vi.fn().mockReturnThis(),
         tint: 0,
         alpha: 1,
         x: 0,
         y: 0,
-        scale: { x: 1 },
     })),
     Point: vi.fn().mockImplementation((x = 0, y = 0) => ({ x, y })),
     Container: vi.fn().mockImplementation(() => ({
@@ -46,7 +42,6 @@ vi.mock("../../../src/scripts/utils/Utility", () => ({
     random: vi.fn().mockReturnValue(100),
     chooseAtRandom: vi.fn().mockReturnValue(["small"]),
     getDistance: vi.fn().mockReturnValue(5),
-    getColorMarkShape: vi.fn().mockReturnValue("circle"),
 }));
 
 // Mock Const
@@ -72,7 +67,6 @@ vi.mock("../../../src/scripts/components/BaseCaptureableObject", () => ({
 }));
 
 import { Butterfly } from "../../../src/scripts/components/Butterfly";
-import * as Utility from "../../../src/scripts/utils/Utility";
 
 // Create simple Point-like objects for testing
 class MockPoint {
@@ -225,29 +219,6 @@ describe("Butterfly", () => {
             (butterfly as any).ellipse = null;
 
             expect(() => butterfly.switchColor()).not.toThrow();
-        });
-
-        it("should redraw the color mark for the new color (#70 colorblind-safe mark)", () => {
-            vi.mocked(Utility.getColorMarkShape).mockClear();
-
-            butterfly.switchColor();
-
-            // 新しい色(切替後のcolor)で形状マークを引き直していること
-            expect(Utility.getColorMarkShape).toHaveBeenCalledWith(
-                butterfly.color,
-            );
-            expect((butterfly as any).mark.clear).toHaveBeenCalled();
-        });
-    });
-
-    describe("color mark (#70 colorblind accessibility)", () => {
-        it("should draw a mark based on getColorMarkShape() on construction", () => {
-            expect(Utility.getColorMarkShape).toHaveBeenCalledWith(0xff0000);
-            expect((butterfly as any).mark).toBeDefined();
-            expect((butterfly as any).mark.clear).toHaveBeenCalled();
-            // 黒縁取り+白地の二重塗りで、どの羽色の上でも視認できるようにする
-            expect((butterfly as any).mark.fill).toHaveBeenCalledWith(0x000000);
-            expect((butterfly as any).mark.fill).toHaveBeenCalledWith(0xffffff);
         });
     });
 

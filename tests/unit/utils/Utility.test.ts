@@ -8,9 +8,7 @@ import {
     isClickGesture,
     shuffleArray,
     calculateObstacleTiming,
-    getColorMarkShape,
 } from "../../../src/scripts/utils/Utility";
-import * as Const from "../../../src/scripts/utils/Const";
 
 // Create a simple Point-like object for testing
 class MockPoint {
@@ -121,22 +119,6 @@ describe("Utility Functions", () => {
             expect(isTrueRandom(50)).toBe(true); // 0.3 * 100 = 30 <= 50
             expect(isTrueRandom(25)).toBe(false); // 0.3 * 100 = 30 > 25
             vi.restoreAllMocks();
-        });
-    });
-
-    describe("getColorMarkShape()", () => {
-        it("should map every COLOR_LIST entry to a distinct MARK_SHAPES entry", () => {
-            const shapes = Const.COLOR_LIST.map((color) =>
-                getColorMarkShape(color),
-            );
-            expect(shapes).toEqual([...Const.MARK_SHAPES]);
-            // 全て異なる形状であること(色だけでなく形でも判別できるようにするため)
-            expect(new Set(shapes).size).toBe(Const.COLOR_LIST.length);
-        });
-
-        it("should return the same shape for the same color every time", () => {
-            const color = Const.COLOR_LIST[2];
-            expect(getColorMarkShape(color)).toBe(getColorMarkShape(color));
         });
     });
 

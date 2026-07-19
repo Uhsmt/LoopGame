@@ -40,18 +40,6 @@ export function isTrueRandom(_percentage: number): boolean {
     return Math.random() * 100 <= _percentage;
 }
 
-const COLOR_MARK_SHAPE_MAP: ReadonlyMap<number, Const.MarkShape> = new Map(
-    Const.COLOR_LIST.map((color, i) => [color, Const.MARK_SHAPES[i]]),
-);
-
-/**
- * 蝶の色に対応する形状マークを返す(色覚特性があっても色以外の手がかりで
- * 同色判定ができるようにするため)
- */
-export function getColorMarkShape(color: number): Const.MarkShape {
-    return COLOR_MARK_SHAPE_MAP.get(color) ?? Const.MARK_SHAPES[0];
-}
-
 export function formatNumberWithCommas(x: number): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
