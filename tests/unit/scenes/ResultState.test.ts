@@ -403,21 +403,22 @@ describe("ResultState", () => {
             (state as any).slideY = vi.fn().mockResolvedValue(undefined);
         }
 
-        it("routes to displayNotebookResult only when clearing a normal (non-bonus) stage", () => {
-            const notebookCase = makeClearStageInfo({
-                isPractice: false,
-                bonusFlag: false,
-            });
+        it("routes to displayNotebookResult when clearing a stage, including the bonus stage's own result", () => {
+            const notebookCases = [
+                makeClearStageInfo({ isPractice: false, bonusFlag: false }), // normal clear
+                makeClearStageInfo({ isPractice: false, bonusFlag: true }), // bonus stage's own result (same design)
+            ];
             const legacyCases = [
                 makeClearStageInfo({ isPractice: true }), // practice clear
-                makeClearStageInfo({ bonusFlag: true }), // bonus stage result
                 makeGameOverStageInfo({ isPractice: false }), // game over
             ];
 
-            expect(
-                (new ResultState(manager as any, notebookCase, false) as any)
-                    .isNotebookResult,
-            ).toBe(true);
+            notebookCases.forEach((stageInfo) => {
+                expect(
+                    (new ResultState(manager as any, stageInfo, false) as any)
+                        .isNotebookResult,
+                ).toBe(true);
+            });
 
             legacyCases.forEach((stageInfo) => {
                 expect(
@@ -493,6 +494,30 @@ describe("ResultState", () => {
                 options.centerX === app.screen.width / 2 &&
                     options.centerY === app.screen.height / 2,
             ).toBe(false);
+        });
+
+        it("uses the bonus-stage heading, an infinity target, and drops the bonus-score row for the bonus stage's own result", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: true,
+                needCount: -1,
+                bonusCount: 0,
+                capturedSpecimens: [makeSpecimen({}), makeSpecimen({})],
+            });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            const texts = (state as any).notebookChildren
+                .map((child: any) => child.text)
+                .filter((text: unknown) => typeof text === "string");
+
+            expect(texts).toContain(t("result.bonusStage"));
+            expect(texts.some((text: string) => text.includes("∞"))).toBe(true);
+            expect(texts).not.toContain(
+                t("result.notebook.bonusScore", { count: 0 }),
+            );
         });
     });
 });

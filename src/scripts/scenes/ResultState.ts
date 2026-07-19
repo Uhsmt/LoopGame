@@ -22,8 +22,6 @@ import { layoutSpecimens } from "../utils/SpecimenLayout";
 // 標本を並べる固定セルサイズ(px)で構成する。数値はモックアップでの
 // 実測を元にした初期値で、実機で見ながら微調整してよい
 const NOTEBOOK_Y_RATIO = 0.5;
-// ノートの出現/退場は、スライドではなくごく一瞬のフェードにする
-const NOTEBOOK_FADE_SPEED = 0.35;
 const PAGE_LEFT_X_RATIO = 0.064;
 const PAGE_LEFT_W_RATIO = 0.405;
 const PAGE_RIGHT_X_RATIO = 0.56;
@@ -65,9 +63,10 @@ export class ResultState extends StateBase {
     /** 暗転/明転に使う夜背景(夢の演出があるときだけ用意する) */
     private nightBackground?: PIXI.Sprite;
     /**
-     * レベルクリア→次のステージへ進む場合だけtrue(ノート型リザルト画面を使う)。
-     * ボーナスステージのリザルト・ゲームオーバー・プラクティスクリアは
-     * 今回のスコープ外のため、従来どおりdisplayLegacyResult()を使う
+     * クリアして次のステージへ進む場合にtrue(ノート型リザルト画面を使う)。
+     * ボーナスステージ自身の結果もこれに含む(通常クリアと同じデザインを
+     * 共有する)。ゲームオーバー・プラクティスクリアはスコープ外のため、
+     * 従来どおりdisplayLegacyResult()を使う
      */
     private readonly isNotebookResult: boolean;
     private notebookSprite?: PIXI.Sprite;
@@ -93,11 +92,10 @@ export class ResultState extends StateBase {
         this.isEnteringDream =
             stageInfo.isClear && isGotBonusButterfly && !stageInfo.isPractice;
         this.isWakingDream = stageInfo.bonusFlag;
-        // レベルクリアして次のステージへ進む場合だけノート型リザルトを使う。
-        // ボーナスステージのリザルト(bonusFlag)・ゲームオーバー・プラクティス
+        // クリアして次のステージ(またはボーナスステージ→通常ステージ)へ
+        // 進む場合はノート型リザルトを使う。ゲームオーバー・プラクティス
         // クリアは今回のスコープ外(displayLegacyResultのまま)
-        this.isNotebookResult =
-            stageInfo.isClear && !stageInfo.isPractice && !stageInfo.bonusFlag;
+        this.isNotebookResult = stageInfo.isClear && !stageInfo.isPractice;
 
         // 夢に誘う蝶をスコアの紙・テキストより常に手前(最前面)に描画するため、
         // zIndexでの並べ替えを有効にしておく(スコアテキストはdisplayStageResult
@@ -192,11 +190,20 @@ export class ResultState extends StateBase {
         }
 
         // ノートの中央に次面の案内を重ねると読みづらいため、ノート型リザルト
-        // では先にノートをごく一瞬でフェードアウトさせてから次のメッセージを出す
+        // では先にノートをフェード+スライドで下げてから次のメッセージを出す
+        // (登場時と対になる動き)
         if (this.notebookSprite) {
-            await this.fadeOut(this.notebookSprite, NOTEBOOK_FADE_SPEED);
-            this.container.removeChild(this.notebookSprite);
-            this.notebookSprite.destroy();
+            const notebook = this.notebookSprite;
+            await Promise.all([
+                this.fadeOut(notebook, 0.05),
+                this.slideY(
+                    notebook,
+                    notebook.y + this.manager.app.screen.height * 0.08,
+                    0.15,
+                ),
+            ]);
+            this.container.removeChild(notebook);
+            notebook.destroy();
             this.notebookSprite = undefined;
         }
 
@@ -481,12 +488,17 @@ export class ResultState extends StateBase {
         const notebookSprite = new PIXI.Sprite(PIXI.Texture.from("notebook"));
         notebookSprite.anchor.set(0.5);
         notebookSprite.x = screenSize.x / 2;
-        notebookSprite.y = screenSize.y * NOTEBOOK_Y_RATIO;
+        const notebookRestY = screenSize.y * NOTEBOOK_Y_RATIO;
+        // stickyと同じく、少し下からフェード+スライドで収まる形にする
+        notebookSprite.y = notebookRestY + screenSize.y * 0.08;
         notebookSprite.alpha = 0;
         this.container.addChild(notebookSprite);
         this.notebookSprite = notebookSprite;
 
-        await this.fadeIn(notebookSprite, NOTEBOOK_FADE_SPEED, 1);
+        await Promise.all([
+            this.fadeIn(notebookSprite, 0.05, 1),
+            this.slideY(notebookSprite, notebookRestY, 0.15),
+        ]);
 
         const notebookLeft = notebookSprite.x - notebookSprite.width / 2;
         const notebookTop = notebookSprite.y - notebookSprite.height / 2;
@@ -501,11 +513,11 @@ export class ResultState extends StateBase {
             notebookTop +
             notebookSprite.height * (1 - PAGE_BOTTOM_MARGIN_RATIO);
 
-        // 左ページ: 見出し
-        const levelMsg = new Message(
-            t("result.level", { n: this.stageInfo.level }),
-            28,
-        );
+        // 左ページ: 見出し(ボーナスステージの結果も同じデザインを使う)
+        const headingText = this.stageInfo.bonusFlag
+            ? t("result.bonusStage")
+            : t("result.level", { n: this.stageInfo.level });
+        const levelMsg = new Message(headingText, 28);
         levelMsg.anchor.set(0, 0.5);
         levelMsg.x = leftPageX;
         levelMsg.y = pageTop + 16;
@@ -612,7 +624,7 @@ export class ResultState extends StateBase {
 
         const needGotMsg = new Message(
             t("result.notebook.needGot", {
-                need: this.stageInfo.needCount,
+                need: this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount,
                 got: this.stageInfo.captureCount,
             }),
             16,
@@ -624,30 +636,46 @@ export class ResultState extends StateBase {
         this.container.addChild(needGotMsg);
         this.notebookChildren.push(needGotMsg);
 
-        addScoreRow(
-            t("result.notebook.baseScore"),
-            Utility.formatNumberWithCommas(this.stageInfo.stagePoint),
-            scoreBlockTop + scoreLineHeight,
-            16,
-        );
-        addScoreRow(
-            t("result.notebook.bonusScore", {
-                count: this.stageInfo.bonusCount,
-            }),
-            `+${Utility.formatNumberWithCommas(this.stageInfo.bonusPoint)}`,
-            scoreBlockTop + scoreLineHeight * 2,
-            16,
-        );
-        addScoreRow(
-            t("result.notebook.stageScore"),
-            Utility.formatNumberWithCommas(this.stageInfo.stageTotalScore),
-            scoreBlockTop + scoreLineHeight * 3,
-            16,
-        );
+        // ボーナスステージの結果には「ボーナス」行がない(上限のないステージ
+        // なので、通常クリアのような超過ボーナスという概念がない)
+        const scoreLines: { label: string; value: string }[] = [
+            {
+                label: t("result.notebook.baseScore"),
+                value: Utility.formatNumberWithCommas(
+                    this.stageInfo.stagePoint,
+                ),
+            },
+            ...(this.stageInfo.bonusFlag
+                ? []
+                : [
+                      {
+                          label: t("result.notebook.bonusScore", {
+                              count: this.stageInfo.bonusCount,
+                          }),
+                          value: `+${Utility.formatNumberWithCommas(this.stageInfo.bonusPoint)}`,
+                      },
+                  ]),
+            {
+                label: t("result.notebook.stageScore"),
+                value: Utility.formatNumberWithCommas(
+                    this.stageInfo.stageTotalScore,
+                ),
+            },
+        ];
+
+        scoreLines.forEach((row, index) => {
+            addScoreRow(
+                row.label,
+                row.value,
+                scoreBlockTop + scoreLineHeight * (index + 1),
+                16,
+            );
+        });
+
         addScoreRow(
             t("result.notebook.totalScore"),
             Utility.formatNumberWithCommas(this.stageInfo.totalScore),
-            scoreBlockTop + scoreLineHeight * 4 + 10,
+            scoreBlockTop + scoreLineHeight * (scoreLines.length + 1) + 10,
             22,
         );
     }
