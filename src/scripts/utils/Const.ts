@@ -1,19 +1,18 @@
 /* eslint @typescript-eslint/no-namespace: 0 */
-// 色覚特性(P型/D型など)があっても互いに見分けやすいよう、
-// IBM Design Languageの色覚配慮パレットをベースに選定。
-// Wongパレットも試したが彩度が低くくすんで見えるとのレビューがあったため、
-// より鮮やかで見分けやすいIBM版に変更した。
-// さらにIBM版のpurpleがblueと色相的に近く(約20度差)見分けづらいとの
-// レビューを受け、blueから最も離れたティール(青緑)に差し替えている。
-// orange/goldは元からHSL彩度100%だったため、明度が高くパステル寄りに
-// 見えていたblue/teal/magentaの3色だけを彩度・鮮やかさを上げる方向で調整
-// (色相の間隔は変えていないため、色覚特性での判別性は維持される)
+// 色覚特性(P型/D型など)があっても互いに見分けやすい配色。
+// 数度のレビューを経て以下を満たすよう調整済み:
+// - 色相を5色でまんべんなく分散(隣接する組でも最低20度以上離す)
+// - 色相が近い組(orange/gold等)は明度(Lightness)もはっきり分け、
+//   色相だけに頼らず判別できるようにする
+//   (teal .43 < orange .50 < blue .59 < gold .65 < pink .71)
+// - 彩度は基本的に高め(パステル・くすみを避ける)だが、暗くしすぎて
+//   茶色っぽく見えないよう明度は0.4を下回らないようにする
 export const COLOR_LIST = [
     0x2f5cff, // blue
     0x00d9b8, // teal
-    0xf0047d, // magenta
-    0xfe6100, // orange
-    0xffb000, // gold
+    0xff6bca, // pink
+    0xff7700, // orange
+    0xfbde51, // gold(yellow)
 ] as const;
 
 export const SIZE_LIST = ["small", "medium", "large"] as const;
