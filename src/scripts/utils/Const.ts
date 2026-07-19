@@ -4,13 +4,16 @@
 // - 色相を5色でまんべんなく分散(隣接する組でも最低20度以上離す)
 // - 色相が近い組(orange/gold等)は明度(Lightness)もはっきり分け、
 //   色相だけに頼らず判別できるようにする
-//   (teal .43 < orange .50 < magenta .55 < blue .59 < gold .65)
+//   (teal .43 < orange .50 < blue .59 < pink/gold .65)
 // - 彩度は基本的に高め(パステル・くすみを避ける)だが、暗くしすぎて
 //   茶色っぽく見えないよう明度は0.4を下回らないようにする
+// - pinkはmagenta寄りだと電光的に見えすぎるとのレビューを受け、
+//   色相は保ったまま明度を上げてホットピンク寄りにしている
+//   (goldとほぼ同じ明度だが、色相が70度離れているため判別には問題ない)
 export const COLOR_LIST = [
     0x2f5cff, // blue
     0x00d9b8, // teal
-    0xf91f68, // magenta(pink)
+    0xf8548a, // pink
     0xff7700, // orange
     0xfbde51, // gold(yellow)
 ] as const;
