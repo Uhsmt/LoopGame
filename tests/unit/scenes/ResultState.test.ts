@@ -164,10 +164,10 @@ describe("ResultState", () => {
 
     async function runOnEnter(state: ResultState): Promise<void> {
         const promise = state.onEnter();
-        // ノート型は結果表示が1秒長い(6000ms)ため、両方のパスをまかなえる
+        // ノート型は結果表示が2秒長い(7000ms)ため、両方のパスをまかなえる
         // 長さまで進める(displayStageResultはstubResultDisplayでモック
         // 済みなので、余分に進めても後続の状態遷移には影響しない)
-        await vi.advanceTimersByTimeAsync(6000 + 2000);
+        await vi.advanceTimersByTimeAsync(7000 + 2000);
         await promise;
     }
 
@@ -198,8 +198,8 @@ describe("ResultState", () => {
             (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
 
             const promise = state.onEnter();
-            // ノート型は結果表示が1秒長い(6000ms)
-            await vi.advanceTimersByTimeAsync(6000);
+            // ノート型は結果表示が2秒長い(7000ms)
+            await vi.advanceTimersByTimeAsync(7000);
             await promise;
 
             expect(stageInfo.bonusFlag).toBe(true);
@@ -400,6 +400,7 @@ describe("ResultState", () => {
             (state as any).fadeIn = vi.fn().mockResolvedValue(undefined);
             (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
             (state as any).wait = vi.fn().mockResolvedValue(undefined);
+            (state as any).slideY = vi.fn().mockResolvedValue(undefined);
         }
 
         it("routes to displayNotebookResult only when clearing a normal (non-bonus) stage", () => {

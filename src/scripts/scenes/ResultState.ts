@@ -152,13 +152,13 @@ export class ResultState extends StateBase {
         // disp result
         await this.displayStageResult();
 
-        // 5秒まつ(ノート型はもう1秒長く見せる)
+        // 5秒まつ(ノート型はさらに2秒長く見せる)
         await new Promise((resolve) =>
             setTimeout(
                 () => {
                     resolve(null);
                 },
-                this.isNotebookResult ? 6000 : 5000,
+                this.isNotebookResult ? 7000 : 5000,
             ),
         );
 
@@ -190,9 +190,13 @@ export class ResultState extends StateBase {
         }
 
         // ノートの中央に次面の案内を重ねると読みづらいため、ノート型リザルト
-        // では先にノート自体を消してから次のメッセージを出す
+        // では先にノートを画面下へスライドアウトさせてから次のメッセージを出す
         if (this.notebookSprite) {
-            await this.fadeOut(this.notebookSprite, 0.05);
+            await this.slideY(
+                this.notebookSprite,
+                this.manager.app.screen.height + this.notebookSprite.height / 2,
+                0.8,
+            );
             this.container.removeChild(this.notebookSprite);
             this.notebookSprite.destroy();
             this.notebookSprite = undefined;
@@ -479,12 +483,13 @@ export class ResultState extends StateBase {
         const notebookSprite = new PIXI.Sprite(PIXI.Texture.from("notebook"));
         notebookSprite.anchor.set(0.5);
         notebookSprite.x = screenSize.x / 2;
-        notebookSprite.y = screenSize.y * NOTEBOOK_Y_RATIO;
-        notebookSprite.alpha = 0;
+        const notebookRestY = screenSize.y * NOTEBOOK_Y_RATIO;
+        // 画面下から現れるように、開始位置は画面外(下)にしておく
+        notebookSprite.y = screenSize.y + notebookSprite.height / 2;
         this.container.addChild(notebookSprite);
         this.notebookSprite = notebookSprite;
 
-        await this.fadeIn(notebookSprite, 0.05, 1);
+        await this.slideY(notebookSprite, notebookRestY, 0.8);
 
         const notebookLeft = notebookSprite.x - notebookSprite.width / 2;
         const notebookTop = notebookSprite.y - notebookSprite.height / 2;
