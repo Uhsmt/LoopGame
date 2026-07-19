@@ -346,6 +346,47 @@ describe("StageInformation", () => {
         });
     });
 
+    describe("retry", () => {
+        it("should default retryUsed to false", () => {
+            const si = new StageInformation();
+            expect(si.retryUsed).toBe(false);
+        });
+
+        it("should reset the current attempt but keep the same level/needCount", () => {
+            const si = new StageInformation(5);
+            si.captureCount = si.needCount - 1;
+            si.stagePoint = 300;
+            si.calcScore(); // 失敗扱い(未クリア)。totalScoreにstagePointが加算される
+
+            const needCountBeforeRetry = si.needCount;
+            const totalScoreBeforeRetry = si.totalScore;
+
+            si.retry();
+
+            expect(si.level).toBe(5);
+            expect(si.needCount).toBe(needCountBeforeRetry);
+            expect(si.retryUsed).toBe(true);
+            expect(si.captureCount).toBe(0);
+            expect(si.stagePoint).toBe(0);
+            expect(si.bonusPoint).toBe(0);
+            expect(si.stageTotalScore).toBe(0);
+            expect(si.isClear).toBe(false);
+            // 失敗した挑戦分の得点はtotalScoreから取り消される
+            expect(si.totalScore).toBe(totalScoreBeforeRetry - 300);
+        });
+
+        it("should not let totalScore go negative when the failed attempt scored nothing", () => {
+            const si = new StageInformation();
+            si.captureCount = 0;
+            si.stagePoint = 0;
+            si.calcScore();
+
+            si.retry();
+
+            expect(si.totalScore).toBe(0);
+        });
+    });
+
     describe("bonusStage", () => {
         it("should enter bonus mode with randomized settings in expected ranges", () => {
             const si = new StageInformation();

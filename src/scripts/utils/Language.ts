@@ -27,6 +27,7 @@ const CATALOG = {
     "button.back": { ja: "もどる", en: "Back" },
     "button.next": { ja: "つぎへ", en: "Next" },
     "button.backToMenu": { ja: "メニュー", en: "Menu" },
+    "button.retry": { ja: "もう一度", en: "Retry" },
     "button.practice": { ja: "れんしゅう", en: "Practice" },
 
     // --- れんしゅうモード(PracticeSelectState) ---
@@ -82,6 +83,10 @@ const CATALOG = {
     "result.yourTotalScore": {
         ja: "Score \r {score}",
         en: "Your total score\r {score}",
+    },
+    "result.retryHint": {
+        ja: "1回だけリトライできるよ",
+        en: "You can retry once",
     },
     "result.newRecord": { ja: "しんきろく！", en: "New Record!" },
     "result.best": { ja: "ベスト: {score}", en: "Best: {score}" },
