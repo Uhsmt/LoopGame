@@ -77,17 +77,16 @@ describe("Moon", () => {
         moon = new Moon();
     });
 
-    it("marks itself as blinking and pulses the sprite alpha over time when blink() is called", () => {
+    it("marks itself as blinking and sways the angle back and forth over time when blink() is called", () => {
+        const baseAngle = moon.angle;
         moon.blink();
         expect(moon.blinking).toBe(true);
 
         const [ticker] = (PIXI.Ticker as unknown as MockTickerLike).instances;
         expect(ticker.started).toBe(true);
 
-        const sprite = moon.children[0] as { alpha: number };
-        const alphaAtStart = sprite.alpha;
         ticker.tick(250);
-        expect(sprite.alpha).not.toBe(alphaAtStart);
+        expect(moon.angle).not.toBe(baseAngle);
     });
 
     it("does not start a second ticker when blink() is called again while already blinking", () => {
@@ -98,7 +97,8 @@ describe("Moon", () => {
         ).toBe(1);
     });
 
-    it("stops pulsing and restores full alpha on stopBlink()", () => {
+    it("stops swaying and restores the original angle on stopBlink()", () => {
+        const baseAngle = moon.angle;
         moon.blink();
         const [ticker] = (PIXI.Ticker as unknown as MockTickerLike).instances;
         ticker.tick(250);
@@ -108,8 +108,7 @@ describe("Moon", () => {
         expect(moon.blinking).toBe(false);
         expect(ticker.started).toBe(false);
         expect(ticker.destroyed).toBe(true);
-        const sprite = moon.children[0] as { alpha: number };
-        expect(sprite.alpha).toBe(1);
+        expect(moon.angle).toBe(baseAngle);
     });
 
     it("is safe to call stopBlink() before blink() was ever called", () => {

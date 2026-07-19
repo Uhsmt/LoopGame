@@ -2,16 +2,17 @@ import * as PIXI from "pixi.js";
 import { PlanetBase } from "./PlanetBase";
 import * as Const from "../utils/Const";
 
-// 発光の明滅の周期(ms)。値が小さいほど点滅が速くなる
-const BLINK_PERIOD_MS = 500;
-// 明滅時の最小alpha(0にすると消えてしまうため下限を設ける)
-const BLINK_MIN_ALPHA = 0.35;
+// ハンモックのような揺れの周期(ms)。値が小さいほど速く揺れる
+const SWAY_PERIOD_MS = 900;
+// 揺れ幅(度)。基準角度を中心に左右にこの分だけ傾く
+const SWAY_AMPLITUDE_DEG = 8;
 
 export class Moon extends PlanetBase {
     public blinking: boolean;
     private sprite: PIXI.Sprite;
-    private blinkTicker: PIXI.Ticker | null = null;
-    private blinkElapsed: number = 0;
+    private swayTicker: PIXI.Ticker | null = null;
+    private swayElapsed: number = 0;
+    private readonly baseAngle: number = -30;
 
     constructor() {
         super();
@@ -20,35 +21,36 @@ export class Moon extends PlanetBase {
         const sprite = PIXI.Sprite.from("moon");
         sprite.anchor.set(0.5);
         this.alpha = 1;
-        this.angle = -30;
+        this.angle = this.baseAngle;
         this.scale.set(0.7);
         this.addChild(sprite);
         this.sprite = sprite;
     }
 
+    // 太陽の点滅の代わりに、月をハンモックのように左右へゆっくり揺らして
+    // 残り時間の緊張感を演出する
     blink(): void {
         if (this.blinking) return;
         this.blinking = true;
-        this.blinkElapsed = 0;
-        this.blinkTicker = new PIXI.Ticker();
-        this.blinkTicker.add(() => {
-            this.blinkElapsed += this.blinkTicker!.deltaMS;
-            const cycle =
-                (Math.sin((this.blinkElapsed / BLINK_PERIOD_MS) * Math.PI * 2) +
-                    1) /
-                2;
-            this.sprite.alpha = BLINK_MIN_ALPHA + cycle * (1 - BLINK_MIN_ALPHA);
+        this.swayElapsed = 0;
+        this.swayTicker = new PIXI.Ticker();
+        this.swayTicker.add(() => {
+            this.swayElapsed += this.swayTicker!.deltaMS;
+            const angleOffset =
+                Math.sin((this.swayElapsed / SWAY_PERIOD_MS) * Math.PI * 2) *
+                SWAY_AMPLITUDE_DEG;
+            this.angle = this.baseAngle + angleOffset;
         });
-        this.blinkTicker.start();
+        this.swayTicker.start();
     }
 
     stopBlink(): void {
         if (!this.blinking) return;
         this.blinking = false;
-        this.blinkTicker?.stop();
-        this.blinkTicker?.destroy();
-        this.blinkTicker = null;
-        this.sprite.alpha = 1;
+        this.swayTicker?.stop();
+        this.swayTicker?.destroy();
+        this.swayTicker = null;
+        this.angle = this.baseAngle;
     }
 
     move(progress: number, screen_width: number, screen_height: number): void {
