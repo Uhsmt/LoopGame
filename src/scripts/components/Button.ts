@@ -22,13 +22,19 @@ export class Button extends BaseCaptureableObject {
         super();
         this.leafSprite = new PIXI.Sprite(PIXI.Texture.from(textureAlias));
         this.leafSprite.scale.set(0.5);
+        this.leafSprite.anchor.set(0.5);
+        this.leafSprite.position.set(
+            this.leafSprite.width / 2,
+            this.leafSprite.height / 2,
+        );
+        this.leafSprite.rotation = Math.PI / 3;
         this.addChild(this.leafSprite);
 
+        const font = Button.fontStyleFor(text);
         this.buttonText = new PIXI.Text({
             text: text,
             style: {
-                ...Button.fontStyleFor(text),
-                fontSize: 30,
+                ...font,
                 fill: "#ffffff",
                 align: "center",
             },
@@ -36,7 +42,7 @@ export class Button extends BaseCaptureableObject {
         this.addChild(this.buttonText);
         this.buttonText.anchor.set(0.5);
         this.buttonText.x = (1.1 * this.leafSprite.width) / 2;
-        this.buttonText.y = this.leafSprite.height / 2;
+        this.buttonText.y = this.leafSprite.height / 2 + font.fontSize / 3;
 
         this.x = x;
         this.y = y;
@@ -45,21 +51,28 @@ export class Button extends BaseCaptureableObject {
         this.hitRate = 0.3;
     }
 
-    /** 表示テキストに応じて日本語/英語フォントを選ぶ */
+    /**
+     * 表示テキストに応じて日本語/英語フォントを選ぶ。
+     * 日本語は全角文字で幅を取り葉からはみ出しやすいため、英語よりやや
+     * 小さめのfontSizeにする
+     */
     private static fontStyleFor(text: string): {
         fontFamily: string;
         fontWeight: PIXI.TextStyleFontWeight;
+        fontSize: number;
     } {
         return isJapaneseText(text)
             ? {
                   fontFamily: Const.FONT_JAPANESE,
                   fontWeight:
                       Const.FONT_JAPANESE_BOLD as PIXI.TextStyleFontWeight,
+                  fontSize: 24,
               }
             : {
                   fontFamily: Const.FONT_ENGLISH,
                   fontWeight:
                       Const.FONT_ENGLISH_BOLD as PIXI.TextStyleFontWeight,
+                  fontSize: 30,
               };
     }
 
@@ -69,6 +82,7 @@ export class Button extends BaseCaptureableObject {
         const font = Button.fontStyleFor(text);
         this.buttonText.style.fontFamily = font.fontFamily;
         this.buttonText.style.fontWeight = font.fontWeight;
+        this.buttonText.style.fontSize = font.fontSize;
     }
 
     /**

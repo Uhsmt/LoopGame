@@ -53,6 +53,8 @@ export class StageInformation {
     bonusFlag: boolean = false;
     // プラクティスモード(記録・スコア保存を行わない再挑戦プレイ)かどうか
     isPractice: boolean = false;
+    // 1回だけ使えるリトライを使い切ったかどうか(ラン全体で1回のみ)
+    retryUsed: boolean = false;
 
     constructor(startLevel: number = 1) {
         // initial level (プラクティスモードでは任意のレベルから開始できる)
@@ -134,6 +136,23 @@ export class StageInformation {
         this.bonusPoint = this.bonusCount * 100;
         this.stageTotalScore = this.stagePoint + this.bonusPoint;
         this.totalScore += this.stageTotalScore;
+    }
+
+    /**
+     * 失敗時に1回だけ使えるリトライ。同じレベルを最初からやり直す。
+     * calcScore()が既にtotalScoreへ加算した失敗分のスコアを取り消してから、
+     * 挑戦カウンタをリセットする(ラン全体で1回のみ、retryUsedで管理)。
+     */
+    retry(): void {
+        this.totalScore -= this.stageTotalScore;
+        this.retryUsed = true;
+        this.setConfig(this.level);
+        this.captureCount = 0;
+        this.stagePoint = 0;
+        this.bonusCount = 0;
+        this.bonusPoint = 0;
+        this.stageTotalScore = 0;
+        this.isClear = false;
     }
 
     next(): void {
