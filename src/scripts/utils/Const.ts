@@ -7,13 +7,17 @@
 // レビューを受け、blueから最も離れたティール(青緑)に差し替えている。
 // orange/goldは元からHSL彩度100%だったため、明度が高くパステル寄りに
 // 見えていたblue/teal/magentaの3色だけを彩度・鮮やかさを上げる方向で調整
-// (色相の間隔は変えていないため、色覚特性での判別性は維持される)
+// (色相の間隔は変えていないため、色覚特性での判別性は維持される)。
+// その後、実プレイでorange/gold/magentaが色変え中に見分けづらいとの指摘。
+// 原因は3色とも明度がほぼ同じ(0.48〜0.50)で色相だけが頼りだったこと。
+// orangeを暗いrust寄りに、goldを明るいyellow寄りに離し、明度差でも
+// 判別できるようにした(色相もorange/gold間を18度→25度に少し拡大)
 export const COLOR_LIST = [
     0x2f5cff, // blue
     0x00d9b8, // teal
-    0xf0047d, // magenta
-    0xfe6100, // orange
-    0xffb000, // gold
+    0xf91f68, // magenta(pink)
+    0xcc4400, // orange(rust寄りに暗く)
+    0xfbd460, // gold(yellow寄りに明るく)
 ] as const;
 
 export const SIZE_LIST = ["small", "medium", "large"] as const;
