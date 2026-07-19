@@ -28,10 +28,12 @@ const PAGE_RIGHT_X_RATIO = 0.56;
 const PAGE_RIGHT_W_RATIO = 0.4;
 const PAGE_TOP_RATIO = 0.085;
 const PAGE_BOTTOM_MARGIN_RATIO = 0.11;
-// 標本1匹分のセルサイズ(スペシャル個体基準の固定枠)とセル間ギャップ。
-// 蝶の実サイズに関わらずこの枠に収めるので、行の高さ・間隔がガタつかない
-const CELL_SIZE = 80;
-const CELL_GAP = 10;
+// 標本1匹分のセルサイズとセル間ギャップ。蝶の実サイズに関わらずこの枠に
+// 収めるので、行の高さ・間隔がガタつかない。通常種の最大(large ≒ 51px)を
+// 基準に詰めて並べる。スペシャル個体(≒74px幅)は1匹しか出ないため、
+// 隣のセルに羽が少しかかるのは許容する
+const CELL_SIZE = 60;
+const CELL_GAP = 4;
 const ROW_PITCH = CELL_SIZE + CELL_GAP;
 const HEADING_BLOCK_HEIGHT = 60;
 const SCORE_BLOCK_HEIGHT = 132;
