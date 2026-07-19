@@ -2,10 +2,12 @@
 // 色覚特性(P型/D型など)があっても互いに見分けやすいよう、
 // IBM Design Languageの色覚配慮パレットをベースに選定。
 // Wongパレットも試したが彩度が低くくすんで見えるとのレビューがあったため、
-// より鮮やかで見分けやすいIBM版に変更した
+// より鮮やかで見分けやすいIBM版に変更した。
+// さらにIBM版のpurpleがblueと色相的に近く(約20度差)見分けづらいとの
+// レビューを受け、blueから最も離れたティール(青緑)に差し替えている
 export const COLOR_LIST = [
     0x648fff, // blue
-    0x785ef0, // purple
+    0x00bfa5, // teal
     0xdc267f, // magenta
     0xfe6100, // orange
     0xffb000, // gold
