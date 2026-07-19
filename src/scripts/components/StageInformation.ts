@@ -25,6 +25,14 @@ interface StageConfig {
 const stageConfigs: StageConfig[] = stageConfig;
 const stageDebugConfigs: StageConfig[] = stageDebugConfig;
 
+// 実際に捕まえた蝶1匹分のスナップショット(ノート型リザルト画面で
+// 標本としてピン留め表示するために使う)
+export interface CapturedSpecimen {
+    color: number;
+    sizeCategory: Const.ButterflySizeCategory;
+    isSpecial: boolean;
+}
+
 export class StageInformation {
     //settings
     level: number = 0;
@@ -42,6 +50,9 @@ export class StageInformation {
 
     // scores
     captureCount: number = 0;
+    // このステージで実際に捕まえた蝶の一覧(ノート型リザルト画面用)。
+    // captureCountと同様、GameplayState.endGame()で毎回上書きされる
+    capturedSpecimens: CapturedSpecimen[] = [];
     stagePoint: number = 0;
     bonusCount: number = 0;
     bonusPoint: number = 0;

@@ -10,7 +10,10 @@ import { ResultState } from "./ResultState";
 import { Butterfly } from "../components/Butterfly";
 import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
-import { StageInformation } from "../components/StageInformation";
+import {
+    StageInformation,
+    CapturedSpecimen,
+} from "../components/StageInformation";
 import { StateBase } from "./BaseState";
 import { HelpFlower } from "../components/HelpFlower";
 import { BaseObstacle } from "../components/BaseObstacle";
@@ -41,7 +44,7 @@ export class GameplayState extends StateBase {
     private lineShortenElapsedTime: number = -1;
     private avoidPencilElapsedTime: number = -1;
     private stagePoint = 0;
-    caputuredButterflies: Butterfly[] = [];
+    capturedSpecimens: CapturedSpecimen[] = [];
     butterflies: Butterfly[] = [];
     private isAddBonusButterfly = false;
     flowers: HelpFlower[] = [];
@@ -719,7 +722,8 @@ export class GameplayState extends StateBase {
         this.isRunning = false;
         this.isFinish = true;
         this.stageInfo.stagePoint = this.stagePoint;
-        this.stageInfo.captureCount = this.caputuredButterflies.length;
+        this.stageInfo.captureCount = this.capturedSpecimens.length;
+        this.stageInfo.capturedSpecimens = this.capturedSpecimens;
         this.stageInfo.calcScore();
 
         this.butterflies.forEach((butterfly) => {
@@ -742,9 +746,9 @@ export class GameplayState extends StateBase {
         // ボーナス終了時の締め演出(バナー)は出さない。
         // 「夢から覚める」明転はボーナスのリザルト(ResultState)側が担う。
 
-        // captureButterfliesの中にSpecialButterflyが含まれているかどうか
-        const isGotBonusButterfly = this.caputuredButterflies.some(
-            (butterfly) => butterfly instanceof SpecialButterfly,
+        // 捕獲済みの中にSpecialButterflyが含まれているかどうか
+        const isGotBonusButterfly = this.capturedSpecimens.some(
+            (specimen) => specimen.isSpecial,
         );
 
         // リザルト表示(3秒後)の1秒前からBGMをフェードアウトし始める
@@ -779,7 +783,7 @@ export class GameplayState extends StateBase {
     }
 
     private updateScoreMessage(): void {
-        this.scoreMessage.text = `${this.caputuredButterflies.length} / ${this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount}`;
+        this.scoreMessage.text = `${this.capturedSpecimens.length} / ${this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount}`;
     }
 
     // ループエリアが完成したときの処理
@@ -867,7 +871,13 @@ export class GameplayState extends StateBase {
             this.showerOverLoopArea(butterflies, loopArea);
         }
 
-        this.caputuredButterflies.push(...butterflies);
+        this.capturedSpecimens.push(
+            ...butterflies.map((b) => ({
+                color: b.color,
+                sizeCategory: b.sizeCategory,
+                isSpecial: b instanceof SpecialButterfly,
+            })),
+        );
         this.updateScoreMessage();
 
         // score加算 全部同じ色の場合は蝶の数×10 それ以外は蝶の数×20
@@ -905,7 +915,7 @@ export class GameplayState extends StateBase {
 
         if (
             !this.stageInfo.bonusFlag &&
-            this.caputuredButterflies.length >= this.stageInfo.needCount
+            this.capturedSpecimens.length >= this.stageInfo.needCount
         ) {
             this.endGame();
         } else {

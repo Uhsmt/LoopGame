@@ -100,6 +100,7 @@ describe("Butterfly", () => {
             expect(butterfly.screenSize).toEqual(mockScreenSize);
             expect(butterfly.isFlying).toBe(false);
             expect(butterfly.isFlapping).toBe(false);
+            expect(butterfly.sizeCategory).toBe("small");
         });
 
         it("should initialize large butterfly with different speed", () => {
@@ -113,6 +114,7 @@ describe("Butterfly", () => {
             // We can't easily test private properties, but we can test that construction doesn't throw
             expect(largeButterly).toBeDefined();
             expect(largeButterly.multiplicationRate).toBe(1);
+            expect(largeButterly.sizeCategory).toBe("large");
         });
 
         it("should initialize medium butterfly", () => {
@@ -124,6 +126,7 @@ describe("Butterfly", () => {
                 mockScreenSize,
             );
             expect(mediumButterfly).toBeDefined();
+            expect(mediumButterfly.sizeCategory).toBe("medium");
         });
 
         it("should initialize special butterfly", () => {
@@ -135,6 +138,7 @@ describe("Butterfly", () => {
                 mockScreenSize,
             );
             expect(specialButterfly).toBeDefined();
+            expect(specialButterfly.sizeCategory).toBe("special");
         });
 
         it("should handle random size selection", () => {
@@ -146,6 +150,9 @@ describe("Butterfly", () => {
                 mockScreenSize,
             );
             expect(randomButterfly).toBeDefined();
+            expect(["small", "medium", "large"]).toContain(
+                randomButterfly.sizeCategory,
+            );
         });
 
         it("should handle multiplication rate >= 2", () => {

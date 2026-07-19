@@ -35,6 +35,25 @@ vi.mock("../../../src/scripts/utils/ScoreStorage", () => ({
     saveResult: saveResultMock,
 }));
 
+// DreamFlightPathは軌道計算そのものは検証済み(DreamFlightPath.test.ts)なので、
+// ここではコンストラクタに渡された引数(出発座標)だけを捕捉できるスタブにする
+const { dreamFlightPathCtorMock } = vi.hoisted(() => ({
+    dreamFlightPathCtorMock: vi.fn(),
+}));
+vi.mock("../../../src/scripts/utils/DreamFlightPath", () => ({
+    DreamFlightPath: class {
+        x = 0;
+        y = 0;
+        done = false;
+        constructor(options: unknown) {
+            dreamFlightPathCtorMock(options);
+        }
+        step() {
+            /* noop */
+        }
+    },
+}));
+
 // 遷移先のシーンは重い依存を持つため、コンストラクタだけを検証できるスタブにする
 vi.mock("../../../src/scripts/scenes/GameplayState", () => ({
     GameplayState: vi.fn(),
@@ -86,6 +105,21 @@ function makeClearStageInfo(
     info.totalScore = 1234;
     Object.assign(info, overrides);
     return info;
+}
+
+function makeSpecimen(
+    overrides: Partial<{
+        color: number;
+        sizeCategory: "small" | "medium" | "large" | "special";
+        isSpecial: boolean;
+    }> = {},
+) {
+    return {
+        color: 0xff69b4,
+        sizeCategory: "small" as const,
+        isSpecial: false,
+        ...overrides,
+    };
 }
 
 function makeGameOverStageInfo(
@@ -351,6 +385,109 @@ describe("ResultState", () => {
 
             expect(saveResultMock).toHaveBeenCalledWith(stageInfo.totalScore);
             expect(StartState).toHaveBeenCalledWith(manager);
+        });
+    });
+
+    describe("notebook-style result (level clear only)", () => {
+        // displayLegacyResultと同じ理由(PIXI.Tickerの実アニメーション完了を
+        // 待ってしまう)で、displayNotebookResult/enterDreamSequence内の
+        // fadeIn/fadeOut/waitは即時解決に差し替える
+        function stubAnimations(state: ResultState): void {
+            (state as any).fadeIn = vi.fn().mockResolvedValue(undefined);
+            (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
+            (state as any).wait = vi.fn().mockResolvedValue(undefined);
+        }
+
+        it("routes to displayNotebookResult only when clearing a normal (non-bonus) stage", () => {
+            const notebookCase = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+            });
+            const legacyCases = [
+                makeClearStageInfo({ isPractice: true }), // practice clear
+                makeClearStageInfo({ bonusFlag: true }), // bonus stage result
+                makeGameOverStageInfo({ isPractice: false }), // game over
+            ];
+
+            expect(
+                (new ResultState(manager as any, notebookCase, false) as any)
+                    .isNotebookResult,
+            ).toBe(true);
+
+            legacyCases.forEach((stageInfo) => {
+                expect(
+                    (new ResultState(manager as any, stageInfo, false) as any)
+                        .isNotebookResult,
+                ).toBe(false);
+            });
+        });
+
+        it("pins one specimen per captured butterfly", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [
+                    makeSpecimen({ color: 0xdc143c }),
+                    makeSpecimen({ color: 0x6a5acd }),
+                ],
+            });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            const pinnedCount = (state as any).notebookChildren.filter(
+                (child: any) => "butterfly" in child,
+            ).length;
+            expect(pinnedCount).toBe(2);
+            expect((state as any).dreamSpecimen).toBeUndefined();
+        });
+
+        it("keeps the special specimen out of notebookChildren and tracks it as dreamSpecimen", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [
+                    makeSpecimen({}),
+                    makeSpecimen({ isSpecial: true }),
+                ],
+            });
+            const state = new ResultState(manager as any, stageInfo, true);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            expect((state as any).dreamSpecimen).toBeDefined();
+            const pinnedInChildren = (state as any).notebookChildren.filter(
+                (child: any) => "butterfly" in child,
+            );
+            expect(pinnedInChildren).toHaveLength(1);
+        });
+
+        it("starts the dream flight from the pinned specimen's position, not the screen center", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [makeSpecimen({ isSpecial: true })],
+            });
+            const state = new ResultState(manager as any, stageInfo, true);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+            const dreamSpecimen = (state as any).dreamSpecimen;
+            expect(dreamSpecimen).toBeDefined();
+
+            await (state as any).enterDreamSequence();
+
+            expect(dreamFlightPathCtorMock).toHaveBeenCalledTimes(1);
+            const options = dreamFlightPathCtorMock.mock.calls[0][0];
+            // 旧仕様は常に画面中央(width/2, height/2)から出現していた。
+            // 今は捕まえたスペシャル個体のピン留め位置から出発するため、
+            // 一致しないはず(ピン留め位置がたまたま中央と重なることはない)
+            expect(
+                options.centerX === app.screen.width / 2 &&
+                    options.centerY === app.screen.height / 2,
+            ).toBe(false);
         });
     });
 });

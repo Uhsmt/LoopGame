@@ -24,6 +24,9 @@ export class Butterfly extends BaseCaptureableObject {
     private readonly xTernFrame = Utility.random(120, 150);
     private readonly yTernFrame = Utility.random(120, 150);
     readonly spriteWith: number;
+    // 実際に解決されたサイズ区分("random"はどれかに解決された後の値)。
+    // 捕獲時のスナップショット(StageInformation.capturedSpecimens)に使う
+    readonly sizeCategory: Const.ButterflySizeCategory;
 
     readonly screenSize: { x: number; y: number };
 
@@ -51,6 +54,7 @@ export class Butterfly extends BaseCaptureableObject {
                 this.yDiretion = 0.3;
                 this.flappingSpeed = Utility.random(8, 10) / 1000;
                 this.hitAreaSize = 14;
+                this.sizeCategory = "large";
                 break;
             case "medium":
                 this.sprite = PIXI.Sprite.from("butterfly_medium");
@@ -59,6 +63,7 @@ export class Butterfly extends BaseCaptureableObject {
                 this.yDiretion = 0.4;
                 this.flappingSpeed = Utility.random(12, 15) / 1000;
                 this.hitAreaSize = 11;
+                this.sizeCategory = "medium";
                 break;
             case "special":
                 this.sprite = PIXI.Sprite.from("butterfly_special");
@@ -67,6 +72,7 @@ export class Butterfly extends BaseCaptureableObject {
                 this.yDiretion = 0.5;
                 this.flappingSpeed = Utility.random(10, 13) / 1000;
                 this.hitAreaSize = 10;
+                this.sizeCategory = "special";
                 break;
             default:
                 this.sprite = PIXI.Sprite.from("butterfly_small");
@@ -75,6 +81,7 @@ export class Butterfly extends BaseCaptureableObject {
                 this.yDiretion = 0.6;
                 this.flappingSpeed = Utility.random(13, 17) / 1000;
                 this.hitAreaSize = 9;
+                this.sizeCategory = "small";
                 break;
         }
         this.sprite.tint = color;
