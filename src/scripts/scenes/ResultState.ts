@@ -21,7 +21,7 @@ import { layoutSpecimens } from "../utils/SpecimenLayout";
 // notebook.pngの実寸(sprite.width/height、常に723x541)に対する割合と、
 // 標本を並べる固定セルサイズ(px)で構成する。数値はモックアップでの
 // 実測を元にした初期値で、実機で見ながら微調整してよい
-const NOTEBOOK_Y_RATIO = 0.55;
+const NOTEBOOK_Y_RATIO = 0.5;
 const PAGE_LEFT_X_RATIO = 0.064;
 const PAGE_LEFT_W_RATIO = 0.405;
 const PAGE_RIGHT_X_RATIO = 0.536;
@@ -152,11 +152,14 @@ export class ResultState extends StateBase {
         // disp result
         await this.displayStageResult();
 
-        // 5秒まつ
+        // 5秒まつ(ノート型はもう1秒長く見せる)
         await new Promise((resolve) =>
-            setTimeout(() => {
-                resolve(null);
-            }, 5000),
+            setTimeout(
+                () => {
+                    resolve(null);
+                },
+                this.isNotebookResult ? 6000 : 5000,
+            ),
         );
 
         // messagesぜんぶ消す
@@ -184,6 +187,15 @@ export class ResultState extends StateBase {
         if (this.isEnteringDream) {
             await this.enterDreamSequence();
             return;
+        }
+
+        // ノートの中央に次面の案内を重ねると読みづらいため、ノート型リザルト
+        // では先にノート自体を消してから次のメッセージを出す
+        if (this.notebookSprite) {
+            await this.fadeOut(this.notebookSprite, 0.05);
+            this.container.removeChild(this.notebookSprite);
+            this.notebookSprite.destroy();
+            this.notebookSprite = undefined;
         }
 
         // プラクティスモードのクリアは次のステージへ進まないため、
@@ -498,15 +510,6 @@ export class ResultState extends StateBase {
         levelMsg.show();
         this.container.addChild(levelMsg);
         this.notebookChildren.push(levelMsg);
-
-        const underline = new PIXI.Graphics();
-        underline.rect(0, 0, leftPageWidth * 0.6, 3);
-        underline.fill(0xdc143c);
-        underline.alpha = 0.5;
-        underline.x = leftPageX;
-        underline.y = pageTop + 34;
-        this.container.addChild(underline);
-        this.notebookChildren.push(underline);
 
         // 左ページ: 標本のグリッド配置(見出し分だけ上を空ける)
         const leftGridTop = pageTop + HEADING_BLOCK_HEIGHT;

@@ -164,7 +164,10 @@ describe("ResultState", () => {
 
     async function runOnEnter(state: ResultState): Promise<void> {
         const promise = state.onEnter();
-        await vi.advanceTimersByTimeAsync(5000 + 2000);
+        // ノート型は結果表示が1秒長い(6000ms)ため、両方のパスをまかなえる
+        // 長さまで進める(displayStageResultはstubResultDisplayでモック
+        // 済みなので、余分に進めても後続の状態遷移には影響しない)
+        await vi.advanceTimersByTimeAsync(6000 + 2000);
         await promise;
     }
 
@@ -195,7 +198,8 @@ describe("ResultState", () => {
             (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
 
             const promise = state.onEnter();
-            await vi.advanceTimersByTimeAsync(5000);
+            // ノート型は結果表示が1秒長い(6000ms)
+            await vi.advanceTimersByTimeAsync(6000);
             await promise;
 
             expect(stageInfo.bonusFlag).toBe(true);
