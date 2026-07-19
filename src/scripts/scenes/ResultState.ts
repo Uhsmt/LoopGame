@@ -27,6 +27,10 @@ export class ResultState extends StateBase {
     private messageButterflies: Butterfly[] = [];
     private stickySprite: PIXI.Sprite;
     private backToStartButton!: Button;
+    // 失敗直後、まだリトライが残っている場合だけ生成される
+    private retryButton?: Button;
+    // 「1回だけ」であることを伝える、retryButtonと同時にのみ表示するヒント
+    private retryHintMessage?: Message;
     private nextMessage!: Message;
     private recordMessage?: Message;
     private lineDrawer!: LineDrawer;
@@ -201,9 +205,45 @@ export class ResultState extends StateBase {
             this.manager.setState(
                 new GameplayState(this.manager, this.stageInfo),
             );
+        } else if (
+            !this.stageInfo.isClear &&
+            !this.stageInfo.isPractice &&
+            !this.stageInfo.retryUsed
+        ) {
+            // 失敗直後、まだ1回分のリトライが残っている場合。
+            // このランはまだ確定していないため、ここではスコアを保存せず、
+            // 「もう一度」か「メニューへ戻る」かをプレイヤーに選ばせる
+            // (保存/記録メッセージの表示はhandleLoopAreaCompleted側で行う)
+            this.lineDrawer = new LineDrawer(this.manager.app);
+            this.lineDrawer.on(
+                "loopAreaCompleted",
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                this.handleLoopAreaCompleted.bind(this),
+            );
+            this.retryButton = new Button(
+                t("button.retry"),
+                this.manager.app.screen.width * 0.35,
+                this.manager.app.screen.height * 0.8,
+            );
+            this.backToStartButton = new Button(
+                t("button.backToMenu"),
+                this.manager.app.screen.width * 0.65,
+                this.manager.app.screen.height * 0.8,
+            );
+            this.container.addChild(this.retryButton);
+            this.container.addChild(this.backToStartButton);
+
+            // ボタンだけでは「1回だけ」だと伝わらないため、一言添える
+            this.retryHintMessage = new Message(t("result.retryHint"), 18);
+            this.retryHintMessage.anchor.set(0.5);
+            this.retryHintMessage.x = this.manager.app.screen.width / 2;
+            this.retryHintMessage.y = this.manager.app.screen.height * 0.68;
+            this.container.addChild(this.retryHintMessage);
+            this.retryHintMessage.show();
         } else {
-            // ゲームオーバー、またはプラクティスモードでのクリアの場合は
-            // 次のステージへは進めず、メニューへ戻るボタンを表示する
+            // ゲームオーバー(リトライを使い切った、または元々対象外)、
+            // またはプラクティスモードでのクリアの場合は、次のステージへは
+            // 進めず、メニューへ戻るボタンのみを表示する
 
             // プラクティスモードでは個人記録(ハイスコア・前回スコア)を保存しない
             if (!this.stageInfo.isPractice) {
@@ -212,7 +252,6 @@ export class ResultState extends StateBase {
                     this.stageInfo.totalScore,
                 );
                 if (isNewRecord) {
-                    AudioManager.shared.playSe("se_applause");
                     this.recordMessage = new Message(t("result.newRecord"), 24);
                 } else if (previousBest !== null) {
                     this.recordMessage = new Message(
@@ -512,18 +551,54 @@ export class ResultState extends StateBase {
 
     // LineDrawerのループエリアが完成したときのハンドラ
     private async handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
+        if (this.retryButton && this.retryButton.isHit(loopArea)) {
+            AudioManager.shared.playSe("se_select");
+            this.retryButton.selected();
+
+            await this.wait(300);
+
+            await Promise.all([
+                this.fadeOut(this.retryButton),
+                this.fadeOut(this.backToStartButton),
+                this.fadeOut(this.nextMessage),
+                this.fadeOut(this.stickySprite),
+                ...(this.retryHintMessage
+                    ? [this.fadeOut(this.retryHintMessage)]
+                    : []),
+            ]);
+            // 同じレベルを最初からやり直す(このランはまだ確定していないので保存しない)
+            this.stageInfo.retry();
+            this.manager.setState(
+                new GameplayState(this.manager, this.stageInfo),
+            );
+            return;
+        }
+
         if (this.backToStartButton && this.backToStartButton.isHit(loopArea)) {
             AudioManager.shared.playSe("se_select");
             this.backToStartButton.selected();
 
             await this.wait(300);
 
+            // リトライ提示中に「メニューへ戻る」を選んだ場合、このランは
+            // ここで初めて確定する。onEnter側ではまだ保存していないため、
+            // 決定した最終スコアをここで保存する(recordMessageはこの経路
+            // では出さない: リトライを蹴った直後にフェードアウトが始まる
+            // ため、表示してもほぼ読めないまま消えてしまう)
+            if (this.retryButton && !this.stageInfo.isPractice) {
+                saveResult(this.stageInfo.totalScore);
+            }
+
             await Promise.all([
                 this.fadeOut(this.backToStartButton),
+                ...(this.retryButton ? [this.fadeOut(this.retryButton)] : []),
                 this.fadeOut(this.nextMessage),
                 this.fadeOut(this.stickySprite),
                 ...(this.recordMessage
                     ? [this.fadeOut(this.recordMessage)]
+                    : []),
+                ...(this.retryHintMessage
+                    ? [this.fadeOut(this.retryHintMessage)]
                     : []),
             ]);
             // プラクティスモードはステージ選択画面へ、通常プレイはスタート画面へ戻る
