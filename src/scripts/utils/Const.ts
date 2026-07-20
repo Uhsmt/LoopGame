@@ -111,7 +111,6 @@ export const imageSrcs = [
     { alias: "moon", src: `${BASE_URL}assets/moon.png` },
     { alias: "pencil", src: `${BASE_URL}assets/pencil.png` },
     { alias: "pin", src: `${BASE_URL}assets/pin.png` },
-    { alias: "sticky", src: `${BASE_URL}assets/sticky.png` },
     { alias: "sun", src: `${BASE_URL}assets/sun.png` },
     { alias: "sunset_spritesheet", src: `${BASE_URL}assets/sunset.json` },
     { alias: "sunset", src: `${BASE_URL}assets/sunset.png` },

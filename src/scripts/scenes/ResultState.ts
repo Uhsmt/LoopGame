@@ -42,7 +42,6 @@ export class ResultState extends StateBase {
     private stageInfo: StageInformation;
     private messages: Message[] = [];
     private messageButterflies: Butterfly[] = [];
-    private stickySprite: PIXI.Sprite;
     private backToStartButton!: Button;
     // 失敗直後、まだリトライが残っている場合だけ生成される
     private retryButton?: Button;
@@ -64,13 +63,6 @@ export class ResultState extends StateBase {
     private readonly isWakingDream: boolean;
     /** 暗転/明転に使う夜背景(夢の演出があるときだけ用意する) */
     private nightBackground?: PIXI.Sprite;
-    /**
-     * クリアした場合にtrue(ノート型リザルト画面を使う)。通常クリア・
-     * ボーナスステージ自身の結果・プラクティスクリアのいずれも同じ
-     * デザインを共有する。ゲームオーバーだけは従来どおり
-     * displayLegacyResult()を使う
-     */
-    private readonly isNotebookResult: boolean;
     /**
      * ノート・テキスト・標本(スペシャル個体を除く)をひとかたまりに持つ
      * コンテナ。退場のフェード+スライドはこれごと一体で動かす
@@ -103,9 +95,6 @@ export class ResultState extends StateBase {
         this.isEnteringDream =
             stageInfo.isClear && isGotBonusButterfly && !stageInfo.isPractice;
         this.isWakingDream = stageInfo.bonusFlag;
-        // クリアした場合(通常・ボーナスステージ・プラクティスとも)は
-        // ノート型リザルトを使う。ゲームオーバーだけdisplayLegacyResultのまま
-        this.isNotebookResult = stageInfo.isClear;
 
         // 夢に誘う蝶をスコアの紙・テキストより常に手前(最前面)に描画するため、
         // zIndexでの並べ替えを有効にしておく(スコアテキストはdisplayStageResult
@@ -131,16 +120,6 @@ export class ResultState extends StateBase {
             this.container.addChild(nightSprite);
             this.nightBackground = nightSprite;
         }
-
-        // sticky
-        const stickySprite = new PIXI.Sprite(PIXI.Texture.from("sticky"));
-        stickySprite.anchor.set(0.5);
-        stickySprite.scale.set(0.25);
-        stickySprite.x = this.manager.app.screen.width / 2;
-        stickySprite.y = this.manager.app.screen.height / 2;
-        stickySprite.alpha = 0;
-        this.stickySprite = stickySprite;
-        this.container.addChild(stickySprite);
 
         // frame
         this.addFrameGraphic();
@@ -171,14 +150,11 @@ export class ResultState extends StateBase {
             this.dreamDarkenPromise = this.fadeIn(this.nightBackground, 0.0015);
         }
 
-        // 5秒まつ(ノート型はさらに2秒長く見せる)
+        // 7秒まつ
         await new Promise((resolve) =>
-            setTimeout(
-                () => {
-                    resolve(null);
-                },
-                this.isNotebookResult ? 7000 : 5000,
-            ),
+            setTimeout(() => {
+                resolve(null);
+            }, 7000),
         );
 
         // messagesぜんぶ消す
@@ -562,19 +538,16 @@ export class ResultState extends StateBase {
     }
 
     private async displayStageResult(): Promise<void> {
-        if (this.isNotebookResult) {
-            await this.displayNotebookResult();
-        } else {
-            await this.displayLegacyResult();
-        }
+        await this.displayNotebookResult();
     }
 
     /**
-     * ノート型リザルト画面(レベルクリア→次のステージへ進む場合のみ)。
+     * ノート型リザルト画面。通常クリア・ボーナスステージ自身の結果・
+     * プラクティスクリア・ゲームオーバーのいずれも同じデザインを共有する。
      * 左ページに見出しと実際に捕まえた蝶を標本のようにピン留め表示し、
      * 右ページにスコアをまとめて一括表示する(行ごとの逐次演出はしない)。
-     * 既存のsticky版と同様、まずページ自体をフェードインさせ、それが
-     * 収まってから中身を一括で表示する(中身の逐次演出はしない)。
+     * まずページ自体をフェードインさせ、それが収まってから中身を
+     * 一括で表示する(中身の逐次演出はしない)。
      */
     private async displayNotebookResult(): Promise<void> {
         const screenSize = {
@@ -592,7 +565,7 @@ export class ResultState extends StateBase {
         notebookSprite.anchor.set(0.5);
         notebookSprite.x = screenSize.x / 2;
         const notebookRestY = screenSize.y * NOTEBOOK_Y_RATIO;
-        // stickyと同じく、少し下からフェード+スライドで収まる形にする
+        // 少し下からフェード+スライドで収まる形にする
         notebookSprite.y = notebookRestY + screenSize.y * 0.08;
         notebookSprite.alpha = 0;
         notebookGroup.addChild(notebookSprite);
@@ -798,145 +771,6 @@ export class ResultState extends StateBase {
         );
     }
 
-    /**
-     * 従来のリザルト表示(ボーナスステージ・ゲームオーバー・プラクティス
-     * クリア用)。スコアを紙(sticky)の上に行ごとに逐次表示する
-     */
-    private async displayLegacyResult(): Promise<void> {
-        this.stickySprite.y += this.manager.app.screen.height * 0.08;
-        await Promise.all([
-            this.fadeIn(this.stickySprite, 0.05, 1),
-            this.slideY(
-                this.stickySprite,
-                this.manager.app.screen.height / 2,
-                0.15,
-            ),
-        ]);
-
-        const topMsg = new Message(
-            this.stageInfo.bonusFlag
-                ? t("result.bonusStage")
-                : t("result.level", { n: this.stageInfo.level }),
-            30,
-        );
-        const conditionMsg = new Message(
-            t("result.need", {
-                n: this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount,
-            }),
-            20,
-        );
-        const countMsg = new Message(
-            t("result.got", { n: this.stageInfo.captureCount }),
-            20,
-        );
-        const lineMsg = new Message("----", 30);
-        const baseScoreMsg = new Message(
-            t("result.baseScore", {
-                score: Utility.formatNumberWithCommas(
-                    this.stageInfo.stagePoint,
-                ),
-            }),
-            20,
-        );
-        const bonusMsg = new Message(
-            t("result.bonusScore", {
-                count: this.stageInfo.bonusCount,
-                score: Utility.formatNumberWithCommas(
-                    this.stageInfo.bonusPoint,
-                ),
-            }),
-            20,
-        );
-        const stageScoreMsg = new Message(
-            t("result.stageScore", {
-                score: Utility.formatNumberWithCommas(
-                    this.stageInfo.stageTotalScore,
-                ),
-            }),
-            30,
-        );
-        const totalScoreMsg = new Message(
-            t("result.totalScore", {
-                score: Utility.formatNumberWithCommas(
-                    this.stageInfo.totalScore,
-                ),
-            }),
-            30,
-        );
-
-        const top_msgs = [topMsg, conditionMsg, countMsg, lineMsg];
-        const result_msgs = [
-            baseScoreMsg,
-            ...(this.stageInfo.bonusFlag ? [] : [bonusMsg]),
-            stageScoreMsg,
-            totalScoreMsg,
-        ];
-        this.messages = [...top_msgs, ...result_msgs];
-        const marginTop =
-            this.stickySprite.y -
-            this.stickySprite.height / 2 +
-            this.stickySprite.height * 0.12;
-        const lineHeight = this.manager.app.screen.height * 0.08;
-
-        top_msgs.forEach((msg, index) => {
-            this.container.addChild(msg);
-            msg.anchor.set(0.5);
-            msg.x = this.manager.app.screen.width / 2;
-            msg.y = marginTop + lineHeight * index;
-            msg.show();
-        });
-
-        // 2匹の蝶々を表示
-        for (let i = 0; i < 2; i++) {
-            const butterfly = new Butterfly(
-                "small",
-                this.stageInfo.butterflyColors[i],
-                this.stageInfo.butterflyColors[i],
-                1,
-                {
-                    x: this.manager.app.screen.width,
-                    y: this.manager.app.screen.height,
-                },
-            );
-            butterfly.y =
-                marginTop + lineHeight * (i + 1) + butterfly.height / 2;
-            butterfly.x = this.manager.app.screen.width / 2 + butterfly.width;
-            butterfly.isFlapping = true;
-            butterfly.appear(false);
-            this.container.addChild(butterfly);
-            this.messageButterflies.push(butterfly);
-        }
-
-        // 1秒待ってから結果表示
-        await new Promise((resolve) =>
-            setTimeout(() => {
-                resolve(null);
-            }, 1000),
-        );
-
-        for (let index = 0; index < result_msgs.length; index++) {
-            const msg = result_msgs[index];
-            this.container.addChild(msg);
-            msg.anchor.set(0.5);
-            msg.x = this.manager.app.screen.width / 2;
-            msg.y = marginTop + lineHeight * (index + top_msgs.length);
-            if (msg === lineMsg) {
-                msg.show();
-            } else {
-                await new Promise((resolve) =>
-                    setTimeout(() => {
-                        msg.show();
-                        // 行ごとに半音ずつ上げる
-                        AudioManager.shared.playSe("se_score", {
-                            rate: Math.pow(2, index / 12),
-                        });
-                        resolve(null);
-                    }, 450),
-                );
-            }
-        }
-    }
-
     // LineDrawerのループエリアが完成したときのハンドラ
     private async handleLoopAreaCompleted(loopArea: PIXI.Graphics) {
         if (this.retryButton && this.retryButton.isHit(loopArea)) {
@@ -949,7 +783,6 @@ export class ResultState extends StateBase {
                 this.fadeOut(this.retryButton),
                 this.fadeOut(this.backToStartButton),
                 this.fadeOut(this.nextMessage),
-                this.fadeOut(this.stickySprite),
                 ...(this.retryHintMessage
                     ? [this.fadeOut(this.retryHintMessage)]
                     : []),
@@ -981,7 +814,6 @@ export class ResultState extends StateBase {
                 this.fadeOut(this.backToStartButton),
                 ...(this.retryButton ? [this.fadeOut(this.retryButton)] : []),
                 this.fadeOut(this.nextMessage),
-                this.fadeOut(this.stickySprite),
                 ...(this.recordMessage
                     ? [this.fadeOut(this.recordMessage)]
                     : []),
