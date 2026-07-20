@@ -1,10 +1,18 @@
 /* eslint @typescript-eslint/no-namespace: 0 */
+// 色覚特性(P型/D型など)があっても互いに見分けやすい配色。
+// 数度のレビューを経て以下を満たすよう調整済み:
+// - 色相を5色でまんべんなく分散(隣接する組でも最低20度以上離す)
+// - 色相が近い組(orange/gold等)は明度(Lightness)もはっきり分け、
+//   色相だけに頼らず判別できるようにする
+//   (teal .43 < orange .50 < blue .59 < gold .65 < pink .71)
+// - 彩度は基本的に高め(パステル・くすみを避ける)だが、暗くしすぎて
+//   茶色っぽく見えないよう明度は0.4を下回らないようにする
 export const COLOR_LIST = [
-    0xff69b4, // hotpink
-    0xdc143c, // crimson
-    0x6a5acd, // slateblue
-    0x00f3eb, // lightblue
-    0xffa519, // orange
+    0x2f5cff, // blue
+    0x00d9b8, // teal
+    0xff6bca, // pink
+    0xff7700, // orange
+    0xfbde51, // gold(yellow)
 ] as const;
 
 export const SIZE_LIST = ["small", "medium", "large"] as const;
