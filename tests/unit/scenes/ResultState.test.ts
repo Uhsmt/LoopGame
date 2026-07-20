@@ -205,6 +205,9 @@ describe("ResultState", () => {
             await promise;
 
             expect(stageInfo.bonusFlag).toBe(true);
+            // 案内(bonus.invitation)はリザルト側で表示済みなので、遷移先の
+            // ボーナスでは導入をスキップするフラグが立つ
+            expect(stageInfo.bonusIntroShown).toBe(true);
             expect(GameplayState).toHaveBeenCalledWith(manager, stageInfo);
         });
     });

@@ -495,7 +495,13 @@ export class GameplayState extends StateBase {
             // 通常ステージ用のstartMessageは使わないので、通常経路と対称に
             // なるようここで取り除いておく(alpha=0のまま残さない)
             this.container.removeChild(this.startMessage);
-            this.bonusEffect.startIntro();
+            if (this.stageInfo.bonusIntroShown) {
+                // リザルト側で案内(bonus.invitation)を見せてから遷移して
+                // きたので、同じメッセージは再表示せずすぐゲームを開始する
+                this.bonusEffect.skipIntro();
+            } else {
+                this.bonusEffect.startIntro();
+            }
             return;
         }
 

@@ -446,6 +446,27 @@ describe("Bonus (dream) stage flow", () => {
         });
     });
 
+    describe("dream invitation already shown during the result: bonus starts without re-displaying it", () => {
+        it("skips the intro and starts the game on the first update", async () => {
+            const stageInfo = new StageInformation();
+            stageInfo.bonusStage();
+            stageInfo.bonusIntroShown = true;
+            const manager = createMockManager();
+            const state = new GameplayState(manager, stageInfo);
+
+            await state.onEnter();
+
+            const internal = state as any;
+            // 案内(bonus.invitation)はリザルト側で見せているため再表示しない
+            expect(internal.bonusEffect.phase).toBe("playing");
+            expect(internal.bonusEffect.message.alpha).toBe(0);
+
+            // 最初のupdateでゲーム本編がすぐ始まる
+            state.update(16);
+            expect(internal.isRunning).toBe(true);
+        });
+    });
+
     describe("entering the dream: special-butterfly result darkens, then leads into the bonus", () => {
         it("trembles free of its pin, flies off-screen, fades to night, and starts the bonus only after the butterfly has left the screen", async () => {
             const stageInfo = new StageInformation();
@@ -495,8 +516,10 @@ describe("Bonus (dream) stage flow", () => {
             state.update(16);
             expect(dreamSpecimen.butterfly.update).toHaveBeenCalled();
 
-            // 夜背景はまだ暗くない(昼のまま)
-            expect(internal.nightBackground.alpha).toBe(0);
+            // 夜への暗転はリザルト表示中から先行して始まる(実機では
+            // 「気づいたら夜」くらいゆっくりだが、このファイルの同期Ticker
+            // では開始と同時に完了する)
+            expect(internal.nightBackground.alpha).toBeCloseTo(1, 1);
             // ノート一式(ノート・テキスト・標本のグループ)はまだ表示されている
             expect(internal.notebookGroup.alpha).toBe(1);
 
@@ -528,8 +551,11 @@ describe("Bonus (dream) stage flow", () => {
             expect(offScreen).toBe(true);
             expect(dreamSpecimen.destroyed).toBe(true);
             expect(internal.dreamSpecimen).toBeUndefined();
-            // 夢(ボーナス)へ入る: bonusStageが呼ばれ、次のステートへ一度だけ遷移
+            // 夢(ボーナス)へ入る: bonusStageが呼ばれ、次のステートへ一度だけ遷移。
+            // 案内メッセージ(bonus.invitation)はリザルト側で既に見せたので、
+            // ボーナス側の導入をスキップするためのフラグが立っている
             expect(stageInfo.bonusFlag).toBe(true);
+            expect(stageInfo.bonusIntroShown).toBe(true);
             expect(setStateSpy).toHaveBeenCalledTimes(1);
             expect(setStateSpy).toHaveBeenCalledWith(expect.any(GameplayState));
         });

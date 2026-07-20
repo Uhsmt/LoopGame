@@ -62,6 +62,10 @@ export class StageInformation {
     //status
     isClear: boolean = false;
     bonusFlag: boolean = false;
+    // ボーナスの案内(bonus.invitation)をリザルト側で表示済みかどうか。
+    // trueならボーナスのGameplayStateは導入(同じメッセージの再表示)を
+    // スキップして、すぐゲームを開始する
+    bonusIntroShown: boolean = false;
     // プラクティスモード(記録・スコア保存を行わない再挑戦プレイ)かどうか
     isPractice: boolean = false;
     // 1回だけ使えるリトライを使い切ったかどうか(ラン全体で1回のみ)
@@ -172,6 +176,7 @@ export class StageInformation {
         this.captureCount = 0;
         this.isClear = false;
         this.bonusFlag = false;
+        this.bonusIntroShown = false;
     }
 
     /**

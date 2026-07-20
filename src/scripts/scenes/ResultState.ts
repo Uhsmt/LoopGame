@@ -85,6 +85,10 @@ export class ResultState extends StateBase {
      * そのまま飛び立たせる(内部のButterflyは再親付けしない)
      */
     private dreamSpecimen?: PinnedSpecimen;
+    /** リザルト表示中から先行して始める、夜への暗転のPromise(夢に入るときだけ) */
+    private dreamDarkenPromise?: Promise<void>;
+    /** 暗転しきった夜に出す「ちょうを できるだけ つかまえて」の案内 */
+    private bonusInvitationMessage?: Message;
 
     constructor(
         manager: GameStateManager,
@@ -157,6 +161,13 @@ export class ResultState extends StateBase {
 
         // disp result
         await this.displayStageResult();
+
+        // 夢に入る場合、夜への暗転はリザルト表示中から「気づいたら夜に
+        // なっている」くらいゆっくり先行して始めておく(約11秒かけて完了)。
+        // ノート一式は夜背景より手前に描かれるので、スコアは暗転中も読める
+        if (this.isEnteringDream && this.nightBackground) {
+            this.dreamDarkenPromise = this.fadeIn(this.nightBackground, 0.0015);
+        }
 
         // 5秒まつ(ノート型はさらに2秒長く見せる)
         await new Promise((resolve) =>
@@ -350,14 +361,22 @@ export class ResultState extends StateBase {
         // ノート一式は蝶がピンから外れた時点からゆっくりフェードアウト
         // させる(startDreamDeparture内)。震えている間はまだノートの上にいる
 
-        // 旅立ち(震え→ピンが外れて飛び去る)と暗転(約3.2秒)を並行して
-        // 進め、両方が終わって(=蝶が画面外に抜けきって)からボーナスへ入る
+        // 旅立ち(震え→ピンが外れて飛び去る)と、リザルト表示中から先行
+        // している暗転の両方が終わって(=蝶が画面外に抜けきって)から
+        // ボーナスへ入る
         const departurePromise = this.dreamSpecimen
             ? this.startDreamDeparture(this.dreamSpecimen)
             : Promise.resolve();
-        const darkenPromise = this.nightBackground
-            ? this.fadeIn(this.nightBackground, 0.005)
-            : Promise.resolve();
+        const darkenPromise =
+            this.dreamDarkenPromise ??
+            (this.nightBackground
+                ? this.fadeIn(this.nightBackground, 0.005)
+                : Promise.resolve());
+        // 暗転しきったら、蝶がまだ画面内に残っていてもボーナスの案内
+        // (ちょうを できるだけ つかまえて)を出してよい
+        void darkenPromise.then(() => {
+            this.showBonusInvitation();
+        });
         await Promise.all([departurePromise, darkenPromise]);
 
         // 蝶は既に画面外へ抜けきっているので、そのまま片付けてよい
@@ -367,8 +386,41 @@ export class ResultState extends StateBase {
         }
         this.dreamSpecimen = undefined;
 
+        // 案内は短くフェードアウトさせてからボーナスへ(遷移でぶつ切りに
+        // 消えないように)
+        if (this.bonusInvitationMessage) {
+            await this.fadeOut(this.bonusInvitationMessage, 0.05);
+            this.container.removeChild(this.bonusInvitationMessage);
+            this.bonusInvitationMessage.destroy();
+            this.bonusInvitationMessage = undefined;
+        }
+
         this.stageInfo.bonusStage();
+        // 案内は既に見せたので、ボーナス側の導入(同じメッセージの再表示)は
+        // スキップして、遷移後すぐゲームが始まる
+        this.stageInfo.bonusIntroShown = true;
         this.manager.setState(new GameplayState(this.manager, this.stageInfo));
+    }
+
+    /**
+     * 暗転しきった夜に、ボーナスの案内(bonus.invitation)をふわりと出す。
+     * スペシャル蝶がまだ画面内を飛んでいても出してよい(ゲーム本編の開始は
+     * 蝶の退場を待つ)。BonusStageEffectの導入メッセージと同じ文言・位置
+     * なので、そのまま導入の代わりになる
+     */
+    private showBonusInvitation(): void {
+        if (this.bonusInvitationMessage) return;
+        // 夜背景の上に出すので、BonusStageEffectの導入と同じ白文字にする
+        const message = new Message(t("bonus.invitation"), 23, 0xffffff);
+        message.anchor.set(0.5);
+        message.x = this.manager.app.screen.width / 2;
+        message.y = this.manager.app.screen.height / 2;
+        // 夜背景やノートより手前、飛んでいる蝶(1000)よりは奥
+        message.zIndex = 900;
+        this.container.addChild(message);
+        // ふわりと浮かび上がらせる(完了は待ち合わせない)
+        void this.fadeIn(message, 0.02, 1);
+        this.bonusInvitationMessage = message;
     }
 
     /**
@@ -936,7 +988,7 @@ export class ResultState extends StateBase {
 }
 
 class Message extends PIXI.BitmapText {
-    constructor(message: string, size: number) {
+    constructor(message: string, size: number, color: number = 0x000000) {
         super();
         const isJa = getLang() === "ja";
         const style = new PIXI.TextStyle({
@@ -946,7 +998,7 @@ class Message extends PIXI.BitmapText {
                 : Const.FONT_ENGLISH_BOLD,
             fontSize: size,
             align: "center",
-            fill: 0x000000,
+            fill: color,
         });
         this.style = style;
         this.text = message;
