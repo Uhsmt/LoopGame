@@ -134,3 +134,6 @@ dist/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# nano banana で生成した下書きアセット(レビュー後に手動で public/assets へ移動する)
+public/assets/_generated/

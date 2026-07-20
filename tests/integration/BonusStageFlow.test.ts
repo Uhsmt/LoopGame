@@ -446,11 +446,38 @@ describe("Bonus (dream) stage flow", () => {
         });
     });
 
-    describe("entering the dream: special-butterfly result darkens, then leads into the bonus", () => {
-        it("gives the special butterfly a choreographed flight (not the wander-based fly()), fades to night, then starts the bonus stage without waiting for the flight to finish", async () => {
+    describe("dream invitation already shown during the result: bonus starts without re-displaying it", () => {
+        it("skips the intro and starts the game on the first update", async () => {
             const stageInfo = new StageInformation();
-            // スペシャル蝶を捕まえてクリアした通常ステージのリザルト
+            stageInfo.bonusStage();
+            stageInfo.bonusIntroShown = true;
+            const manager = createMockManager();
+            const state = new GameplayState(manager, stageInfo);
+
+            await state.onEnter();
+
+            const internal = state as any;
+            // 案内(bonus.invitation)はリザルト側で見せているため再表示しない
+            expect(internal.bonusEffect.phase).toBe("playing");
+            expect(internal.bonusEffect.message.alpha).toBe(0);
+
+            // 最初のupdateでゲーム本編がすぐ始まる
+            state.update(16);
+            expect(internal.isRunning).toBe(true);
+        });
+    });
+
+    describe("entering the dream: special-butterfly result darkens, then leads into the bonus", () => {
+        it("trembles free of its pin, flies off-screen, fades to night, and starts the bonus only after the butterfly has left the screen", async () => {
+            const stageInfo = new StageInformation();
+            // スペシャル蝶を捕まえてクリアした通常ステージのリザルト。
+            // ノート型リザルトは実際に捕まえた標本(capturedSpecimens)を
+            // 見て「どれが夢へ誘う個体か」を決めるため、ここで用意しておく
             stageInfo.captureCount = stageInfo.needCount;
+            stageInfo.capturedSpecimens = [
+                { color: 0xff69b4, sizeCategory: "small", isSpecial: false },
+                { color: 0xdc143c, sizeCategory: "special", isSpecial: true },
+            ];
             stageInfo.calcScore();
             expect(stageInfo.isClear).toBe(true);
             expect(stageInfo.bonusFlag).toBe(false);
@@ -461,30 +488,42 @@ describe("Bonus (dream) stage flow", () => {
             const state = new ResultState(manager, stageInfo, true);
             const internal = state as any;
 
-            // リザルト中はスペシャル蝶が振り付けモーション(円→退場)で動く。
-            // 位置は専用の DreamFlightPath が動かすため、Butterfly.fly()側の
-            // 壁バウンド徘徊(isFlying)は使わない
-            expect(internal.dreamButterfly).toBeDefined();
-            expect(internal.dreamButterfly.isFlying).toBe(false);
-            // スコアの紙・テキストより手前(最前面)に描画されるよう、
-            // コンテナのzIndexソートが有効で、蝶に高いzIndexが付いている
+            const done = state.onEnter();
+            // displayNotebookResult()自体はPIXI.Tickerベースのフェードを
+            // 挟むが、このファイルのTickerモックはstart()が同期的に完走する。
+            // 着地音→ジングルの間に300msの間があるため、その分だけ進めれば
+            // ノート描画が完了する
+            await vi.advanceTimersByTimeAsync(300);
+
+            // リザルト中(まだピン留めされたまま)はスペシャル個体の旅立ち
+            // モーション(震え→退場)はまだ始まっていない。Butterfly.fly()側の
+            // 壁バウンド徘徊(isFlying)は最初から使わない設計
+            expect(internal.dreamSpecimen).toBeDefined();
+            expect(internal.dreamSpecimen.butterfly.isFlying).toBe(false);
             expect(internal.container.sortableChildren).toBe(true);
-            expect(internal.dreamButterfly.zIndex).toBeGreaterThan(0);
             // クリーンアップ後の状態を見るため、同じ参照を保持しておく
-            // (dreamButterflyフィールド自体はクリーンアップ時にundefinedへ戻る)
-            const dreamButterfly = internal.dreamButterfly as {
-                alpha: number;
+            // (dreamSpecimenフィールド自体はクリーンアップ時にundefinedへ戻る)
+            const dreamSpecimen = internal.dreamSpecimen as {
+                x: number;
+                y: number;
                 destroyed: boolean;
+                zIndex: number;
+                butterfly: {
+                    isFlapping: boolean;
+                    update: (...a: unknown[]) => void;
+                };
+                pinSprite: unknown;
             };
             state.update(16);
-            expect(internal.dreamButterfly.update).toHaveBeenCalled();
+            expect(dreamSpecimen.butterfly.update).toHaveBeenCalled();
 
-            // 夜背景はまだ暗くない(昼のまま)
-            expect(internal.nightBackground.alpha).toBe(0);
-            // スコアの紙はまだ表示されている
-            expect(internal.stickySprite.visible).toBe(true);
+            // 夜への暗転はリザルト表示中から先行して始まる(実機では
+            // 「気づいたら夜」くらいゆっくりだが、このファイルの同期Ticker
+            // では開始と同時に完了する)
+            expect(internal.nightBackground.alpha).toBeCloseTo(1, 1);
+            // ノート一式(ノート・テキスト・標本のグループ)はまだ表示されている
+            expect(internal.notebookGroup.alpha).toBe(1);
 
-            const done = state.onEnter();
             await vi.advanceTimersByTimeAsync(30000);
             await done;
 
@@ -493,17 +532,31 @@ describe("Bonus (dream) stage flow", () => {
 
             // だんだん暗くなって夜になった
             expect(internal.nightBackground.alpha).toBeCloseTo(1, 1);
-            // スコアの紙はスライドやフェードではなく、パッと非表示になっている
-            expect(internal.stickySprite.visible).toBe(false);
-            // 遷移のゲートは暗転完了のみ: 蝶は振り付け(円→退場)の完了を
-            // 待たされず、遷移直前の短いフェードアウトで消えている
-            // (振り付け自体が数秒〜十数秒かかることは
-            // DreamFlightPath.test.tsで別途検証済み)
-            expect(dreamButterfly.alpha).toBe(0);
-            expect(dreamButterfly.destroyed).toBe(true);
-            expect(internal.dreamButterfly).toBeUndefined();
-            // 夢(ボーナス)へ入る: bonusStageが呼ばれ、次のステートへ一度だけ遷移
+            // ノート一式(テキスト・標本ごと)は、蝶がピンから外れたあとに
+            // ゆっくりフェードアウトして消えている
+            expect(internal.notebookGroup.alpha).toBeCloseTo(0, 1);
+            // 旅立ちを始める時点で、スコアの紙・テキストより手前(最前面)に
+            // 描画されるよう高いzIndexが付く
+            expect(dreamSpecimen.zIndex).toBeGreaterThan(0);
+            // 震え終わりにピンが外れ(pinSprite=null)、羽ばたいて飛び去った
+            expect(dreamSpecimen.pinSprite).toBeNull();
+            expect(dreamSpecimen.butterfly.isFlapping).toBe(true);
+            // 遷移のゲートは「蝶が画面外へ抜けきる」こと。フェードアウトでは
+            // なく、実際に画面外(余白込み)の座標まで飛んでから破棄されている
+            const margin = 90;
+            const offScreen =
+                dreamSpecimen.x < -margin ||
+                dreamSpecimen.x > 1150 + margin ||
+                dreamSpecimen.y < -margin ||
+                dreamSpecimen.y > 650 + margin;
+            expect(offScreen).toBe(true);
+            expect(dreamSpecimen.destroyed).toBe(true);
+            expect(internal.dreamSpecimen).toBeUndefined();
+            // 夢(ボーナス)へ入る: bonusStageが呼ばれ、次のステートへ一度だけ遷移。
+            // 案内メッセージ(bonus.invitation)はリザルト側で既に見せたので、
+            // ボーナス側の導入をスキップするためのフラグが立っている
             expect(stageInfo.bonusFlag).toBe(true);
+            expect(stageInfo.bonusIntroShown).toBe(true);
             expect(setStateSpy).toHaveBeenCalledTimes(1);
             expect(setStateSpy).toHaveBeenCalledWith(expect.any(GameplayState));
         });
@@ -524,7 +577,7 @@ describe("Bonus (dream) stage flow", () => {
             // 夢から覚めるリザルトは夜のまま見せる
             expect(internal.nightBackground.alpha).toBe(1);
             // 夢に誘う蝶は出さない(入るときだけの演出)
-            expect(internal.dreamButterfly).toBeUndefined();
+            expect(internal.dreamSpecimen).toBeUndefined();
 
             const done = state.onEnter();
             await vi.advanceTimersByTimeAsync(30000);

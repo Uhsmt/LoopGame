@@ -17,6 +17,10 @@ export const COLOR_LIST = [
 
 export const SIZE_LIST = ["small", "medium", "large"] as const;
 
+// Butterflyが実際に解決したサイズ区分("random"は解決後の値になる)。
+// SpecialButterflyは常に"special"を渡すため、SIZE_LISTには含めていない
+export type ButterflySizeCategory = (typeof SIZE_LIST)[number] | "special";
+
 export const MARGIN = 25;
 
 export const FONT_ENGLISH = "Rajdhani";
@@ -78,6 +82,15 @@ export const seSrcs = [
         alias: "se_obstacle_hit",
         src: `${BASE_URL}assets/sounds/se_obstacle_hit.m4a`,
     },
+    { alias: "se_notebook", src: `${BASE_URL}assets/sounds/se_notebook.m4a` },
+    {
+        alias: "se_result_jingle",
+        src: `${BASE_URL}assets/sounds/se_result_jingle.m4a`,
+    },
+    {
+        alias: "se_result_jingle_special",
+        src: `${BASE_URL}assets/sounds/se_result_jingle_special.m4a`,
+    },
 ];
 
 export const bgmSrcs = {
@@ -105,6 +118,7 @@ export const imageSrcs = [
     { alias: "leaf_white", src: `${BASE_URL}assets/leaf_white.png` },
     { alias: "moon", src: `${BASE_URL}assets/moon.png` },
     { alias: "pencil", src: `${BASE_URL}assets/pencil.png` },
+    { alias: "pin", src: `${BASE_URL}assets/pin.png` },
     { alias: "sticky", src: `${BASE_URL}assets/sticky.png` },
     { alias: "sun", src: `${BASE_URL}assets/sun.png` },
     { alias: "sunset_spritesheet", src: `${BASE_URL}assets/sunset.json` },

@@ -35,6 +35,27 @@ vi.mock("../../../src/scripts/utils/ScoreStorage", () => ({
     saveResult: saveResultMock,
 }));
 
+// DreamDeparturePathは軌道計算そのものは検証済み(DreamDeparturePath.test.ts)
+// なので、ここではコンストラクタに渡された引数(出発座標)だけを捕捉できる
+// スタブにする
+const { departurePathCtorMock } = vi.hoisted(() => ({
+    departurePathCtorMock: vi.fn(),
+}));
+vi.mock("../../../src/scripts/utils/DreamDeparturePath", () => ({
+    DreamDeparturePath: class {
+        x = 0;
+        y = 0;
+        mode = "trembling";
+        done = false;
+        constructor(options: unknown) {
+            departurePathCtorMock(options);
+        }
+        step() {
+            /* noop */
+        }
+    },
+}));
+
 // 遷移先のシーンは重い依存を持つため、コンストラクタだけを検証できるスタブにする
 vi.mock("../../../src/scripts/scenes/GameplayState", () => ({
     GameplayState: vi.fn(),
@@ -88,6 +109,21 @@ function makeClearStageInfo(
     return info;
 }
 
+function makeSpecimen(
+    overrides: Partial<{
+        color: number;
+        sizeCategory: "small" | "medium" | "large" | "special";
+        isSpecial: boolean;
+    }> = {},
+) {
+    return {
+        color: 0xff69b4,
+        sizeCategory: "small" as const,
+        isSpecial: false,
+        ...overrides,
+    };
+}
+
 function makeGameOverStageInfo(
     overrides: Partial<StageInformation> = {},
 ): StageInformation {
@@ -130,7 +166,10 @@ describe("ResultState", () => {
 
     async function runOnEnter(state: ResultState): Promise<void> {
         const promise = state.onEnter();
-        await vi.advanceTimersByTimeAsync(5000 + 2000);
+        // ノート型は結果表示が2秒長い(7000ms)ため、両方のパスをまかなえる
+        // 長さまで進める(displayStageResultはstubResultDisplayでモック
+        // 済みなので、余分に進めても後続の状態遷移には影響しない)
+        await vi.advanceTimersByTimeAsync(7000 + 2000);
         await promise;
     }
 
@@ -161,10 +200,14 @@ describe("ResultState", () => {
             (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
 
             const promise = state.onEnter();
-            await vi.advanceTimersByTimeAsync(5000);
+            // ノート型は結果表示が2秒長い(7000ms)
+            await vi.advanceTimersByTimeAsync(7000);
             await promise;
 
             expect(stageInfo.bonusFlag).toBe(true);
+            // 案内(bonus.invitation)はリザルト側で表示済みなので、遷移先の
+            // ボーナスでは導入をスキップするフラグが立つ
+            expect(stageInfo.bonusIntroShown).toBe(true);
             expect(GameplayState).toHaveBeenCalledWith(manager, stageInfo);
         });
     });
@@ -351,6 +394,216 @@ describe("ResultState", () => {
 
             expect(saveResultMock).toHaveBeenCalledWith(stageInfo.totalScore);
             expect(StartState).toHaveBeenCalledWith(manager);
+        });
+    });
+
+    describe("notebook-style result (any clear)", () => {
+        // displayLegacyResultと同じ理由(PIXI.Tickerの実アニメーション完了を
+        // 待ってしまう)で、displayNotebookResult/enterDreamSequence内の
+        // fadeIn/fadeOut/waitは即時解決に差し替える
+        function stubAnimations(state: ResultState): void {
+            (state as any).fadeIn = vi.fn().mockResolvedValue(undefined);
+            (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
+            (state as any).wait = vi.fn().mockResolvedValue(undefined);
+            (state as any).slideY = vi.fn().mockResolvedValue(undefined);
+        }
+
+        it("routes to displayNotebookResult on any clear (normal, bonus stage, practice) but not on game over", () => {
+            const notebookCases = [
+                makeClearStageInfo({ isPractice: false, bonusFlag: false }), // normal clear
+                makeClearStageInfo({ isPractice: false, bonusFlag: true }), // bonus stage's own result (same design)
+                makeClearStageInfo({ isPractice: true }), // practice clear (same design)
+            ];
+            const legacyCases = [
+                makeGameOverStageInfo({ isPractice: false }), // game over
+                makeGameOverStageInfo({ isPractice: true }), // practice game over
+            ];
+
+            notebookCases.forEach((stageInfo) => {
+                expect(
+                    (new ResultState(manager as any, stageInfo, false) as any)
+                        .isNotebookResult,
+                ).toBe(true);
+            });
+
+            legacyCases.forEach((stageInfo) => {
+                expect(
+                    (new ResultState(manager as any, stageInfo, false) as any)
+                        .isNotebookResult,
+                ).toBe(false);
+            });
+        });
+
+        it("pins one specimen per captured butterfly", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [
+                    makeSpecimen({ color: 0xdc143c }),
+                    makeSpecimen({ color: 0x6a5acd }),
+                ],
+            });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            const pinnedCount = (state as any).notebookChildren.filter(
+                (child: any) => "butterfly" in child,
+            ).length;
+            expect(pinnedCount).toBe(2);
+            expect((state as any).dreamSpecimen).toBeUndefined();
+        });
+
+        it("keeps the special specimen out of notebookChildren and tracks it as dreamSpecimen", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [
+                    makeSpecimen({}),
+                    makeSpecimen({ isSpecial: true }),
+                ],
+            });
+            const state = new ResultState(manager as any, stageInfo, true);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            expect((state as any).dreamSpecimen).toBeDefined();
+            const pinnedInChildren = (state as any).notebookChildren.filter(
+                (child: any) => "butterfly" in child,
+            );
+            expect(pinnedInChildren).toHaveLength(1);
+        });
+
+        it("keeps the notebook art, text, and specimens in one group (they leave together), with only the dream specimen outside it", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [
+                    makeSpecimen({}),
+                    makeSpecimen({ isSpecial: true }),
+                ],
+            });
+            const state = new ResultState(manager as any, stageInfo, true);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            const group = (state as any).notebookGroup;
+            expect(group).toBeDefined();
+            // ノートの絵もテキストも標本も、退場を一体で行うグループの子
+            expect((state as any).notebookSprite.parent).toBe(group);
+            (state as any).notebookChildren.forEach((child: any) => {
+                expect(child.parent).toBe(group);
+            });
+            // 夢へ誘うスペシャル標本だけは、ノートが消えたあとも飛び続ける
+            // 必要があるためグループの外(container直下)に置く
+            expect((state as any).dreamSpecimen.parent).not.toBe(group);
+        });
+
+        it("keeps a special specimen as an ordinary pinned exhibit in practice mode (no dream sequence follows)", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: true,
+                capturedSpecimens: [
+                    makeSpecimen({}),
+                    makeSpecimen({ isSpecial: true }),
+                ],
+            });
+            // プラクティスではスペシャルを捕まえていても夢演出には入らない
+            // (isEnteringDream=false)ため、dreamSpecimenとして退避すると
+            // 誰にも回収されず画面に残ってしまう。通常の標本と同じく
+            // notebookChildrenに入れて一緒に片付けられることを確認する
+            const state = new ResultState(manager as any, stageInfo, true);
+            expect((state as any).isEnteringDream).toBe(false);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            expect((state as any).dreamSpecimen).toBeUndefined();
+            const pinnedInChildren = (state as any).notebookChildren.filter(
+                (child: any) => "butterfly" in child,
+            );
+            expect(pinnedInChildren).toHaveLength(2);
+        });
+
+        it("starts the departure from the pinned specimen's position, with the pin still attached while trembling", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [makeSpecimen({ isSpecial: true })],
+            });
+            const state = new ResultState(manager as any, stageInfo, true);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+            const dreamSpecimen = (state as any).dreamSpecimen;
+            expect(dreamSpecimen).toBeDefined();
+
+            // Tickerモックは手動tickが必要なため、旅立ちの完了は待たずに
+            // 開始だけさせて、ステッパーへ渡った出発座標を検証する
+            void (state as any).startDreamDeparture(dreamSpecimen);
+
+            expect(departurePathCtorMock).toHaveBeenCalledTimes(1);
+            const options = departurePathCtorMock.mock.calls[0][0];
+            // 出発点は捕まえたスペシャル個体のピン留め位置そのもの
+            // (旧仕様のような画面中央からの出現ではない)
+            expect(options.startX).toBe(dreamSpecimen.x);
+            expect(options.startY).toBe(dreamSpecimen.y);
+            expect(options.screenWidth).toBe(app.screen.width);
+            expect(options.screenHeight).toBe(app.screen.height);
+
+            // 震えている(departingへ切り替わる)前はピンが刺さったまま。
+            // 生きているスペシャル個体なので、捕まっている間も羽ばたいている
+            expect(dreamSpecimen.pinSprite).not.toBeNull();
+            expect(dreamSpecimen.butterfly.isFlapping).toBe(true);
+        });
+
+        it("plays the notebook landing sound and the clear jingle (the special jingle on the bonus result)", async () => {
+            const normal = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+            });
+            const state = new ResultState(manager as any, normal, false);
+            stubAnimations(state);
+            await (state as any).displayNotebookResult();
+            expect(playSeMock).toHaveBeenCalledWith("se_notebook");
+            expect(playSeMock).toHaveBeenCalledWith("se_result_jingle");
+
+            playSeMock.mockClear();
+            const bonus = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: true,
+            });
+            const bonusState = new ResultState(manager as any, bonus, false);
+            stubAnimations(bonusState);
+            await (bonusState as any).displayNotebookResult();
+            expect(playSeMock).toHaveBeenCalledWith("se_result_jingle_special");
+            expect(playSeMock).not.toHaveBeenCalledWith("se_result_jingle");
+        });
+
+        it("uses the bonus-stage heading, an infinity target, and drops the bonus-score row for the bonus stage's own result", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: true,
+                needCount: -1,
+                bonusCount: 0,
+                capturedSpecimens: [makeSpecimen({}), makeSpecimen({})],
+            });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            const texts = (state as any).notebookChildren
+                .map((child: any) => child.text)
+                .filter((text: unknown) => typeof text === "string");
+
+            expect(texts).toContain(t("result.bonusStage"));
+            expect(texts.some((text: string) => text.includes("∞"))).toBe(true);
+            expect(texts).not.toContain(
+                t("result.notebook.bonusScore", { count: 0 }),
+            );
         });
     });
 });

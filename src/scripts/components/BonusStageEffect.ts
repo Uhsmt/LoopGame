@@ -88,6 +88,17 @@ export class BonusStageEffect extends PIXI.Container {
     }
 
     /**
+     * 導入(案内メッセージ)を出さずに、即ゲーム本編を開始できる状態にする。
+     * リザルト側で既に同じ案内(bonus.invitation)を見せてから遷移してきた
+     * とき用。consumeIntroComplete()は通常どおり一度だけtrueを返すので、
+     * ゲーム開始のトリガの流れは変わらない
+     */
+    skipIntro(): void {
+        this.message.alpha = 0;
+        this._phase = "playing";
+    }
+
+    /**
      * 導入演出が完了した瞬間に一度だけ true を返す(ゲーム本編の開始トリガ)。
      * ポーリングで消費するのでフレームの取りこぼしがない
      */

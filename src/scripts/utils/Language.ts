@@ -115,6 +115,20 @@ const CATALOG = {
         en: "total score : {score}",
     },
 
+    // --- ノート型リザルト画面(ResultState、レベルクリア時のみ) ---
+    "result.notebook.needGot": {
+        ja: "もくひょう {need} → {got} 匹",
+        en: "Target {need} → Caught {got}",
+    },
+    "result.notebook.baseScore": { ja: "きほんスコア", en: "Base score" },
+    "result.notebook.bonusScore": {
+        ja: "ボーナス ×{count}",
+        en: "Bonus ×{count}",
+    },
+    "result.notebook.stageScore": { ja: "ステージスコア", en: "Stage score" },
+    "result.notebook.totalScore": { ja: "合計スコア", en: "Total score" },
+    "result.notebook.overflow": { ja: "…+{count}", en: "…+{count}" },
+
     // --- あそびかた(RuleState) ---
     "rule.title.howToPlay": { ja: "あそびかた", en: "How to play" },
     "rule.p1.draw": {

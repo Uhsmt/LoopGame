@@ -5,7 +5,7 @@ import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
 import { PracticeSelectState } from "./PracticeSelectState";
 import { Butterfly } from "../components/Butterfly";
-import { SpecialButterfly } from "../components/SpecialButterfly";
+import { PinnedSpecimen } from "../components/PinnedSpecimen";
 import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
 import { StateBase } from "./BaseState";
@@ -14,14 +14,31 @@ import { LineDrawer } from "../components/LineDrawer";
 import { AudioManager } from "../utils/AudioManager";
 import { saveResult } from "../utils/ScoreStorage";
 import { t, getLang } from "../utils/Language";
-import { DreamFlightPath } from "../utils/DreamFlightPath";
+import { DreamDeparturePath } from "../utils/DreamDeparturePath";
+import { layoutSpecimens } from "../utils/SpecimenLayout";
+
+// ノート型リザルト画面(左ページ・右ページ)のレイアウト定数。
+// notebook.pngの実寸(sprite.width/height、常に723x541)に対する割合と、
+// 標本を並べる固定セルサイズ(px)で構成する。数値はモックアップでの
+// 実測を元にした初期値で、実機で見ながら微調整してよい
+const NOTEBOOK_Y_RATIO = 0.5;
+const PAGE_LEFT_X_RATIO = 0.064;
+const PAGE_LEFT_W_RATIO = 0.405;
+const PAGE_RIGHT_X_RATIO = 0.56;
+const PAGE_RIGHT_W_RATIO = 0.4;
+const PAGE_TOP_RATIO = 0.085;
+const PAGE_BOTTOM_MARGIN_RATIO = 0.11;
+// 標本1匹分のセルサイズとセル間ギャップ。蝶の実サイズに関わらずこの枠に
+// 収めるので、行の高さ・間隔がガタつかない。通常種の最大(large ≒ 51px)を
+// 基準に詰めて並べる。スペシャル個体(≒74px幅)は1匹しか出ないため、
+// 隣のセルに羽が少しかかるのは許容する
+const CELL_SIZE = 60;
+const CELL_GAP = 4;
+const ROW_PITCH = CELL_SIZE + CELL_GAP;
+const HEADING_BLOCK_HEIGHT = 60;
+const SCORE_BLOCK_HEIGHT = 132;
 
 export class ResultState extends StateBase {
-    // 夢に誘う蝶が出現する位置(画面中心からのオフセット、px)。
-    // 軌道の形状そのもの(円の半径・速さ・退場のなじませ方など)は
-    // DreamFlightPath側に集約している
-    private static readonly DREAM_SPAWN_RADIUS = 15;
-
     private stageInfo: StageInformation;
     private messages: Message[] = [];
     private messageButterflies: Butterfly[] = [];
@@ -47,8 +64,31 @@ export class ResultState extends StateBase {
     private readonly isWakingDream: boolean;
     /** 暗転/明転に使う夜背景(夢の演出があるときだけ用意する) */
     private nightBackground?: PIXI.Sprite;
-    /** リザルト画面で振り付けモーションを行うスペシャル蝶(夢に入るときだけ) */
-    private dreamButterfly?: SpecialButterfly;
+    /**
+     * クリアした場合にtrue(ノート型リザルト画面を使う)。通常クリア・
+     * ボーナスステージ自身の結果・プラクティスクリアのいずれも同じ
+     * デザインを共有する。ゲームオーバーだけは従来どおり
+     * displayLegacyResult()を使う
+     */
+    private readonly isNotebookResult: boolean;
+    /**
+     * ノート・テキスト・標本(スペシャル個体を除く)をひとかたまりに持つ
+     * コンテナ。退場のフェード+スライドはこれごと一体で動かす
+     */
+    private notebookGroup?: PIXI.Container;
+    private notebookSprite?: PIXI.Sprite;
+    /** ノート型リザルト画面で生成した表示物(テスト・列挙用にまとめて持つ) */
+    private notebookChildren: PIXI.Container[] = [];
+    /**
+     * 捕まえたスペシャル個体に対応するピン留め標本(夢に入るときだけ)。
+     * enterDreamSequenceでこれ自体のx/yを動かして、ピン留め位置から
+     * そのまま飛び立たせる(内部のButterflyは再親付けしない)
+     */
+    private dreamSpecimen?: PinnedSpecimen;
+    /** リザルト表示中から先行して始める、夜への暗転のPromise(夢に入るときだけ) */
+    private dreamDarkenPromise?: Promise<void>;
+    /** 暗転しきった夜に出す「ちょうを できるだけ つかまえて」の案内 */
+    private bonusInvitationMessage?: Message;
 
     constructor(
         manager: GameStateManager,
@@ -63,6 +103,9 @@ export class ResultState extends StateBase {
         this.isEnteringDream =
             stageInfo.isClear && isGotBonusButterfly && !stageInfo.isPractice;
         this.isWakingDream = stageInfo.bonusFlag;
+        // クリアした場合(通常・ボーナスステージ・プラクティスとも)は
+        // ノート型リザルトを使う。ゲームオーバーだけdisplayLegacyResultのまま
+        this.isNotebookResult = stageInfo.isClear;
 
         // 夢に誘う蝶をスコアの紙・テキストより常に手前(最前面)に描画するため、
         // zIndexでの並べ替えを有効にしておく(スコアテキストはdisplayStageResult
@@ -102,53 +145,40 @@ export class ResultState extends StateBase {
         // frame
         this.addFrameGraphic();
 
-        // 夢に入るリザルトでは、スペシャル蝶が「画面のど真ん中あたりに現れる
-        // →軽く円を描く→そのまま画面外へ」という振り付けモーションを行う
-        // (ランダムな徘徊はしない)。update()側の壁バウンド徘徊(isFlying)は
-        // 使わず、専用の振り付け(startDreamFlightChoreography)で動かすため、
-        // isFlying は false のままにする。振り付けは生成と同時に自走を始め、
-        // リザルト表示中もずっと進行する
-        if (this.isEnteringDream) {
-            const special = new SpecialButterfly(
-                this.stageInfo.butterflyColors[0],
-                {
-                    x: this.manager.app.screen.width,
-                    y: this.manager.app.screen.height,
-                },
-            );
-            special.x =
-                this.manager.app.screen.width / 2 +
-                ResultState.DREAM_SPAWN_RADIUS;
-            special.y = this.manager.app.screen.height / 2;
-            special.appear(false);
-            special.isFlapping = true;
-            special.isFlying = false;
-            // 黒枠を含む全要素より常に手前(最前面)に見えるよう固定する。
-            // sortableChildren=trueによりzIndexソートが優先されるため、
-            // 挿入位置は描画順に影響しない(addChildで十分)
-            special.zIndex = 1000;
-            this.container.addChild(special);
-            this.dreamButterfly = special;
-            this.startDreamFlightChoreography(special);
-        }
+        // 夢に誘うスペシャル個体は、ノートにピン留めされた実際の標本を
+        // その場から飛び立たせる形にしたため、ここで新規に蝶を生成する処理は
+        // 不要になった(displayNotebookResult内でピン留め時にdreamSpecimenを
+        // 記録し、enterDreamSequenceで初めて解放して振り付けを開始する)
     }
 
     async onEnter(): Promise<void> {
         // 夢から覚める(ボーナスのリザルト)は、明転(夜→昼)をスコア表示の
-        // 完了を待たずに、ほぼ同時に始める(明転は裏で進み、あとで待ち合わせる)
+        // 完了を待たずに、ほぼ同時に始める(明転は裏で進み、あとで待ち合わせる)。
+        // 夢に入るときの暗転と同様、「気づいたら朝になっている」くらい
+        // ゆっくり(約7秒)かけて明ける
         const brightenPromise =
             this.isWakingDream && this.nightBackground
-                ? this.fadeOut(this.nightBackground, 0.008)
+                ? this.fadeOut(this.nightBackground, 0.0025)
                 : Promise.resolve();
 
         // disp result
         await this.displayStageResult();
 
-        // 5秒まつ
+        // 夢に入る場合、夜への暗転はリザルト表示中から「気づいたら夜に
+        // なっている」くらいゆっくり先行して始めておく(約11秒かけて完了)。
+        // ノート一式は夜背景より手前に描かれるので、スコアは暗転中も読める
+        if (this.isEnteringDream && this.nightBackground) {
+            this.dreamDarkenPromise = this.fadeIn(this.nightBackground, 0.0015);
+        }
+
+        // 5秒まつ(ノート型はさらに2秒長く見せる)
         await new Promise((resolve) =>
-            setTimeout(() => {
-                resolve(null);
-            }, 5000),
+            setTimeout(
+                () => {
+                    resolve(null);
+                },
+                this.isNotebookResult ? 7000 : 5000,
+            ),
         );
 
         // messagesぜんぶ消す
@@ -164,9 +194,32 @@ export class ResultState extends StateBase {
         this.messageButterflies = [];
 
         // 夢に入る: 「BONUS STAGE!」とは出さず、静かに暗転してボーナスへ誘う
+        // (ノート一式の非表示はenterDreamSequence側で行う。dreamSpecimenは
+        // グループに入れていないので、ノートが消えても飛び続けられる)
         if (this.isEnteringDream) {
             await this.enterDreamSequence();
             return;
+        }
+
+        // ノートの中央に次面の案内を重ねると読みづらいため、ノート型リザルト
+        // では先にノート一式(ノート・テキスト・標本)をひとつのオブジェクト
+        // としてフェード+スライドで下げてから次のメッセージを出す
+        // (登場時と対になる動き)
+        if (this.notebookGroup) {
+            const group = this.notebookGroup;
+            await Promise.all([
+                this.fadeOut(group, 0.05),
+                this.slideY(
+                    group,
+                    group.y + this.manager.app.screen.height * 0.08,
+                    0.15,
+                ),
+            ]);
+            this.container.removeChild(group);
+            group.destroy({ children: true });
+            this.notebookGroup = undefined;
+            this.notebookSprite = undefined;
+            this.notebookChildren = [];
         }
 
         // プラクティスモードのクリアは次のステージへ進まないため、
@@ -291,13 +344,14 @@ export class ResultState extends StateBase {
 
     /**
      * 夢に入る演出: リザルト表示のあと、画面がだんだん暗くなって夜へ向かう。
-     * 遷移のゲートは暗転完了のみ(オーナー了承済み)で、誘ってくれた
-     * スペシャル蝶の振り付け(円→退場)完了は待たない。画面切り替えで
-     * 蝶が唐突に消えて見えないよう、暗転が終わったら短くフェードアウト
-     * させてからボーナス(夢)へ入る。
+     * 誘ってくれるのはノートにピン留めされていた実際のスペシャル標本
+     * (dreamSpecimen)で、ピン留め位置でブルブルと震えたあとピンが外れ、
+     * 画面の左半分にいれば右上へ・右半分にいれば左上へ、ふら〜と蛇行
+     * しながら飛び去っていく。暗転は旅立ちと並行して進み、蝶が画面外へ
+     * 抜けきってからボーナス(夢)へ入る。
      */
     private async enterDreamSequence(): Promise<void> {
-        // 少し余韻をおく(スペシャル蝶はこの間もふらふら飛んでいる)
+        // 少し余韻をおく
         await this.wait(400);
 
         // 背景の切り替わり(暗転)が始まる時点で、ボーナスBGMを先出しして
@@ -306,57 +360,160 @@ export class ResultState extends StateBase {
         // 二重再生にはならない
         AudioManager.shared.playBgm(Const.bgmSrcs.bonus);
 
-        // スコアの紙はスライドやフェードではなく、パッと非表示にする
-        this.stickySprite.visible = false;
+        // ノート一式は蝶がピンから外れた時点からゆっくりフェードアウト
+        // させる(startDreamDeparture内)。震えている間はまだノートの上にいる
 
-        // だんだん暗くなる(夜へ)。約3.2秒かけてゆっくり切り替える
-        if (this.nightBackground) {
-            await this.fadeIn(this.nightBackground, 0.005);
+        // 旅立ち(震え→ピンが外れて飛び去る)と、リザルト表示中から先行
+        // している暗転の両方が終わって(=蝶が画面外に抜けきって)から
+        // ボーナスへ入る
+        const departurePromise = this.dreamSpecimen
+            ? this.startDreamDeparture(this.dreamSpecimen)
+            : Promise.resolve();
+        const darkenPromise =
+            this.dreamDarkenPromise ??
+            (this.nightBackground
+                ? this.fadeIn(this.nightBackground, 0.005)
+                : Promise.resolve());
+        // 暗転しきったら、蝶がまだ画面内に残っていてもボーナスの案内
+        // (ちょうを できるだけ つかまえて)を出してよい
+        void darkenPromise.then(() => {
+            this.showBonusInvitation();
+        });
+        await Promise.all([departurePromise, darkenPromise]);
+
+        // 蝶は既に画面外へ抜けきっているので、そのまま片付けてよい
+        if (this.dreamSpecimen && !this.dreamSpecimen.destroyed) {
+            this.container.removeChild(this.dreamSpecimen);
+            this.dreamSpecimen.destroy({ children: true });
+        }
+        this.dreamSpecimen = undefined;
+
+        // 案内は短くフェードアウトさせてからボーナスへ(遷移でぶつ切りに
+        // 消えないように)
+        if (this.bonusInvitationMessage) {
+            await this.fadeOut(this.bonusInvitationMessage, 0.05);
+            this.container.removeChild(this.bonusInvitationMessage);
+            this.bonusInvitationMessage.destroy();
+            this.bonusInvitationMessage = undefined;
         }
 
-        // 暗転が完了したら、蝶の退場(振り付けの完了)は待たずにボーナスへ
-        // 進む。ただし画面切り替えで蝶が唐突に消えて見えないよう、
-        // 遷移直前に短くフェードアウトしてから消す
-        await this.fadeOutDreamButterfly();
-
         this.stageInfo.bonusStage();
+        // 案内は既に見せたので、ボーナス側の導入(同じメッセージの再表示)は
+        // スキップして、遷移後すぐゲームが始まる
+        this.stageInfo.bonusIntroShown = true;
         this.manager.setState(new GameplayState(this.manager, this.stageInfo));
     }
 
     /**
-     * 夢に誘うスペシャル蝶の振り付けモーションを開始する。
-     * 「画面中央あたりに現れる → 軽く円を描く(だいたい1周) → そのまま
-     * 同じ速さで画面外へ抜ける」という軌道の計算自体は DreamFlightPath
-     * (PIXI非依存の純粋なステッパー)に任せ、ここでは毎フレームその結果を
-     * butterflyの座標へ反映するだけにする。生成と同時に自走を始め、
-     * リザルト表示中もずっと進行する(delta駆動、専用Tickerで動く)。
-     *
-     * 遷移(enterDreamSequence)は暗転完了だけをゲートにしており、この
-     * 振り付けの完了(画面外まで抜けきること)は待たない。そのため
-     * butterfly.destroyed(=fadeOutDreamButterflyによる破棄)か、
-     * まれに振り付け自体が最後まで完了した場合のどちらかでTickerを
-     * 止める(自然完了は安全弁で、通常はdestroyedの方が先に来る)。
+     * 暗転しきった夜に、ボーナスの案内(bonus.invitation)をふわりと出す。
+     * スペシャル蝶がまだ画面内を飛んでいても出してよい(ゲーム本編の開始は
+     * 蝶の退場を待つ)。BonusStageEffectの導入メッセージと同じ文言・位置
+     * なので、そのまま導入の代わりになる
      */
-    private startDreamFlightChoreography(butterfly: SpecialButterfly): void {
-        const path = new DreamFlightPath({
-            centerX: this.manager.app.screen.width / 2,
-            centerY: this.manager.app.screen.height / 2,
+    private showBonusInvitation(): void {
+        if (this.bonusInvitationMessage) return;
+        // 夜背景の上に出すので、BonusStageEffectの導入と同じ白文字にする
+        const message = new Message(t("bonus.invitation"), 23, 0xffffff);
+        message.anchor.set(0.5);
+        message.x = this.manager.app.screen.width / 2;
+        message.y = this.manager.app.screen.height / 2;
+        // 夜背景やノートより手前、飛んでいる蝶(1000)よりは奥
+        message.zIndex = 900;
+        this.container.addChild(message);
+        // ふわりと浮かび上がらせる(完了は待ち合わせない)
+        void this.fadeIn(message, 0.02, 1);
+        this.bonusInvitationMessage = message;
+    }
+
+    /**
+     * ピン留めされていた標本(dreamSpecimen)の旅立ちモーションを開始する。
+     * 軌道の計算は DreamDeparturePath(PIXI非依存の純粋なステッパー)に任せ、
+     * ここでは毎フレームその結果をspecimenコンテナの座標へ反映するだけに
+     * する(中のButterflyは再親付けしていないので、コンテナごと動かせば
+     * 一緒についてくる)。
+     *
+     * ピンは震え(trembling)の間は刺さったままで、departingへ切り替わった
+     * 瞬間に外す(=ブルブル震えてピンが抜ける)。外れたピンは落下+フェード
+     * アウトさせ、ノート一式もこの瞬間からゆっくりフェードアウトを始める。
+     * 返すPromiseは蝶が画面外へ抜けきる(path.done)か、万一先に破棄された
+     * 場合に解決する。
+     */
+    private startDreamDeparture(specimen: PinnedSpecimen): Promise<void> {
+        // 黒枠を含む全要素より常に手前(最前面)に見えるよう固定する
+        specimen.zIndex = 1000;
+
+        const path = new DreamDeparturePath({
+            startX: specimen.x,
+            startY: specimen.y,
             screenWidth: this.manager.app.screen.width,
             screenHeight: this.manager.app.screen.height,
-            spawnRadius: ResultState.DREAM_SPAWN_RADIUS,
         });
 
+        return new Promise((resolve) => {
+            let released = false;
+            const ticker = new PIXI.Ticker();
+            ticker.add(() => {
+                if (specimen.destroyed) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                    return;
+                }
+                path.step(ticker.deltaMS);
+                if (!released && path.mode === "departing") {
+                    // 震え終わり: ピンが外れ、羽ばたきながら飛び立つ。
+                    // 外れたピンは下に落ちながらフェードアウトさせる
+                    const pin = specimen.detachPin();
+                    if (pin) {
+                        // specimenのローカル座標からcontainer座標へ変換して
+                        // 同じ見た目の位置に置き直す
+                        pin.x += specimen.x;
+                        pin.y += specimen.y;
+                        this.dropPin(pin);
+                    }
+                    // 蝶がピンから外れたら、ノート一式(テキスト・標本ごと)を
+                    // ゆっくりフェードアウトさせる(蝶とピンだけが残っていく)。
+                    // 完了は待ち合わせない(退場飛行・暗転と並行して進む)
+                    if (this.notebookGroup) {
+                        void this.fadeOut(this.notebookGroup, 0.008);
+                    }
+                    released = true;
+                }
+                specimen.x = path.x;
+                specimen.y = path.y;
+                if (path.done) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                }
+            });
+            ticker.start();
+        });
+    }
+
+    /**
+     * 外れたピンを重力っぽく加速しながら下へ落とし、同時にフェードアウト
+     * させて消す。純粋な飾りの演出なので、完了は誰も待ち合わせない
+     * (シーン遷移で親ごと破棄されても、ticker側のガードで安全に止まる)。
+     */
+    private dropPin(pin: PIXI.Sprite): void {
+        pin.zIndex = 900; // 蝶(1000)のすぐ下、ノートより手前
+        this.container.addChild(pin);
+
+        let velocityY = 0;
         const ticker = new PIXI.Ticker();
         ticker.add(() => {
-            if (butterfly.destroyed) {
+            if (pin.destroyed) {
                 ticker.stop();
                 ticker.destroy();
                 return;
             }
-            path.step(ticker.deltaMS);
-            butterfly.x = path.x;
-            butterfly.y = path.y;
-            if (path.done) {
+            velocityY += 0.0008 * ticker.deltaMS;
+            pin.y += velocityY * ticker.deltaMS;
+            pin.alpha -= 0.0012 * ticker.deltaMS;
+            if (pin.alpha <= 0) {
+                this.container.removeChild(pin);
+                pin.destroy();
                 ticker.stop();
                 ticker.destroy();
             }
@@ -364,45 +521,35 @@ export class ResultState extends StateBase {
         ticker.start();
     }
 
-    /**
-     * 夢へ誘うスペシャル蝶を短くフェードアウトしてから消す。
-     * enterDreamSequenceは暗転完了だけをゲートに次のシーンへ進むため、
-     * 振り付け(円→退場)の途中で画面が切り替わり得る。画面切り替えで
-     * 蝶が唐突に消えて見えないよう、遷移直前にひと呼吸フェードさせておく
-     * (フェード中も振り付け自体は自然に動き続ける)。
-     */
-    private async fadeOutDreamButterfly(): Promise<void> {
-        const butterfly = this.dreamButterfly;
-        if (!butterfly) return;
-
-        await this.fadeOut(butterfly, 0.05);
-
-        if (!butterfly.destroyed) {
-            this.container.removeChild(butterfly);
-            butterfly.delete();
-        }
-        this.dreamButterfly = undefined;
-    }
-
     update(delta: number): void {
         this.messageButterflies.forEach((butterfly) => {
             butterfly.update(delta, []);
         });
-        if (this.dreamButterfly) {
+        if (this.dreamSpecimen && !this.dreamSpecimen.destroyed) {
+            // ピン留め中の「たまにちょっとブルブル」(deltaはms単位:
+            // game.tsがapp.ticker.deltaMSを渡してくる)
+            this.dreamSpecimen.update(delta);
             // isFlying=falseなのでButterfly.update内のfly()は何もしない。
             // 羽ばたきアニメ(flap())だけをここに任せる。位置は
-            // startDreamFlightChoreographyの専用Tickerが動かす
-            this.dreamButterfly.update(delta, []);
+            // startDreamDepartureの専用Tickerが動かす
+            this.dreamSpecimen.butterfly.update(delta, []);
         }
+        // ノート上の標本の羽ばたきアニメ(isFlapping=trueなのはスペシャル
+        // 個体だけで、通常の標本は静止したままなので実質何もしない)
+        this.notebookChildren.forEach((child) => {
+            if (child instanceof PinnedSpecimen && !child.destroyed) {
+                child.butterfly.update(delta, []);
+            }
+        });
     }
 
     render(): void {}
 
     onExit(): void {
-        // 途中で遷移した場合に備え、飛び残ったスペシャル蝶を確実に破棄する
-        if (this.dreamButterfly && !this.dreamButterfly.destroyed) {
-            this.dreamButterfly.delete();
-            this.dreamButterfly = undefined;
+        // 途中で遷移した場合に備え、飛び残った標本を確実に破棄する
+        if (this.dreamSpecimen && !this.dreamSpecimen.destroyed) {
+            this.dreamSpecimen.destroy({ children: true });
+            this.dreamSpecimen = undefined;
         }
         this.manager.app.stage.removeChild(this.container);
         this.container.destroy();
@@ -415,6 +562,247 @@ export class ResultState extends StateBase {
     }
 
     private async displayStageResult(): Promise<void> {
+        if (this.isNotebookResult) {
+            await this.displayNotebookResult();
+        } else {
+            await this.displayLegacyResult();
+        }
+    }
+
+    /**
+     * ノート型リザルト画面(レベルクリア→次のステージへ進む場合のみ)。
+     * 左ページに見出しと実際に捕まえた蝶を標本のようにピン留め表示し、
+     * 右ページにスコアをまとめて一括表示する(行ごとの逐次演出はしない)。
+     * 既存のsticky版と同様、まずページ自体をフェードインさせ、それが
+     * 収まってから中身を一括で表示する(中身の逐次演出はしない)。
+     */
+    private async displayNotebookResult(): Promise<void> {
+        const screenSize = {
+            x: this.manager.app.screen.width,
+            y: this.manager.app.screen.height,
+        };
+
+        // ノート・テキスト・標本をひとかたまりで動かすためのグループ。
+        // 中身は画面絶対座標のまま配置する(グループ自体は原点に置く)
+        const notebookGroup = new PIXI.Container();
+        this.container.addChild(notebookGroup);
+        this.notebookGroup = notebookGroup;
+
+        const notebookSprite = new PIXI.Sprite(PIXI.Texture.from("notebook"));
+        notebookSprite.anchor.set(0.5);
+        notebookSprite.x = screenSize.x / 2;
+        const notebookRestY = screenSize.y * NOTEBOOK_Y_RATIO;
+        // stickyと同じく、少し下からフェード+スライドで収まる形にする
+        notebookSprite.y = notebookRestY + screenSize.y * 0.08;
+        notebookSprite.alpha = 0;
+        notebookGroup.addChild(notebookSprite);
+        this.notebookSprite = notebookSprite;
+
+        await Promise.all([
+            this.fadeIn(notebookSprite, 0.05, 1),
+            this.slideY(notebookSprite, notebookRestY, 0.15),
+        ]);
+
+        // ノート着地の紙音→ひと呼吸おいて、中身の一括表示と同時にジングル。
+        // ボーナスステージの結果は少し豪華なスペシャル版を鳴らす
+        AudioManager.shared.playSe("se_notebook");
+        await this.wait(300);
+        AudioManager.shared.playSe(
+            this.stageInfo.bonusFlag
+                ? "se_result_jingle_special"
+                : "se_result_jingle",
+        );
+
+        const notebookLeft = notebookSprite.x - notebookSprite.width / 2;
+        const notebookTop = notebookSprite.y - notebookSprite.height / 2;
+        const leftPageX =
+            notebookLeft + notebookSprite.width * PAGE_LEFT_X_RATIO;
+        const leftPageWidth = notebookSprite.width * PAGE_LEFT_W_RATIO;
+        const rightPageX =
+            notebookLeft + notebookSprite.width * PAGE_RIGHT_X_RATIO;
+        const rightPageWidth = notebookSprite.width * PAGE_RIGHT_W_RATIO;
+        const pageTop = notebookTop + notebookSprite.height * PAGE_TOP_RATIO;
+        const pageBottom =
+            notebookTop +
+            notebookSprite.height * (1 - PAGE_BOTTOM_MARGIN_RATIO);
+
+        // 左ページ: 見出し(ボーナスステージの結果も同じデザインを使う)
+        const headingText = this.stageInfo.bonusFlag
+            ? t("result.bonusStage")
+            : t("result.level", { n: this.stageInfo.level });
+        const levelMsg = new Message(headingText, 28);
+        levelMsg.anchor.set(0, 0.5);
+        levelMsg.x = leftPageX;
+        levelMsg.y = pageTop + 16;
+        levelMsg.show();
+        notebookGroup.addChild(levelMsg);
+        this.notebookChildren.push(levelMsg);
+
+        // 左ページ: 標本のグリッド配置(見出し分だけ上を空ける)
+        const leftGridTop = pageTop + HEADING_BLOCK_HEIGHT;
+        const leftColumns = Math.max(1, Math.floor(leftPageWidth / ROW_PITCH));
+        const leftRows = Math.max(
+            1,
+            Math.floor((pageBottom - leftGridTop) / ROW_PITCH),
+        );
+        const leftCapacity = leftColumns * leftRows;
+
+        // 右ページ: 標本の続き(見出し無し、スコア欄の分だけ下を空ける)
+        const rightGridTop = pageTop;
+        const rightColumns = Math.max(
+            1,
+            Math.floor(rightPageWidth / ROW_PITCH),
+        );
+        const rightRows = Math.max(
+            1,
+            Math.floor(
+                (pageBottom - SCORE_BLOCK_HEIGHT - rightGridTop) / ROW_PITCH,
+            ),
+        );
+        const rightCapacity = rightColumns * rightRows;
+
+        const { left, right, overflowCount } = layoutSpecimens(
+            this.stageInfo.capturedSpecimens,
+            leftCapacity,
+            rightCapacity,
+        );
+
+        const placeSpecimens = (
+            specimens: typeof left,
+            originX: number,
+            originY: number,
+            columns: number,
+        ): void => {
+            specimens.forEach((specimen, index) => {
+                const row = Math.floor(index / columns);
+                const col = index % columns;
+                const pinned = new PinnedSpecimen(specimen, screenSize);
+                pinned.x = originX + CELL_SIZE / 2 + col * ROW_PITCH;
+                pinned.y = originY + CELL_SIZE / 2 + row * ROW_PITCH;
+                if (specimen.isSpecial && this.isEnteringDream) {
+                    // ノートに貼ったこの標本を、あとで夢演出でそのまま
+                    // 飛び立たせる。ノート一式が消えたあとも飛び続けるため
+                    // グループには入れず、containerへ直接置いて専用フィールドで持つ
+                    this.container.addChild(pinned);
+                    this.dreamSpecimen = pinned;
+                } else {
+                    // プラクティスではスペシャル個体でも夢演出に入らない
+                    // (isEnteringDream=false)ため、専用フィールドに退避すると
+                    // 回収されず画面に残る。通常の標本として一緒に片付ける
+                    notebookGroup.addChild(pinned);
+                    this.notebookChildren.push(pinned);
+                }
+            });
+        };
+
+        placeSpecimens(left, leftPageX, leftGridTop, leftColumns);
+        placeSpecimens(right, rightPageX, rightGridTop, rightColumns);
+
+        // 右ページ: 表示しきれなかった分は「…+N」で右寄せに省略する
+        if (overflowCount > 0) {
+            const rightRowsUsed = Math.ceil(right.length / rightColumns);
+            const overflowMsg = new Message(
+                t("result.notebook.overflow", { count: overflowCount }),
+                16,
+            );
+            overflowMsg.anchor.set(1, 0);
+            overflowMsg.x = rightPageX + rightPageWidth;
+            overflowMsg.y = rightGridTop + rightRowsUsed * ROW_PITCH + 4;
+            overflowMsg.show();
+            notebookGroup.addChild(overflowMsg);
+            this.notebookChildren.push(overflowMsg);
+        }
+
+        // 右ページ: スコア(下部にまとめて、一括で表示する)
+        const scoreBlockTop = pageBottom - SCORE_BLOCK_HEIGHT;
+        const scoreLineHeight = 24;
+
+        const addScoreRow = (
+            label: string,
+            value: string,
+            y: number,
+            fontSize: number,
+        ): void => {
+            const labelMsg = new Message(label, fontSize);
+            labelMsg.anchor.set(0, 0.5);
+            labelMsg.x = rightPageX;
+            labelMsg.y = y;
+            labelMsg.show();
+            notebookGroup.addChild(labelMsg);
+            this.notebookChildren.push(labelMsg);
+
+            const valueMsg = new Message(value, fontSize);
+            valueMsg.anchor.set(1, 0.5);
+            valueMsg.x = rightPageX + rightPageWidth;
+            valueMsg.y = y;
+            valueMsg.show();
+            notebookGroup.addChild(valueMsg);
+            this.notebookChildren.push(valueMsg);
+        };
+
+        const needGotMsg = new Message(
+            t("result.notebook.needGot", {
+                need: this.stageInfo.bonusFlag ? "∞" : this.stageInfo.needCount,
+                got: this.stageInfo.captureCount,
+            }),
+            16,
+        );
+        needGotMsg.anchor.set(0, 0.5);
+        needGotMsg.x = rightPageX;
+        needGotMsg.y = scoreBlockTop;
+        needGotMsg.show();
+        notebookGroup.addChild(needGotMsg);
+        this.notebookChildren.push(needGotMsg);
+
+        // ボーナスステージの結果には「ボーナス」行がない(上限のないステージ
+        // なので、通常クリアのような超過ボーナスという概念がない)
+        const scoreLines: { label: string; value: string }[] = [
+            {
+                label: t("result.notebook.baseScore"),
+                value: Utility.formatNumberWithCommas(
+                    this.stageInfo.stagePoint,
+                ),
+            },
+            ...(this.stageInfo.bonusFlag
+                ? []
+                : [
+                      {
+                          label: t("result.notebook.bonusScore", {
+                              count: this.stageInfo.bonusCount,
+                          }),
+                          value: `+${Utility.formatNumberWithCommas(this.stageInfo.bonusPoint)}`,
+                      },
+                  ]),
+            {
+                label: t("result.notebook.stageScore"),
+                value: Utility.formatNumberWithCommas(
+                    this.stageInfo.stageTotalScore,
+                ),
+            },
+        ];
+
+        scoreLines.forEach((row, index) => {
+            addScoreRow(
+                row.label,
+                row.value,
+                scoreBlockTop + scoreLineHeight * (index + 1),
+                16,
+            );
+        });
+
+        addScoreRow(
+            t("result.notebook.totalScore"),
+            Utility.formatNumberWithCommas(this.stageInfo.totalScore),
+            scoreBlockTop + scoreLineHeight * (scoreLines.length + 1) + 10,
+            22,
+        );
+    }
+
+    /**
+     * 従来のリザルト表示(ボーナスステージ・ゲームオーバー・プラクティス
+     * クリア用)。スコアを紙(sticky)の上に行ごとに逐次表示する
+     */
+    private async displayLegacyResult(): Promise<void> {
         this.stickySprite.y += this.manager.app.screen.height * 0.08;
         await Promise.all([
             this.fadeIn(this.stickySprite, 0.05, 1),
@@ -612,7 +1000,7 @@ export class ResultState extends StateBase {
 }
 
 class Message extends PIXI.BitmapText {
-    constructor(message: string, size: number) {
+    constructor(message: string, size: number, color: number = 0x000000) {
         super();
         const isJa = getLang() === "ja";
         const style = new PIXI.TextStyle({
@@ -622,7 +1010,7 @@ class Message extends PIXI.BitmapText {
                 : Const.FONT_ENGLISH_BOLD,
             fontSize: size,
             align: "center",
-            fill: 0x000000,
+            fill: color,
         });
         this.style = style;
         this.text = message;

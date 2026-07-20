@@ -35,6 +35,18 @@ export default [
             "@typescript-eslint/no-explicit-any": "error",
         },
     },
+    // Node製の補助スクリプト(ビルド成果物には含まれない)
+    {
+        files: ["scripts/**/*.mjs"],
+        languageOptions: {
+            globals: {
+                process: "readonly",
+                console: "readonly",
+                fetch: "readonly",
+                Buffer: "readonly",
+            },
+        },
+    },
     // Test files - more lenient rules
     {
         files: ["tests/**/*.ts", "**/*.test.ts", "**/*.spec.ts"],
