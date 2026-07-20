@@ -86,6 +86,21 @@ describe("PinnedSpecimen idle tremble", () => {
     });
 });
 
+describe("PinnedSpecimen flapping", () => {
+    it("keeps flapping while pinned when the specimen is special (it's alive)", () => {
+        const special = makeSpecial();
+        expect(special.butterfly.isFlapping).toBe(true);
+    });
+
+    it("does not flap for ordinary specimens", () => {
+        const ordinary = new PinnedSpecimen(
+            { color: 0xff69b4, sizeCategory: "small", isSpecial: false },
+            SCREEN,
+        );
+        expect(ordinary.butterfly.isFlapping).toBe(false);
+    });
+});
+
 describe("PinnedSpecimen pin placement and detachment", () => {
     it("pins slightly above the butterfly's center", () => {
         const specimen = makeSpecial();

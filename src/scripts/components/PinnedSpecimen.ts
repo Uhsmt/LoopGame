@@ -55,7 +55,9 @@ export class PinnedSpecimen extends PIXI.Container {
                   screenSize,
               );
         this.butterfly.isFlying = false;
-        this.butterfly.isFlapping = false;
+        // スペシャル個体は生きている(このあと夢へ誘う)ので、ピン留め
+        // されている間も羽ばたかせる。通常の標本は静止したまま
+        this.butterfly.isFlapping = specimen.isSpecial;
         this.butterfly.appear(false);
         this.addChild(this.butterfly);
         // pivotによる見た目のずれを打ち消し、蝶の中心をこのコンテナの原点に合わせる

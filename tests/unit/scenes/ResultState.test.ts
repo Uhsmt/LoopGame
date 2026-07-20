@@ -550,9 +550,10 @@ describe("ResultState", () => {
             expect(options.screenWidth).toBe(app.screen.width);
             expect(options.screenHeight).toBe(app.screen.height);
 
-            // 震えている(departingへ切り替わる)前はピンが刺さったまま
+            // 震えている(departingへ切り替わる)前はピンが刺さったまま。
+            // 生きているスペシャル個体なので、捕まっている間も羽ばたいている
             expect(dreamSpecimen.pinSprite).not.toBeNull();
-            expect(dreamSpecimen.butterfly.isFlapping).toBe(false);
+            expect(dreamSpecimen.butterfly.isFlapping).toBe(true);
         });
 
         it("uses the bonus-stage heading, an infinity target, and drops the bonus-score row for the bonus stage's own result", async () => {

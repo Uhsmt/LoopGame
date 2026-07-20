@@ -347,8 +347,8 @@ export class ResultState extends StateBase {
         // 二重再生にはならない
         AudioManager.shared.playBgm(Const.bgmSrcs.bonus);
 
-        // ノート一式の非表示は、蝶がピンから外れた瞬間に行う
-        // (startDreamDeparture内)。震えている間はまだノートの上にいる
+        // ノート一式は蝶がピンから外れた時点からゆっくりフェードアウト
+        // させる(startDreamDeparture内)。震えている間はまだノートの上にいる
 
         // 旅立ち(震え→ピンが外れて飛び去る)と暗転(約3.2秒)を並行して
         // 進め、両方が終わって(=蝶が画面外に抜けきって)からボーナスへ入る
@@ -379,9 +379,10 @@ export class ResultState extends StateBase {
      * 一緒についてくる)。
      *
      * ピンは震え(trembling)の間は刺さったままで、departingへ切り替わった
-     * 瞬間に外す(=ブルブル震えてピンが抜ける)。羽ばたきもその瞬間から
-     * 再開する。返すPromiseは蝶が画面外へ抜けきる(path.done)か、
-     * 万一先に破棄された場合に解決する。
+     * 瞬間に外す(=ブルブル震えてピンが抜ける)。外れたピンは落下+フェード
+     * アウトさせ、ノート一式もこの瞬間からゆっくりフェードアウトを始める。
+     * 返すPromiseは蝶が画面外へ抜けきる(path.done)か、万一先に破棄された
+     * 場合に解決する。
      */
     private startDreamDeparture(specimen: PinnedSpecimen): Promise<void> {
         // 黒枠を含む全要素より常に手前(最前面)に見えるよう固定する
@@ -416,11 +417,11 @@ export class ResultState extends StateBase {
                         pin.y += specimen.y;
                         this.dropPin(pin);
                     }
-                    specimen.butterfly.isFlapping = true;
                     // 蝶がピンから外れたら、ノート一式(テキスト・標本ごと)を
-                    // パッと非表示にする(蝶とピンだけが残る)
+                    // ゆっくりフェードアウトさせる(蝶とピンだけが残っていく)。
+                    // 完了は待ち合わせない(退場飛行・暗転と並行して進む)
                     if (this.notebookGroup) {
-                        this.notebookGroup.visible = false;
+                        void this.fadeOut(this.notebookGroup, 0.008);
                     }
                     released = true;
                 }
@@ -479,6 +480,13 @@ export class ResultState extends StateBase {
             // startDreamDepartureの専用Tickerが動かす
             this.dreamSpecimen.butterfly.update(delta, []);
         }
+        // ノート上の標本の羽ばたきアニメ(isFlapping=trueなのはスペシャル
+        // 個体だけで、通常の標本は静止したままなので実質何もしない)
+        this.notebookChildren.forEach((child) => {
+            if (child instanceof PinnedSpecimen && !child.destroyed) {
+                child.butterfly.update(delta, []);
+            }
+        });
     }
 
     render(): void {}
