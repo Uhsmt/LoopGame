@@ -50,15 +50,15 @@ const CATALOG = {
 
     // --- ゲーム中(GameplayState) ---
     "game.captureN": {
-        ja: "ちょうちょを {n}ひき つかまえて！",
+        ja: "ちょうを {n}ひき つかまえて！",
         en: "Capture {n} butterflies!",
     },
     "game.captureMany": {
-        ja: "ちょうちょを たくさん つかまえて！",
+        ja: "ちょうを たくさん つかまえて！",
         en: "Capture many butterflies!",
     },
     "game.pause": { ja: "おやすみ", en: "Pause" },
-    "game.lineShortened": { ja: "みじかい！", en: "Line shortened!" },
+    "game.lineShortened": { ja: "みじかいループ！", en: "Line shortened!" },
     "game.butterfliesFlee": {
         ja: "にげる！",
         en: "Butterflies flee!",
@@ -108,7 +108,7 @@ const CATALOG = {
     // --- あそびかた(RuleState) ---
     "rule.title.howToPlay": { ja: "あそびかた", en: "How to play" },
     "rule.p1.draw": {
-        ja: "せんをかいてちょうちょをつかまえて",
+        ja: "せんをかいてちょうをつかまえて",
         en: "Draw a loop to capture butterflies",
     },
     "rule.p1.morePoints": {
@@ -149,7 +149,7 @@ const CATALOG = {
         en: "Hindrance Objects",
     },
     "rule.practice.colorSwitched": {
-        ja: "いろがかわった！",
+        ja: "いろがかわった",
         en: "Color switched!",
     },
     "rule.practice.gotN": {
@@ -161,7 +161,7 @@ const CATALOG = {
     // --- おたすけフラワー(HelpFlower) ---
     "flower.freeze.message": { ja: "とまれ！", en: "Freeze!" },
     "flower.freeze.description": {
-        ja: "ちょうちょをとめる",
+        ja: "ちょうをとめる",
         en: "Freeze the butterflies",
     },
     "flower.time_plus.message": { ja: "もどれ！", en: "Time extended!" },
@@ -171,7 +171,7 @@ const CATALOG = {
     },
     "flower.gather.message": { ja: "あつまれ！", en: "Gather!" },
     "flower.gather.description": {
-        ja: "ちょうちょをあつめる",
+        ja: "ちょうをあつめる",
         en: "Gather the butterflies by color",
     },
     "flower.long.message": { ja: "ながいループ！", en: "Long Loop!" },
@@ -186,7 +186,7 @@ const CATALOG = {
         en: "Shortens your loop line",
     },
     "obstacle.spider.description": {
-        ja: "ちょうちょが にげる",
+        ja: "ちょうが にげる",
         en: "Butterflies flee from your pencil",
     },
     "obstacle.catapy.description": {

@@ -68,6 +68,6 @@ describe("HelpFlower localization", () => {
         setLang("ja");
         const flower = new HelpFlower("gather", 800, 600);
         expect(flower.message).toBe("あつまれ！");
-        expect(flower.description).toBe("ちょうちょをあつめる");
+        expect(flower.description).toBe("ちょうをあつめる");
     });
 });
