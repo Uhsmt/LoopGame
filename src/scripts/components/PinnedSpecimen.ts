@@ -5,6 +5,12 @@ import { CapturedSpecimen } from "./StageInformation";
 
 const PIN_SCALE = 0.026;
 const PIN_SCALE_SPECIAL = 0.04;
+
+// リザルト表示中の「たまにちょっとブルブル」の周期と振れ幅。
+// 静止期間をはさんで短いバーストだけ、ごく控えめに震える
+export const IDLE_TREMBLE_QUIET_MS = 2200;
+export const IDLE_TREMBLE_BURST_MS = 280;
+const IDLE_TREMBLE_AMPLITUDE = 1.2;
 // pin.png(1024x1024)は針を下に伸ばした構図のため、頭(円盤)部分の中心は
 // 画像中心(0.5, 0.5)ではなく縦42.1%あたりにある。anchorをそこに合わせないと
 // 頭が中心からずれて見える(実測: 頭部分だけの外接矩形/アルファ重心 ≒ (0.500, 0.421))
@@ -23,6 +29,10 @@ const PIN_ANCHOR = { x: 0.5, y: 0.421 };
 export class PinnedSpecimen extends PIXI.Container {
     readonly butterfly: Butterfly;
     private pinSprite: PIXI.Sprite | null;
+    /** 蝶の基準位置(pivot打ち消し後)。震えはこの周りの微小オフセットで表す */
+    private readonly butterflyBaseX: number;
+    private readonly butterflyBaseY: number;
+    private idleClockMs = 0;
 
     constructor(
         specimen: CapturedSpecimen,
@@ -46,12 +56,41 @@ export class PinnedSpecimen extends PIXI.Container {
         // pivotによる見た目のずれを打ち消し、蝶の中心をこのコンテナの原点に合わせる
         this.butterfly.x = this.butterfly.width / 2;
         this.butterfly.y = this.butterfly.height / 2;
+        this.butterflyBaseX = this.butterfly.x;
+        this.butterflyBaseY = this.butterfly.y;
 
         const pin = PIXI.Sprite.from("pin");
         pin.anchor.set(PIN_ANCHOR.x, PIN_ANCHOR.y);
         pin.scale.set(specimen.isSpecial ? PIN_SCALE_SPECIAL : PIN_SCALE);
         this.addChild(pin);
         this.pinSprite = pin;
+    }
+
+    /**
+     * リザルト表示中に毎フレーム呼ぶ。生きているスペシャル個体らしく、
+     * 静止期間(IDLE_TREMBLE_QUIET_MS)をはさんで、たまに短いバーストだけ
+     * かすかにブルブルと震える。ピンが外れたあとは震えない
+     * (飛行の位置駆動はコンテナ自身のx/yを動かす側が担う)。
+     */
+    update(deltaMS: number): void {
+        if (!this.pinSprite) return;
+        this.idleClockMs += deltaMS;
+
+        const cycle = IDLE_TREMBLE_QUIET_MS + IDLE_TREMBLE_BURST_MS;
+        const phase = this.idleClockMs % cycle;
+        if (phase < IDLE_TREMBLE_QUIET_MS) {
+            this.butterfly.x = this.butterflyBaseX;
+            this.butterfly.y = this.butterflyBaseY;
+            return;
+        }
+        // 高周波(周期~70ms)の微小な揺れ。x/yで周波数と位相をずらして
+        // 単調な振動に見えないようにする
+        const t = phase - IDLE_TREMBLE_QUIET_MS;
+        this.butterfly.x =
+            this.butterflyBaseX + Math.sin(t * 0.09) * IDLE_TREMBLE_AMPLITUDE;
+        this.butterfly.y =
+            this.butterflyBaseY +
+            Math.sin(t * 0.07 + 1.3) * IDLE_TREMBLE_AMPLITUDE * 0.6;
     }
 
     /**
@@ -65,6 +104,9 @@ export class PinnedSpecimen extends PIXI.Container {
             this.pinSprite.destroy();
             this.pinSprite = null;
         }
+        // 震えの途中で外れても、ずれたまま飛び立たないよう基準位置へ戻す
+        this.butterfly.x = this.butterflyBaseX;
+        this.butterfly.y = this.butterflyBaseY;
         return this.butterfly;
     }
 }

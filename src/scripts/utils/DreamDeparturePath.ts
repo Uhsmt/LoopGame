@@ -78,8 +78,8 @@ export class DreamDeparturePath {
         this.screenWidth = options.screenWidth;
         this.screenHeight = options.screenHeight;
         this.trembleDurationMs = options.trembleDurationMs ?? 700;
-        this.trembleAmplitude = options.trembleAmplitude ?? 2.5;
-        this.speedPerMs = options.speedPerMs ?? 0.35;
+        this.trembleAmplitude = options.trembleAmplitude ?? 1.5;
+        this.speedPerMs = options.speedPerMs ?? 0.175;
         this.easeInMs = options.easeInMs ?? 600;
         this.swayAmplitude = options.swayAmplitude ?? 26;
         this.swayPeriodMs = options.swayPeriodMs ?? 1300;

@@ -429,6 +429,9 @@ export class ResultState extends StateBase {
             butterfly.update(delta, []);
         });
         if (this.dreamSpecimen && !this.dreamSpecimen.destroyed) {
+            // ピン留め中の「たまにちょっとブルブル」(deltaはms単位:
+            // game.tsがapp.ticker.deltaMSを渡してくる)
+            this.dreamSpecimen.update(delta);
             // isFlying=falseなのでButterfly.update内のfly()は何もしない。
             // 羽ばたきアニメ(flap())だけをここに任せる。位置は
             // startDreamDepartureの専用Tickerが動かす

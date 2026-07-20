@@ -525,7 +525,7 @@ describe("ResultState", () => {
             expect(options.screenHeight).toBe(app.screen.height);
 
             // 震えている(departingへ切り替わる)前はピンが刺さったまま
-            expect((dreamSpecimen).pinSprite).not.toBeNull();
+            expect(dreamSpecimen.pinSprite).not.toBeNull();
             expect(dreamSpecimen.butterfly.isFlapping).toBe(false);
         });
 
