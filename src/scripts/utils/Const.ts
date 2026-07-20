@@ -70,7 +70,6 @@ export const seSrcs = [
         src: `${BASE_URL}assets/sounds/se_capture_many.m4a`,
     },
     { alias: "se_powerup", src: `${BASE_URL}assets/sounds/se_powerup.m4a` },
-    { alias: "se_score", src: `${BASE_URL}assets/sounds/se_score.m4a` },
     { alias: "se_bad_loop", src: `${BASE_URL}assets/sounds/se_bad_loop.m4a` },
     { alias: "se_select", src: `${BASE_URL}assets/sounds/se_select.m4a` },
     { alias: "se_tick", src: `${BASE_URL}assets/sounds/se_tick.m4a` },

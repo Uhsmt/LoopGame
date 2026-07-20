@@ -90,32 +90,8 @@ const CATALOG = {
     },
     "result.newRecord": { ja: "しんきろく！", en: "New Record!" },
     "result.best": { ja: "ベスト: {score}", en: "Best: {score}" },
-    "result.need": {
-        ja: "Need :         × {n} ",
-        en: "Need :         × {n} ",
-    },
-    "result.got": {
-        ja: "Got :          × {n} ",
-        en: "Got :          × {n} ",
-    },
-    "result.baseScore": {
-        ja: "base score : {score}",
-        en: "base score : {score}",
-    },
-    "result.bonusScore": {
-        ja: "bonus score : {count} × 100 = {score}",
-        en: "bonus score : {count} × 100 = {score}",
-    },
-    "result.stageScore": {
-        ja: "stage score : {score}",
-        en: "stage score : {score}",
-    },
-    "result.totalScore": {
-        ja: "total : {score}",
-        en: "total score : {score}",
-    },
 
-    // --- ノート型リザルト画面(ResultState、レベルクリア時のみ) ---
+    // --- ノート型リザルト画面(ResultState、全アウトカム共通) ---
     "result.notebook.needGot": {
         ja: "もくひょう {need} → {got} 匹",
         en: "Target {need} → Caught {got}",

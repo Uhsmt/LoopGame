@@ -4,7 +4,6 @@ import * as PIXI from "pixi.js";
 import { GameplayState } from "./GameplayState";
 import { StartState } from "./StartState";
 import { PracticeSelectState } from "./PracticeSelectState";
-import { Butterfly } from "../components/Butterfly";
 import { PinnedSpecimen } from "../components/PinnedSpecimen";
 import * as Utility from "../utils/Utility";
 import * as Const from "../utils/Const";
@@ -40,8 +39,6 @@ const SCORE_BLOCK_HEIGHT = 132;
 
 export class ResultState extends StateBase {
     private stageInfo: StageInformation;
-    private messages: Message[] = [];
-    private messageButterflies: Butterfly[] = [];
     private backToStartButton!: Button;
     // 失敗直後、まだリトライが残っている場合だけ生成される
     private retryButton?: Button;
@@ -156,18 +153,6 @@ export class ResultState extends StateBase {
                 resolve(null);
             }, 7000),
         );
-
-        // messagesぜんぶ消す
-        this.messages.forEach((msg) => {
-            this.container.removeChild(msg);
-            msg.destroy();
-        });
-        // 蝶も消す
-        this.messageButterflies.forEach((butterfly) => {
-            this.container.removeChild(butterfly);
-            butterfly.delete();
-        });
-        this.messageButterflies = [];
 
         // 夢に入る: 「BONUS STAGE!」とは出さず、静かに暗転してボーナスへ誘う
         // (ノート一式の非表示はenterDreamSequence側で行う。dreamSpecimenは
@@ -498,9 +483,6 @@ export class ResultState extends StateBase {
     }
 
     update(delta: number): void {
-        this.messageButterflies.forEach((butterfly) => {
-            butterfly.update(delta, []);
-        });
         if (this.dreamSpecimen && !this.dreamSpecimen.destroyed) {
             // ピン留め中の「たまにちょっとブルブル」(deltaはms単位:
             // game.tsがapp.ticker.deltaMSを渡してくる)
