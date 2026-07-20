@@ -135,5 +135,9 @@ dist/
 # Claude Code agent worktrees
 .claude/worktrees/
 
-# nano banana で生成した下書きアセット(レビュー後に手動で public/assets へ移動する)
-public/assets/_generated/
+# 生成した下書きアセット(レビュー後に手動で public/assets へ移動する)
+public/assets/**/_generated/
+
+# itch.io 配布用ビルド(npm run build:itch で生成)
+dist-itch/
+loopgame-itch.zip
