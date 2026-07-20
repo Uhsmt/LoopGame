@@ -855,7 +855,9 @@ export class GameplayState extends StateBase {
         } else if (butterfliesInLoopArea.length >= 2) {
             if (this.isSuccessLoop(butterfliesInLoopArea)) {
                 this.captureButterflies(butterfliesInLoopArea, loopArea);
-                this.captureFlowers(flowersInLoopArea);
+                // captureButterflies側で既に捕獲音を鳴らしているため、
+                // 同フレームでse_captureが二重発火しないよう花の分は鳴らさない
+                this.captureFlowers(flowersInLoopArea, false);
             } else {
                 this.stagePoint -= 20;
                 AudioManager.shared.playSe("se_bad_loop");
@@ -944,9 +946,10 @@ export class GameplayState extends StateBase {
         }
     }
 
-    private captureFlowers(flowers: HelpFlower[]): void {
-        if (flowers.length > 0) {
+    private captureFlowers(flowers: HelpFlower[], playSound = true): void {
+        if (flowers.length > 0 && playSound) {
             // アイテムは単体でも取得できるので、取得音はここで鳴らす
+            // (蝶と同時に捕獲された場合は呼び出し元で既に鳴らしている)
             AudioManager.shared.playSe("se_capture");
         }
         flowers.forEach((flower) => {
