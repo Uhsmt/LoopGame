@@ -559,6 +559,29 @@ describe("ResultState", () => {
             expect(dreamSpecimen.butterfly.isFlapping).toBe(true);
         });
 
+        it("plays the notebook landing sound and the clear jingle (the special jingle on the bonus result)", async () => {
+            const normal = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+            });
+            const state = new ResultState(manager as any, normal, false);
+            stubAnimations(state);
+            await (state as any).displayNotebookResult();
+            expect(playSeMock).toHaveBeenCalledWith("se_notebook");
+            expect(playSeMock).toHaveBeenCalledWith("se_result_jingle");
+
+            playSeMock.mockClear();
+            const bonus = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: true,
+            });
+            const bonusState = new ResultState(manager as any, bonus, false);
+            stubAnimations(bonusState);
+            await (bonusState as any).displayNotebookResult();
+            expect(playSeMock).toHaveBeenCalledWith("se_result_jingle_special");
+            expect(playSeMock).not.toHaveBeenCalledWith("se_result_jingle");
+        });
+
         it("uses the bonus-stage heading, an infinity target, and drops the bonus-score row for the bonus stage's own result", async () => {
             const stageInfo = makeClearStageInfo({
                 isPractice: false,

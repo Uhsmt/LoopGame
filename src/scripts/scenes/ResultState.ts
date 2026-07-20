@@ -603,6 +603,16 @@ export class ResultState extends StateBase {
             this.slideY(notebookSprite, notebookRestY, 0.15),
         ]);
 
+        // ノート着地の紙音→ひと呼吸おいて、中身の一括表示と同時にジングル。
+        // ボーナスステージの結果は少し豪華なスペシャル版を鳴らす
+        AudioManager.shared.playSe("se_notebook");
+        await this.wait(300);
+        AudioManager.shared.playSe(
+            this.stageInfo.bonusFlag
+                ? "se_result_jingle_special"
+                : "se_result_jingle",
+        );
+
         const notebookLeft = notebookSprite.x - notebookSprite.width / 2;
         const notebookTop = notebookSprite.y - notebookSprite.height / 2;
         const leftPageX =

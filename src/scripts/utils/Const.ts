@@ -74,6 +74,15 @@ export const seSrcs = [
         alias: "se_obstacle_hit",
         src: `${BASE_URL}assets/sounds/se_obstacle_hit.m4a`,
     },
+    { alias: "se_notebook", src: `${BASE_URL}assets/sounds/se_notebook.m4a` },
+    {
+        alias: "se_result_jingle",
+        src: `${BASE_URL}assets/sounds/se_result_jingle.m4a`,
+    },
+    {
+        alias: "se_result_jingle_special",
+        src: `${BASE_URL}assets/sounds/se_result_jingle_special.m4a`,
+    },
 ];
 
 export const bgmSrcs = {
