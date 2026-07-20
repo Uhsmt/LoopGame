@@ -473,6 +473,32 @@ describe("ResultState", () => {
             expect(pinnedInChildren).toHaveLength(1);
         });
 
+        it("keeps the notebook art, text, and specimens in one group (they leave together), with only the dream specimen outside it", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: false,
+                bonusFlag: false,
+                capturedSpecimens: [
+                    makeSpecimen({}),
+                    makeSpecimen({ isSpecial: true }),
+                ],
+            });
+            const state = new ResultState(manager as any, stageInfo, true);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            const group = (state as any).notebookGroup;
+            expect(group).toBeDefined();
+            // ノートの絵もテキストも標本も、退場を一体で行うグループの子
+            expect((state as any).notebookSprite.parent).toBe(group);
+            (state as any).notebookChildren.forEach((child: any) => {
+                expect(child.parent).toBe(group);
+            });
+            // 夢へ誘うスペシャル標本だけは、ノートが消えたあとも飛び続ける
+            // 必要があるためグループの外(container直下)に置く
+            expect((state as any).dreamSpecimen.parent).not.toBe(group);
+        });
+
         it("keeps a special specimen as an ordinary pinned exhibit in practice mode (no dream sequence follows)", async () => {
             const stageInfo = makeClearStageInfo({
                 isPractice: true,

@@ -100,11 +100,16 @@ export class DreamDeparturePath {
         this.trembleAmplitude = options.trembleAmplitude ?? 1.5;
         this.speedPerMs = options.speedPerMs ?? SPECIAL_BUTTERFLY_SPEED_PER_MS;
         this.easeInMs = options.easeInMs ?? 600;
-        this.accelerateAfterMs = options.accelerateAfterMs ?? 2500;
-        this.accelRampMs = options.accelRampMs ?? 3000;
+        // 加速は早めから・長くなだらかに効かせて、途中で「急に速くなった」
+        // という切り替わりが見えないようにする
+        this.accelerateAfterMs = options.accelerateAfterMs ?? 1500;
+        this.accelRampMs = options.accelRampMs ?? 5000;
         this.maxSpeedFactor = options.maxSpeedFactor ?? 4;
-        this.swayAmplitude = options.swayAmplitude ?? 26;
-        this.swayPeriodMs = options.swayPeriodMs ?? 1300;
+        // 蛇行は控えめに。巡航速度が遅い(実際のスペシャル蝶と同じ)ため、
+        // 振幅や周期を大きくすると前進よりも横揺れが支配的になって
+        // ジグザグに見えてしまう
+        this.swayAmplitude = options.swayAmplitude ?? 14;
+        this.swayPeriodMs = options.swayPeriodMs ?? 2000;
         this.exitScreenMargin = options.exitScreenMargin ?? 90;
 
         // 画面の左半分にピン留めされていれば右上へ、右半分なら左上へ。

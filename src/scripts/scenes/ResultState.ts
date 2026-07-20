@@ -71,8 +71,13 @@ export class ResultState extends StateBase {
      * displayLegacyResult()を使う
      */
     private readonly isNotebookResult: boolean;
+    /**
+     * ノート・テキスト・標本(スペシャル個体を除く)をひとかたまりに持つ
+     * コンテナ。退場のフェード+スライドはこれごと一体で動かす
+     */
+    private notebookGroup?: PIXI.Container;
     private notebookSprite?: PIXI.Sprite;
-    /** ノート型リザルト画面で生成した表示物(片付け用にまとめて持つ) */
+    /** ノート型リザルト画面で生成した表示物(テスト・列挙用にまとめて持つ) */
     private notebookChildren: PIXI.Container[] = [];
     /**
      * 捕まえたスペシャル個体に対応するピン留め標本(夢に入るときだけ)。
@@ -175,37 +180,33 @@ export class ResultState extends StateBase {
         });
         this.messageButterflies = [];
 
-        // ノート型リザルトの表示物も同様に消す。ただしdreamSpecimenは
-        // enterDreamSequence側でまだ使うため、ここでは対象から除外している
-        // (displayNotebookResult側でnotebookChildrenから外してある)
-        this.notebookChildren.forEach((child) => {
-            this.container.removeChild(child);
-            child.destroy({ children: true });
-        });
-        this.notebookChildren = [];
-
         // 夢に入る: 「BONUS STAGE!」とは出さず、静かに暗転してボーナスへ誘う
+        // (ノート一式の非表示はenterDreamSequence側で行う。dreamSpecimenは
+        // グループに入れていないので、ノートが消えても飛び続けられる)
         if (this.isEnteringDream) {
             await this.enterDreamSequence();
             return;
         }
 
         // ノートの中央に次面の案内を重ねると読みづらいため、ノート型リザルト
-        // では先にノートをフェード+スライドで下げてから次のメッセージを出す
+        // では先にノート一式(ノート・テキスト・標本)をひとつのオブジェクト
+        // としてフェード+スライドで下げてから次のメッセージを出す
         // (登場時と対になる動き)
-        if (this.notebookSprite) {
-            const notebook = this.notebookSprite;
+        if (this.notebookGroup) {
+            const group = this.notebookGroup;
             await Promise.all([
-                this.fadeOut(notebook, 0.05),
+                this.fadeOut(group, 0.05),
                 this.slideY(
-                    notebook,
-                    notebook.y + this.manager.app.screen.height * 0.08,
+                    group,
+                    group.y + this.manager.app.screen.height * 0.08,
                     0.15,
                 ),
             ]);
-            this.container.removeChild(notebook);
-            notebook.destroy();
+            this.container.removeChild(group);
+            group.destroy({ children: true });
+            this.notebookGroup = undefined;
             this.notebookSprite = undefined;
+            this.notebookChildren = [];
         }
 
         // プラクティスモードのクリアは次のステージへ進まないため、
@@ -346,9 +347,10 @@ export class ResultState extends StateBase {
         // 二重再生にはならない
         AudioManager.shared.playBgm(Const.bgmSrcs.bonus);
 
-        // ノートはスライドやフェードではなく、パッと非表示にする
-        if (this.notebookSprite) {
-            this.notebookSprite.visible = false;
+        // ノート一式(テキスト・標本ごと)はスライドやフェードではなく、
+        // パッと非表示にする
+        if (this.notebookGroup) {
+            this.notebookGroup.visible = false;
         }
 
         // 旅立ち(震え→ピンが外れて飛び去る)と暗転(約3.2秒)を並行して
@@ -478,6 +480,12 @@ export class ResultState extends StateBase {
             y: this.manager.app.screen.height,
         };
 
+        // ノート・テキスト・標本をひとかたまりで動かすためのグループ。
+        // 中身は画面絶対座標のまま配置する(グループ自体は原点に置く)
+        const notebookGroup = new PIXI.Container();
+        this.container.addChild(notebookGroup);
+        this.notebookGroup = notebookGroup;
+
         const notebookSprite = new PIXI.Sprite(PIXI.Texture.from("notebook"));
         notebookSprite.anchor.set(0.5);
         notebookSprite.x = screenSize.x / 2;
@@ -485,7 +493,7 @@ export class ResultState extends StateBase {
         // stickyと同じく、少し下からフェード+スライドで収まる形にする
         notebookSprite.y = notebookRestY + screenSize.y * 0.08;
         notebookSprite.alpha = 0;
-        this.container.addChild(notebookSprite);
+        notebookGroup.addChild(notebookSprite);
         this.notebookSprite = notebookSprite;
 
         await Promise.all([
@@ -515,7 +523,7 @@ export class ResultState extends StateBase {
         levelMsg.x = leftPageX;
         levelMsg.y = pageTop + 16;
         levelMsg.show();
-        this.container.addChild(levelMsg);
+        notebookGroup.addChild(levelMsg);
         this.notebookChildren.push(levelMsg);
 
         // 左ページ: 標本のグリッド配置(見出し分だけ上を空ける)
@@ -559,15 +567,17 @@ export class ResultState extends StateBase {
                 const pinned = new PinnedSpecimen(specimen, screenSize);
                 pinned.x = originX + CELL_SIZE / 2 + col * ROW_PITCH;
                 pinned.y = originY + CELL_SIZE / 2 + row * ROW_PITCH;
-                this.container.addChild(pinned);
                 if (specimen.isSpecial && this.isEnteringDream) {
                     // ノートに貼ったこの標本を、あとで夢演出でそのまま
-                    // 飛び立たせる(notebookChildrenには入れず、専用フィールドで持つ)
+                    // 飛び立たせる。ノート一式が消えたあとも飛び続けるため
+                    // グループには入れず、containerへ直接置いて専用フィールドで持つ
+                    this.container.addChild(pinned);
                     this.dreamSpecimen = pinned;
                 } else {
                     // プラクティスではスペシャル個体でも夢演出に入らない
                     // (isEnteringDream=false)ため、専用フィールドに退避すると
                     // 回収されず画面に残る。通常の標本として一緒に片付ける
+                    notebookGroup.addChild(pinned);
                     this.notebookChildren.push(pinned);
                 }
             });
@@ -587,7 +597,7 @@ export class ResultState extends StateBase {
             overflowMsg.x = rightPageX + rightPageWidth;
             overflowMsg.y = rightGridTop + rightRowsUsed * ROW_PITCH + 4;
             overflowMsg.show();
-            this.container.addChild(overflowMsg);
+            notebookGroup.addChild(overflowMsg);
             this.notebookChildren.push(overflowMsg);
         }
 
@@ -606,7 +616,7 @@ export class ResultState extends StateBase {
             labelMsg.x = rightPageX;
             labelMsg.y = y;
             labelMsg.show();
-            this.container.addChild(labelMsg);
+            notebookGroup.addChild(labelMsg);
             this.notebookChildren.push(labelMsg);
 
             const valueMsg = new Message(value, fontSize);
@@ -614,7 +624,7 @@ export class ResultState extends StateBase {
             valueMsg.x = rightPageX + rightPageWidth;
             valueMsg.y = y;
             valueMsg.show();
-            this.container.addChild(valueMsg);
+            notebookGroup.addChild(valueMsg);
             this.notebookChildren.push(valueMsg);
         };
 
@@ -629,7 +639,7 @@ export class ResultState extends StateBase {
         needGotMsg.x = rightPageX;
         needGotMsg.y = scoreBlockTop;
         needGotMsg.show();
-        this.container.addChild(needGotMsg);
+        notebookGroup.addChild(needGotMsg);
         this.notebookChildren.push(needGotMsg);
 
         // ボーナスステージの結果には「ボーナス」行がない(上限のないステージ

@@ -497,8 +497,8 @@ describe("Bonus (dream) stage flow", () => {
 
             // 夜背景はまだ暗くない(昼のまま)
             expect(internal.nightBackground.alpha).toBe(0);
-            // ノートはまだ表示されている
-            expect(internal.notebookSprite.visible).toBe(true);
+            // ノート一式(ノート・テキスト・標本のグループ)はまだ表示されている
+            expect(internal.notebookGroup.visible).toBe(true);
 
             await vi.advanceTimersByTimeAsync(30000);
             await done;
@@ -508,8 +508,9 @@ describe("Bonus (dream) stage flow", () => {
 
             // だんだん暗くなって夜になった
             expect(internal.nightBackground.alpha).toBeCloseTo(1, 1);
-            // ノートはスライドやフェードではなく、パッと非表示になっている
-            expect(internal.notebookSprite.visible).toBe(false);
+            // ノート一式(テキスト・標本ごと)はスライドやフェードではなく、
+            // パッと非表示になっている
+            expect(internal.notebookGroup.visible).toBe(false);
             // 旅立ちを始める時点で、スコアの紙・テキストより手前(最前面)に
             // 描画されるよう高いzIndexが付く
             expect(dreamSpecimen.zIndex).toBeGreaterThan(0);

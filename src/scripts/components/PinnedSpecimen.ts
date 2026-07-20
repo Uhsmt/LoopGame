@@ -7,8 +7,10 @@ const PIN_SCALE = 0.026;
 const PIN_SCALE_SPECIAL = 0.04;
 
 // リザルト表示中の「たまにちょっとブルブル」の周期と振れ幅。
-// 静止期間をはさんで短いバーストだけ、ごく控えめに震える
-export const IDLE_TREMBLE_QUIET_MS = 2200;
+// 静止期間をはさんで短いバーストだけ、ごく控えめに震える。
+// リザルト表示(約7秒)の間に1回だけ震え、飛び立ち直前の震え
+// (DreamDeparturePathのtrembling)が2回目になる間隔にしてある
+export const IDLE_TREMBLE_QUIET_MS = 4000;
 export const IDLE_TREMBLE_BURST_MS = 280;
 const IDLE_TREMBLE_AMPLITUDE = 1.2;
 // pin.png(1024x1024)は針を下に伸ばした構図のため、頭(円盤)部分の中心は
