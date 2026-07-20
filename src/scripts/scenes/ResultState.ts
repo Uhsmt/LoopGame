@@ -153,10 +153,12 @@ export class ResultState extends StateBase {
 
     async onEnter(): Promise<void> {
         // 夢から覚める(ボーナスのリザルト)は、明転(夜→昼)をスコア表示の
-        // 完了を待たずに、ほぼ同時に始める(明転は裏で進み、あとで待ち合わせる)
+        // 完了を待たずに、ほぼ同時に始める(明転は裏で進み、あとで待ち合わせる)。
+        // 夢に入るときの暗転と同様、「気づいたら朝になっている」くらい
+        // ゆっくり(約7秒)かけて明ける
         const brightenPromise =
             this.isWakingDream && this.nightBackground
-                ? this.fadeOut(this.nightBackground, 0.008)
+                ? this.fadeOut(this.nightBackground, 0.0025)
                 : Promise.resolve();
 
         // disp result
