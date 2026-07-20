@@ -106,9 +106,9 @@ describe("PinnedSpecimen pin placement and detachment", () => {
         const specimen = makeSpecial();
         const pin = (specimen as any).pinSprite;
         expect(pin).not.toBeNull();
-        // 2〜3px上に刺さって見えるよう、わずかに持ち上げる
+        // 数px上に刺さって見えるよう、わずかに持ち上げる
         expect(pin.y).toBeLessThan(0);
-        expect(pin.y).toBeGreaterThanOrEqual(-4);
+        expect(pin.y).toBeGreaterThanOrEqual(-8);
     });
 
     it("detachPin removes the pin from the container without destroying it, and returns it", () => {

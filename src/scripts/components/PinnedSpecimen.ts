@@ -19,7 +19,7 @@ const IDLE_TREMBLE_AMPLITUDE = 1.2;
 const PIN_ANCHOR = { x: 0.5, y: 0.421 };
 // ピンの刺さり位置。蝶の中心ど真ん中よりわずかに上に刺さって見える方が
 // 自然なので、少しだけ持ち上げる
-const PIN_LIFT_Y = -2.5;
+const PIN_LIFT_Y = -5;
 
 /**
  * ノート型リザルト画面で、実際に捕まえた1匹を標本のようにピン留め表示する。
