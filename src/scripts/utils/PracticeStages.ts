@@ -16,12 +16,15 @@ export interface PracticeStageEntry {
 /**
  * 表示するステージ一覧を選ぶ。
  *
- * - 候補は「1..maxLevelの各レベルの通常ステージ」+「bonusLevelsのうち
- *   maxLevel以下の値それぞれのボーナスステージ」(重複は除去)。
- * - 候補数がmaxCount以下ならすべてをlevel昇順(同levelは通常→ボーナス)で返す。
- * - 候補数がmaxCountを超える場合は、レベルが高いものを優先して残す
- *   (同levelで両方残せる場合は両方、片方しか残せない場合は通常を優先)。
- *   残した候補をlevel昇順(同levelは通常→ボーナス)で返す。
+ * - 通常ステージは1..maxLevelをすべて候補にする。
+ * - ボーナスステージは、bonusLevelsのうちmaxLevel以下で最も大きい値
+ *   (＝最後に到達したボーナス)1件だけを候補にする(bonusStage()の中身は
+ *   levelに関わらず毎回ランダム生成されるため、どのレベルで解放された
+ *   ボーナスかを複数出し分ける意味がない)。
+ * - 候補数がmaxCount以下ならすべてを返す。ボーナスは常に一覧の末尾に置く
+ *   (「16面までクリアしたなら16面の次」)。
+ * - 候補数がmaxCountを超える場合は、通常ステージはレベルが高いものを優先して
+ *   残す。ボーナスは(存在すれば)常に1枠を確保して残し、末尾に置く。
  */
 export function selectDisplayStages(
     maxLevel: number,
@@ -35,25 +38,28 @@ export function selectDisplayStages(
         return [];
     }
 
-    const bonusSet = new Set(
-        bonusLevels.filter((level) => level <= safeMaxLevel),
+    const reachedBonusLevels = bonusLevels.filter(
+        (level) => level <= safeMaxLevel,
     );
+    const latestBonusLevel =
+        reachedBonusLevels.length > 0 ? Math.max(...reachedBonusLevels) : null;
 
-    // レベル降順、同レベルは通常→ボーナスの優先順位で並べた候補一覧
-    const priorityOrder: PracticeStageEntry[] = [];
-    for (let level = safeMaxLevel; level >= 1; level--) {
-        priorityOrder.push({ level, isBonus: false });
-        if (bonusSet.has(level)) {
-            priorityOrder.push({ level, isBonus: true });
-        }
+    const normalSlots =
+        latestBonusLevel !== null ? Math.max(0, maxCount - 1) : maxCount;
+    const keepCount = Math.min(safeMaxLevel, normalSlots);
+
+    const entries: PracticeStageEntry[] = [];
+    for (
+        let level = safeMaxLevel - keepCount + 1;
+        level <= safeMaxLevel;
+        level++
+    ) {
+        entries.push({ level, isBonus: false });
     }
 
-    const kept = priorityOrder.slice(0, maxCount);
+    if (latestBonusLevel !== null) {
+        entries.push({ level: latestBonusLevel, isBonus: true });
+    }
 
-    return kept.sort((a, b) => {
-        if (a.level !== b.level) {
-            return a.level - b.level;
-        }
-        return Number(a.isBonus) - Number(b.isBonus);
-    });
+    return entries;
 }

@@ -558,10 +558,10 @@ export class ResultState extends StateBase {
             this.slideY(notebookSprite, notebookRestY, 0.15),
         ]);
 
-        // ノート着地の紙音→ひと呼吸おいて、中身の一括表示と同時にジングル。
+        // ノート着地の紙音→少し間を置いて、中身の一括表示と同時にジングル。
         // ボーナスステージの結果は少し豪華なスペシャル版を鳴らす
         AudioManager.shared.playSe("se_notebook");
-        await this.wait(300);
+        await this.wait(1300);
         AudioManager.shared.playSe(
             this.stageInfo.bonusFlag
                 ? "se_result_jingle_special"

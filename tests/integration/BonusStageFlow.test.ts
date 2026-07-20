@@ -491,9 +491,9 @@ describe("Bonus (dream) stage flow", () => {
             const done = state.onEnter();
             // displayNotebookResult()自体はPIXI.Tickerベースのフェードを
             // 挟むが、このファイルのTickerモックはstart()が同期的に完走する。
-            // 着地音→ジングルの間に300msの間があるため、その分だけ進めれば
+            // 着地音→ジングルの間に1300msの間があるため、その分だけ進めれば
             // ノート描画が完了する
-            await vi.advanceTimersByTimeAsync(300);
+            await vi.advanceTimersByTimeAsync(1300);
 
             // リザルト中(まだピン留めされたまま)はスペシャル個体の旅立ち
             // モーション(震え→退場)はまだ始まっていない。Butterfly.fly()側の

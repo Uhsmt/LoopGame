@@ -312,10 +312,10 @@ describe("PracticeSelectState", () => {
             stubTransitions(state);
 
             // 6個のボタンは1行に並ぶ: x = 87.5, 212.5, 337.5, 462.5, 587.5, 712.5
-            // index 3 = level 3 のボーナスステージ
+            // ボーナスは常に一覧の末尾(通常5面ぶんのあと) = index 5 (6番目)
             (state as any).lineDrawer.emit(
                 "loopAreaCompleted",
-                loopAround({ x: 462.5, y: GRID_ROW_Y }),
+                loopAround({ x: 712.5, y: GRID_ROW_Y }),
             );
 
             await vi.waitFor(() => {
