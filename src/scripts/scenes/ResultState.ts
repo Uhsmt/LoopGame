@@ -65,10 +65,10 @@ export class ResultState extends StateBase {
     /** 暗転/明転に使う夜背景(夢の演出があるときだけ用意する) */
     private nightBackground?: PIXI.Sprite;
     /**
-     * クリアして次のステージへ進む場合にtrue(ノート型リザルト画面を使う)。
-     * ボーナスステージ自身の結果もこれに含む(通常クリアと同じデザインを
-     * 共有する)。ゲームオーバー・プラクティスクリアはスコープ外のため、
-     * 従来どおりdisplayLegacyResult()を使う
+     * クリアした場合にtrue(ノート型リザルト画面を使う)。通常クリア・
+     * ボーナスステージ自身の結果・プラクティスクリアのいずれも同じ
+     * デザインを共有する。ゲームオーバーだけは従来どおり
+     * displayLegacyResult()を使う
      */
     private readonly isNotebookResult: boolean;
     private notebookSprite?: PIXI.Sprite;
@@ -94,10 +94,9 @@ export class ResultState extends StateBase {
         this.isEnteringDream =
             stageInfo.isClear && isGotBonusButterfly && !stageInfo.isPractice;
         this.isWakingDream = stageInfo.bonusFlag;
-        // クリアして次のステージ(またはボーナスステージ→通常ステージ)へ
-        // 進む場合はノート型リザルトを使う。ゲームオーバー・プラクティス
-        // クリアは今回のスコープ外(displayLegacyResultのまま)
-        this.isNotebookResult = stageInfo.isClear && !stageInfo.isPractice;
+        // クリアした場合(通常・ボーナスステージ・プラクティスとも)は
+        // ノート型リザルトを使う。ゲームオーバーだけdisplayLegacyResultのまま
+        this.isNotebookResult = stageInfo.isClear;
 
         // 夢に誘う蝶をスコアの紙・テキストより常に手前(最前面)に描画するため、
         // zIndexでの並べ替えを有効にしておく(スコアテキストはdisplayStageResult
@@ -569,11 +568,14 @@ export class ResultState extends StateBase {
                 pinned.x = originX + CELL_SIZE / 2 + col * ROW_PITCH;
                 pinned.y = originY + CELL_SIZE / 2 + row * ROW_PITCH;
                 this.container.addChild(pinned);
-                if (specimen.isSpecial) {
+                if (specimen.isSpecial && this.isEnteringDream) {
                     // ノートに貼ったこの標本を、あとで夢演出でそのまま
                     // 飛び立たせる(notebookChildrenには入れず、専用フィールドで持つ)
                     this.dreamSpecimen = pinned;
                 } else {
+                    // プラクティスではスペシャル個体でも夢演出に入らない
+                    // (isEnteringDream=false)ため、専用フィールドに退避すると
+                    // 回収されず画面に残る。通常の標本として一緒に片付ける
                     this.notebookChildren.push(pinned);
                 }
             });

@@ -392,7 +392,7 @@ describe("ResultState", () => {
         });
     });
 
-    describe("notebook-style result (level clear only)", () => {
+    describe("notebook-style result (any clear)", () => {
         // displayLegacyResultと同じ理由(PIXI.Tickerの実アニメーション完了を
         // 待ってしまう)で、displayNotebookResult/enterDreamSequence内の
         // fadeIn/fadeOut/waitは即時解決に差し替える
@@ -403,14 +403,15 @@ describe("ResultState", () => {
             (state as any).slideY = vi.fn().mockResolvedValue(undefined);
         }
 
-        it("routes to displayNotebookResult when clearing a stage, including the bonus stage's own result", () => {
+        it("routes to displayNotebookResult on any clear (normal, bonus stage, practice) but not on game over", () => {
             const notebookCases = [
                 makeClearStageInfo({ isPractice: false, bonusFlag: false }), // normal clear
                 makeClearStageInfo({ isPractice: false, bonusFlag: true }), // bonus stage's own result (same design)
+                makeClearStageInfo({ isPractice: true }), // practice clear (same design)
             ];
             const legacyCases = [
-                makeClearStageInfo({ isPractice: true }), // practice clear
                 makeGameOverStageInfo({ isPractice: false }), // game over
+                makeGameOverStageInfo({ isPractice: true }), // practice game over
             ];
 
             notebookCases.forEach((stageInfo) => {
@@ -468,6 +469,31 @@ describe("ResultState", () => {
                 (child: any) => "butterfly" in child,
             );
             expect(pinnedInChildren).toHaveLength(1);
+        });
+
+        it("keeps a special specimen as an ordinary pinned exhibit in practice mode (no dream sequence follows)", async () => {
+            const stageInfo = makeClearStageInfo({
+                isPractice: true,
+                capturedSpecimens: [
+                    makeSpecimen({}),
+                    makeSpecimen({ isSpecial: true }),
+                ],
+            });
+            // プラクティスではスペシャルを捕まえていても夢演出には入らない
+            // (isEnteringDream=false)ため、dreamSpecimenとして退避すると
+            // 誰にも回収されず画面に残ってしまう。通常の標本と同じく
+            // notebookChildrenに入れて一緒に片付けられることを確認する
+            const state = new ResultState(manager as any, stageInfo, true);
+            expect((state as any).isEnteringDream).toBe(false);
+            stubAnimations(state);
+
+            await (state as any).displayNotebookResult();
+
+            expect((state as any).dreamSpecimen).toBeUndefined();
+            const pinnedInChildren = (state as any).notebookChildren.filter(
+                (child: any) => "butterfly" in child,
+            );
+            expect(pinnedInChildren).toHaveLength(2);
         });
 
         it("starts the dream flight from the pinned specimen's position, not the screen center", async () => {
