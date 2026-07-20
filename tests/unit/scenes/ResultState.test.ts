@@ -35,18 +35,20 @@ vi.mock("../../../src/scripts/utils/ScoreStorage", () => ({
     saveResult: saveResultMock,
 }));
 
-// DreamFlightPathは軌道計算そのものは検証済み(DreamFlightPath.test.ts)なので、
-// ここではコンストラクタに渡された引数(出発座標)だけを捕捉できるスタブにする
-const { dreamFlightPathCtorMock } = vi.hoisted(() => ({
-    dreamFlightPathCtorMock: vi.fn(),
+// DreamDeparturePathは軌道計算そのものは検証済み(DreamDeparturePath.test.ts)
+// なので、ここではコンストラクタに渡された引数(出発座標)だけを捕捉できる
+// スタブにする
+const { departurePathCtorMock } = vi.hoisted(() => ({
+    departurePathCtorMock: vi.fn(),
 }));
-vi.mock("../../../src/scripts/utils/DreamFlightPath", () => ({
-    DreamFlightPath: class {
+vi.mock("../../../src/scripts/utils/DreamDeparturePath", () => ({
+    DreamDeparturePath: class {
         x = 0;
         y = 0;
+        mode = "trembling";
         done = false;
         constructor(options: unknown) {
-            dreamFlightPathCtorMock(options);
+            departurePathCtorMock(options);
         }
         step() {
             /* noop */
@@ -496,7 +498,7 @@ describe("ResultState", () => {
             expect(pinnedInChildren).toHaveLength(2);
         });
 
-        it("starts the dream flight from the pinned specimen's position, not the screen center", async () => {
+        it("starts the departure from the pinned specimen's position, with the pin still attached while trembling", async () => {
             const stageInfo = makeClearStageInfo({
                 isPractice: false,
                 bonusFlag: false,
@@ -509,17 +511,22 @@ describe("ResultState", () => {
             const dreamSpecimen = (state as any).dreamSpecimen;
             expect(dreamSpecimen).toBeDefined();
 
-            await (state as any).enterDreamSequence();
+            // Tickerモックは手動tickが必要なため、旅立ちの完了は待たずに
+            // 開始だけさせて、ステッパーへ渡った出発座標を検証する
+            void (state as any).startDreamDeparture(dreamSpecimen);
 
-            expect(dreamFlightPathCtorMock).toHaveBeenCalledTimes(1);
-            const options = dreamFlightPathCtorMock.mock.calls[0][0];
-            // 旧仕様は常に画面中央(width/2, height/2)から出現していた。
-            // 今は捕まえたスペシャル個体のピン留め位置から出発するため、
-            // 一致しないはず(ピン留め位置がたまたま中央と重なることはない)
-            expect(
-                options.centerX === app.screen.width / 2 &&
-                    options.centerY === app.screen.height / 2,
-            ).toBe(false);
+            expect(departurePathCtorMock).toHaveBeenCalledTimes(1);
+            const options = departurePathCtorMock.mock.calls[0][0];
+            // 出発点は捕まえたスペシャル個体のピン留め位置そのもの
+            // (旧仕様のような画面中央からの出現ではない)
+            expect(options.startX).toBe(dreamSpecimen.x);
+            expect(options.startY).toBe(dreamSpecimen.y);
+            expect(options.screenWidth).toBe(app.screen.width);
+            expect(options.screenHeight).toBe(app.screen.height);
+
+            // 震えている(departingへ切り替わる)前はピンが刺さったまま
+            expect((dreamSpecimen).pinSprite).not.toBeNull();
+            expect(dreamSpecimen.butterfly.isFlapping).toBe(false);
         });
 
         it("uses the bonus-stage heading, an infinity target, and drops the bonus-score row for the bonus stage's own result", async () => {

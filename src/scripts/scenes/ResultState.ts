@@ -14,7 +14,7 @@ import { LineDrawer } from "../components/LineDrawer";
 import { AudioManager } from "../utils/AudioManager";
 import { saveResult } from "../utils/ScoreStorage";
 import { t, getLang } from "../utils/Language";
-import { DreamFlightPath } from "../utils/DreamFlightPath";
+import { DreamDeparturePath } from "../utils/DreamDeparturePath";
 import { layoutSpecimens } from "../utils/SpecimenLayout";
 
 // ノート型リザルト画面(左ページ・右ページ)のレイアウト定数。
@@ -331,10 +331,10 @@ export class ResultState extends StateBase {
     /**
      * 夢に入る演出: リザルト表示のあと、画面がだんだん暗くなって夜へ向かう。
      * 誘ってくれるのはノートにピン留めされていた実際のスペシャル標本
-     * (dreamSpecimen)で、ここで初めてピンを外し、そのままの位置から
-     * 振り付け(円→退場)を開始する。遷移のゲートは暗転完了のみ(従来通り)で、
-     * 振り付けの完了は待たない。画面切り替えで蝶が唐突に消えて見えないよう、
-     * 暗転が終わったら短くフェードアウトさせてからボーナス(夢)へ入る。
+     * (dreamSpecimen)で、ピン留め位置でブルブルと震えたあとピンが外れ、
+     * 画面の左半分にいれば右上へ・右半分にいれば左上へ、ふら〜と蛇行
+     * しながら飛び去っていく。暗転は旅立ちと並行して進み、蝶が画面外へ
+     * 抜けきってからボーナス(夢)へ入る。
      */
     private async enterDreamSequence(): Promise<void> {
         // 少し余韻をおく
@@ -351,88 +351,77 @@ export class ResultState extends StateBase {
             this.notebookSprite.visible = false;
         }
 
-        // ピンを外し、その場から振り付け(円→退場)を開始する。
-        // 羽ばたきはピン留め中は止めてあるため、飛び立つ瞬間だけ再開する
-        if (this.dreamSpecimen) {
-            const butterfly = this.dreamSpecimen.unpinAndRelease();
-            butterfly.isFlapping = true;
-            // 黒枠を含む全要素より常に手前(最前面)に見えるよう固定する
-            this.dreamSpecimen.zIndex = 1000;
-            this.startDreamFlightChoreography(this.dreamSpecimen);
-        }
+        // 旅立ち(震え→ピンが外れて飛び去る)と暗転(約3.2秒)を並行して
+        // 進め、両方が終わって(=蝶が画面外に抜けきって)からボーナスへ入る
+        const departurePromise = this.dreamSpecimen
+            ? this.startDreamDeparture(this.dreamSpecimen)
+            : Promise.resolve();
+        const darkenPromise = this.nightBackground
+            ? this.fadeIn(this.nightBackground, 0.005)
+            : Promise.resolve();
+        await Promise.all([departurePromise, darkenPromise]);
 
-        // だんだん暗くなる(夜へ)。約3.2秒かけてゆっくり切り替える
-        if (this.nightBackground) {
-            await this.fadeIn(this.nightBackground, 0.005);
+        // 蝶は既に画面外へ抜けきっているので、そのまま片付けてよい
+        if (this.dreamSpecimen && !this.dreamSpecimen.destroyed) {
+            this.container.removeChild(this.dreamSpecimen);
+            this.dreamSpecimen.destroy({ children: true });
         }
-
-        // 暗転が完了したら、蝶の退場(振り付けの完了)は待たずにボーナスへ
-        // 進む。ただし画面切り替えで蝶が唐突に消えて見えないよう、
-        // 遷移直前に短くフェードアウトしてから消す
-        await this.fadeOutDreamSpecimen();
+        this.dreamSpecimen = undefined;
 
         this.stageInfo.bonusStage();
         this.manager.setState(new GameplayState(this.manager, this.stageInfo));
     }
 
     /**
-     * ピン留めされていた標本(dreamSpecimen)の振り付けモーションを開始する。
-     * 「今のピン留め位置あたりから → 軽く円を描く(だいたい1周) → そのまま
-     * 同じ速さで画面外へ抜ける」という軌道の計算自体は DreamFlightPath
-     * (PIXI非依存の純粋なステッパー)に任せ、ここでは毎フレームその結果を
-     * specimenコンテナの座標へ反映するだけにする(中のButterflyは再親付け
-     * していないので、コンテナごと動かせば一緒についてくる)。
+     * ピン留めされていた標本(dreamSpecimen)の旅立ちモーションを開始する。
+     * 軌道の計算は DreamDeparturePath(PIXI非依存の純粋なステッパー)に任せ、
+     * ここでは毎フレームその結果をspecimenコンテナの座標へ反映するだけに
+     * する(中のButterflyは再親付けしていないので、コンテナごと動かせば
+     * 一緒についてくる)。
      *
-     * 遷移(enterDreamSequence)は暗転完了だけをゲートにしており、この
-     * 振り付けの完了(画面外まで抜けきること)は待たない。そのため
-     * specimen.destroyed(=fadeOutDreamSpecimenによる破棄)か、まれに
-     * 振り付け自体が最後まで完了した場合のどちらかでTickerを止める
-     * (自然完了は安全弁で、通常はdestroyedの方が先に来る)。
+     * ピンは震え(trembling)の間は刺さったままで、departingへ切り替わった
+     * 瞬間に外す(=ブルブル震えてピンが抜ける)。羽ばたきもその瞬間から
+     * 再開する。返すPromiseは蝶が画面外へ抜けきる(path.done)か、
+     * 万一先に破棄された場合に解決する。
      */
-    private startDreamFlightChoreography(specimen: PinnedSpecimen): void {
-        const path = new DreamFlightPath({
-            centerX: specimen.x,
-            centerY: specimen.y,
+    private startDreamDeparture(specimen: PinnedSpecimen): Promise<void> {
+        // 黒枠を含む全要素より常に手前(最前面)に見えるよう固定する
+        specimen.zIndex = 1000;
+
+        const path = new DreamDeparturePath({
+            startX: specimen.x,
+            startY: specimen.y,
             screenWidth: this.manager.app.screen.width,
             screenHeight: this.manager.app.screen.height,
         });
 
-        const ticker = new PIXI.Ticker();
-        ticker.add(() => {
-            if (specimen.destroyed) {
-                ticker.stop();
-                ticker.destroy();
-                return;
-            }
-            path.step(ticker.deltaMS);
-            specimen.x = path.x;
-            specimen.y = path.y;
-            if (path.done) {
-                ticker.stop();
-                ticker.destroy();
-            }
+        return new Promise((resolve) => {
+            let released = false;
+            const ticker = new PIXI.Ticker();
+            ticker.add(() => {
+                if (specimen.destroyed) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                    return;
+                }
+                path.step(ticker.deltaMS);
+                if (!released && path.mode === "departing") {
+                    // 震え終わり: ピンが外れ、羽ばたきながら飛び立つ
+                    const butterfly = specimen.unpinAndRelease();
+                    butterfly.isFlapping = true;
+                    released = true;
+                }
+                specimen.x = path.x;
+                specimen.y = path.y;
+                if (path.done) {
+                    ticker.stop();
+                    ticker.destroy();
+                    resolve();
+                }
+            });
+            ticker.start();
         });
-        ticker.start();
-    }
-
-    /**
-     * 夢へ誘う標本を短くフェードアウトしてから消す。
-     * enterDreamSequenceは暗転完了だけをゲートに次のシーンへ進むため、
-     * 振り付け(円→退場)の途中で画面が切り替わり得る。画面切り替えで
-     * 蝶が唐突に消えて見えないよう、遷移直前にひと呼吸フェードさせておく
-     * (フェード中も振り付け自体は自然に動き続ける)。
-     */
-    private async fadeOutDreamSpecimen(): Promise<void> {
-        const specimen = this.dreamSpecimen;
-        if (!specimen) return;
-
-        await this.fadeOut(specimen, 0.05);
-
-        if (!specimen.destroyed) {
-            this.container.removeChild(specimen);
-            specimen.destroy({ children: true });
-        }
-        this.dreamSpecimen = undefined;
     }
 
     update(delta: number): void {
@@ -442,7 +431,7 @@ export class ResultState extends StateBase {
         if (this.dreamSpecimen && !this.dreamSpecimen.destroyed) {
             // isFlying=falseなのでButterfly.update内のfly()は何もしない。
             // 羽ばたきアニメ(flap())だけをここに任せる。位置は
-            // startDreamFlightChoreographyの専用Tickerが動かす
+            // startDreamDepartureの専用Tickerが動かす
             this.dreamSpecimen.butterfly.update(delta, []);
         }
     }
