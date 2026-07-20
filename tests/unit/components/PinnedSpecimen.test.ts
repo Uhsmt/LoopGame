@@ -64,7 +64,7 @@ describe("PinnedSpecimen idle tremble", () => {
         const baseX = specimen.butterfly.x;
         const baseY = specimen.butterfly.y;
 
-        specimen.unpinAndRelease();
+        specimen.detachPin();
         // 飛行はコンテナ(specimen.x/y)側が担うため、ピンが外れたあとは
         // 内側の蝶は基準位置に固定されたまま
         advance(specimen, IDLE_TREMBLE_QUIET_MS + IDLE_TREMBLE_BURST_MS);
@@ -80,8 +80,34 @@ describe("PinnedSpecimen idle tremble", () => {
         // バーストの途中(オフセットが乗っている状態)でピンを外しても、
         // ずれたまま飛び立たないように基準位置へ戻る
         advance(specimen, IDLE_TREMBLE_QUIET_MS + IDLE_TREMBLE_BURST_MS / 2);
-        specimen.unpinAndRelease();
+        specimen.detachPin();
         expect(specimen.butterfly.x).toBe(baseX);
         expect(specimen.butterfly.y).toBe(baseY);
+    });
+});
+
+describe("PinnedSpecimen pin placement and detachment", () => {
+    it("pins slightly above the butterfly's center", () => {
+        const specimen = makeSpecial();
+        const pin = (specimen as any).pinSprite;
+        expect(pin).not.toBeNull();
+        // 2〜3px上に刺さって見えるよう、わずかに持ち上げる
+        expect(pin.y).toBeLessThan(0);
+        expect(pin.y).toBeGreaterThanOrEqual(-4);
+    });
+
+    it("detachPin removes the pin from the container without destroying it, and returns it", () => {
+        const specimen = makeSpecial();
+        const pin = specimen.detachPin();
+
+        // 落下+フェードアウトの演出は呼び出し側が行うため、
+        // ここでは破棄せずに返すだけ
+        expect(pin).not.toBeNull();
+        expect(pin!.destroyed).not.toBe(true);
+        expect(specimen.children).not.toContain(pin);
+        expect((specimen as any).pinSprite).toBeNull();
+
+        // 2回目は何も返さない
+        expect(specimen.detachPin()).toBeNull();
     });
 });

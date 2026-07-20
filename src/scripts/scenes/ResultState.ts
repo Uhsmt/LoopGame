@@ -347,11 +347,8 @@ export class ResultState extends StateBase {
         // 二重再生にはならない
         AudioManager.shared.playBgm(Const.bgmSrcs.bonus);
 
-        // ノート一式(テキスト・標本ごと)はスライドやフェードではなく、
-        // パッと非表示にする
-        if (this.notebookGroup) {
-            this.notebookGroup.visible = false;
-        }
+        // ノート一式の非表示は、蝶がピンから外れた瞬間に行う
+        // (startDreamDeparture内)。震えている間はまだノートの上にいる
 
         // 旅立ち(震え→ピンが外れて飛び去る)と暗転(約3.2秒)を並行して
         // 進め、両方が終わって(=蝶が画面外に抜けきって)からボーナスへ入る
@@ -409,9 +406,22 @@ export class ResultState extends StateBase {
                 }
                 path.step(ticker.deltaMS);
                 if (!released && path.mode === "departing") {
-                    // 震え終わり: ピンが外れ、羽ばたきながら飛び立つ
-                    const butterfly = specimen.unpinAndRelease();
-                    butterfly.isFlapping = true;
+                    // 震え終わり: ピンが外れ、羽ばたきながら飛び立つ。
+                    // 外れたピンは下に落ちながらフェードアウトさせる
+                    const pin = specimen.detachPin();
+                    if (pin) {
+                        // specimenのローカル座標からcontainer座標へ変換して
+                        // 同じ見た目の位置に置き直す
+                        pin.x += specimen.x;
+                        pin.y += specimen.y;
+                        this.dropPin(pin);
+                    }
+                    specimen.butterfly.isFlapping = true;
+                    // 蝶がピンから外れたら、ノート一式(テキスト・標本ごと)を
+                    // パッと非表示にする(蝶とピンだけが残る)
+                    if (this.notebookGroup) {
+                        this.notebookGroup.visible = false;
+                    }
                     released = true;
                 }
                 specimen.x = path.x;
@@ -424,6 +434,36 @@ export class ResultState extends StateBase {
             });
             ticker.start();
         });
+    }
+
+    /**
+     * 外れたピンを重力っぽく加速しながら下へ落とし、同時にフェードアウト
+     * させて消す。純粋な飾りの演出なので、完了は誰も待ち合わせない
+     * (シーン遷移で親ごと破棄されても、ticker側のガードで安全に止まる)。
+     */
+    private dropPin(pin: PIXI.Sprite): void {
+        pin.zIndex = 900; // 蝶(1000)のすぐ下、ノートより手前
+        this.container.addChild(pin);
+
+        let velocityY = 0;
+        const ticker = new PIXI.Ticker();
+        ticker.add(() => {
+            if (pin.destroyed) {
+                ticker.stop();
+                ticker.destroy();
+                return;
+            }
+            velocityY += 0.0008 * ticker.deltaMS;
+            pin.y += velocityY * ticker.deltaMS;
+            pin.alpha -= 0.0012 * ticker.deltaMS;
+            if (pin.alpha <= 0) {
+                this.container.removeChild(pin);
+                pin.destroy();
+                ticker.stop();
+                ticker.destroy();
+            }
+        });
+        ticker.start();
     }
 
     update(delta: number): void {

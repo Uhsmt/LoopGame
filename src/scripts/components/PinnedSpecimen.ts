@@ -17,6 +17,9 @@ const IDLE_TREMBLE_AMPLITUDE = 1.2;
 // 画像中心(0.5, 0.5)ではなく縦42.1%あたりにある。anchorをそこに合わせないと
 // 頭が中心からずれて見える(実測: 頭部分だけの外接矩形/アルファ重心 ≒ (0.500, 0.421))
 const PIN_ANCHOR = { x: 0.5, y: 0.421 };
+// ピンの刺さり位置。蝶の中心ど真ん中よりわずかに上に刺さって見える方が
+// 自然なので、少しだけ持ち上げる
+const PIN_LIFT_Y = -2.5;
 
 /**
  * ノート型リザルト画面で、実際に捕まえた1匹を標本のようにピン留め表示する。
@@ -64,6 +67,7 @@ export class PinnedSpecimen extends PIXI.Container {
         const pin = PIXI.Sprite.from("pin");
         pin.anchor.set(PIN_ANCHOR.x, PIN_ANCHOR.y);
         pin.scale.set(specimen.isSpecial ? PIN_SCALE_SPECIAL : PIN_SCALE);
+        pin.y = PIN_LIFT_Y;
         this.addChild(pin);
         this.pinSprite = pin;
     }
@@ -96,19 +100,22 @@ export class PinnedSpecimen extends PIXI.Container {
     }
 
     /**
-     * ピンだけを取り外し、中の蝶を返す(夢演出でその場から飛び立たせる際に使う)。
+     * ピンだけを取り外して返す(夢演出でその場から飛び立たせる際に使う)。
+     * ピンは破棄せずに返すので、呼び出し側で「落下+フェードアウト」の
+     * 演出に使える(このコンテナのローカル座標が残ったままなので、
+     * 再親付け時はspecimenの座標を足して変換すること)。
      * 蝶自身はこのコンテナの子のまま残すため、以降は本コンテナのx/yを
      * 動かせばそのまま蝶が動く(再親付け不要)。
      */
-    unpinAndRelease(): Butterfly {
-        if (this.pinSprite) {
-            this.removeChild(this.pinSprite);
-            this.pinSprite.destroy();
+    detachPin(): PIXI.Sprite | null {
+        const pin = this.pinSprite;
+        if (pin) {
+            this.removeChild(pin);
             this.pinSprite = null;
         }
         // 震えの途中で外れても、ずれたまま飛び立たないよう基準位置へ戻す
         this.butterfly.x = this.butterflyBaseX;
         this.butterfly.y = this.butterflyBaseY;
-        return this.butterfly;
+        return pin;
     }
 }
