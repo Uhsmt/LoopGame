@@ -164,6 +164,16 @@ describe("ResultState", () => {
             .mockResolvedValue(undefined);
     }
 
+    // displayNotebookResult/enterDreamSequence内はPIXI.Tickerの実
+    // アニメーション完了を待ってしまうため、fadeIn/fadeOut/wait/slideYは
+    // 即時解決に差し替える(displayStageResult自体は実装のまま動かす)
+    function stubAnimations(state: ResultState): void {
+        (state as any).fadeIn = vi.fn().mockResolvedValue(undefined);
+        (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
+        (state as any).wait = vi.fn().mockResolvedValue(undefined);
+        (state as any).slideY = vi.fn().mockResolvedValue(undefined);
+    }
+
     async function runOnEnter(state: ResultState): Promise<void> {
         const promise = state.onEnter();
         // ノート型は結果表示が2秒長い(7000ms)ため、両方のパスをまかなえる
@@ -323,6 +333,27 @@ describe("ResultState", () => {
     });
 
     describe("game over (first failure, retry available)", () => {
+        it("displays the notebook result and tears it down before the retry buttons appear", async () => {
+            const stageInfo = makeGameOverStageInfo({ isPractice: false });
+            const state = new ResultState(manager as any, stageInfo, false);
+            stubAnimations(state);
+
+            const promise = state.onEnter();
+            // ノートの着地演出(displayNotebookResult)が終わった直後の
+            // タイミングでは、まだノート一式が表示されたままのはず
+            await vi.advanceTimersByTimeAsync(0);
+            expect((state as any).notebookGroup).toBeDefined();
+            expect((state as any).retryButton).toBeUndefined();
+
+            // 7秒の表示待ちのあと、ノート一式(退場フェード込み)を片付けて
+            // からリトライボタンを出す
+            await vi.advanceTimersByTimeAsync(7000 + 2000);
+            await promise;
+
+            expect((state as any).notebookGroup).toBeUndefined();
+            expect((state as any).retryButton).toBeDefined();
+        });
+
         it("offers a retry and does not save the score yet in normal play", async () => {
             const stageInfo = makeGameOverStageInfo({ isPractice: false });
             const state = new ResultState(manager as any, stageInfo, false);
@@ -397,41 +428,31 @@ describe("ResultState", () => {
         });
     });
 
-    describe("notebook-style result (any clear)", () => {
-        // displayLegacyResultと同じ理由(PIXI.Tickerの実アニメーション完了を
-        // 待ってしまう)で、displayNotebookResult/enterDreamSequence内の
-        // fadeIn/fadeOut/waitは即時解決に差し替える
-        function stubAnimations(state: ResultState): void {
-            (state as any).fadeIn = vi.fn().mockResolvedValue(undefined);
-            (state as any).fadeOut = vi.fn().mockResolvedValue(undefined);
-            (state as any).wait = vi.fn().mockResolvedValue(undefined);
-            (state as any).slideY = vi.fn().mockResolvedValue(undefined);
-        }
-
-        it("routes to displayNotebookResult on any clear (normal, bonus stage, practice) but not on game over", () => {
-            const notebookCases = [
+    describe("notebook-style result (any outcome)", () => {
+        it("routes displayStageResult to displayNotebookResult regardless of outcome (clear, bonus stage, practice, game over)", async () => {
+            const cases = [
                 makeClearStageInfo({ isPractice: false, bonusFlag: false }), // normal clear
-                makeClearStageInfo({ isPractice: false, bonusFlag: true }), // bonus stage's own result (same design)
-                makeClearStageInfo({ isPractice: true }), // practice clear (same design)
-            ];
-            const legacyCases = [
+                makeClearStageInfo({ isPractice: false, bonusFlag: true }), // bonus stage's own result
+                makeClearStageInfo({ isPractice: true }), // practice clear
                 makeGameOverStageInfo({ isPractice: false }), // game over
                 makeGameOverStageInfo({ isPractice: true }), // practice game over
             ];
 
-            notebookCases.forEach((stageInfo) => {
-                expect(
-                    (new ResultState(manager as any, stageInfo, false) as any)
-                        .isNotebookResult,
-                ).toBe(true);
-            });
+            for (const stageInfo of cases) {
+                const state = new ResultState(manager as any, stageInfo, false);
+                stubAnimations(state);
+                const notebookSpy = vi.spyOn(
+                    state as any,
+                    "displayNotebookResult",
+                );
 
-            legacyCases.forEach((stageInfo) => {
-                expect(
-                    (new ResultState(manager as any, stageInfo, false) as any)
-                        .isNotebookResult,
-                ).toBe(false);
-            });
+                await (state as any).displayStageResult();
+
+                expect(notebookSpy).toHaveBeenCalledTimes(1);
+                // 旧sticky版のフィールド/メソッドはもう存在しない
+                expect((state as any).stickySprite).toBeUndefined();
+                expect((state as any).displayLegacyResult).toBeUndefined();
+            }
         });
 
         it("pins one specimen per captured butterfly", async () => {
