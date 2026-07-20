@@ -52,16 +52,37 @@ describe("DreamDeparturePath", () => {
 
     it("drifts toward the upper-right when pinned on the left half of the screen", () => {
         const path = makePath(300, 400);
-        advance(path, 3000);
+        advance(path, 6000);
         expect(path.x).toBeGreaterThan(300 + 100);
         expect(path.y).toBeLessThan(400 - 30);
     });
 
     it("drifts toward the upper-left when pinned on the right half of the screen", () => {
         const path = makePath(850, 400);
-        advance(path, 3000);
+        advance(path, 6000);
         expect(path.x).toBeLessThan(850 - 100);
         expect(path.y).toBeLessThan(400 - 30);
+    });
+
+    it("launches at the in-game special butterfly's cruising speed before accelerating away", () => {
+        // ゲーム内スペシャル蝶(Butterfly.ts: xDiretion=0.6, yDiretion=0.5、
+        // fly()は diretion/16 px/ms)の斜め移動と同じ速さで飛び立つこと
+        const specialSpeedPerMs = Math.hypot(0.6, 0.5) / 16;
+        const path = makePath(300, 400, { trembleDurationMs: 0 });
+
+        // 加速前かつ出だしの助走(ease-in)後の区間で、進行方向に沿った
+        // 移動量を実測する
+        advance(path, 1200);
+        const x1 = path.x;
+        const y1 = path.y;
+        advance(path, 800);
+        // 蛇行(進行方向と直交)成分を除くため、退場方向への射影で比べる
+        const dirLen = Math.hypot(1, 0.55);
+        const along =
+            ((path.x - x1) * (1 / dirLen) + (y1 - path.y) * (0.55 / dirLen)) /
+            800;
+        expect(along).toBeGreaterThan(specialSpeedPerMs * 0.85);
+        expect(along).toBeLessThan(specialSpeedPerMs * 1.15);
     });
 
     it("sways rather than flying in a perfectly straight line", () => {

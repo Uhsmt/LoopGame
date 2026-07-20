@@ -9,9 +9,14 @@
  * - trembling: ピン留め位置を中心に、微小な高周波の揺れを乗せる
  *   (ピンから抜けようともがいている感じ)。飛び立ちはしない
  * - departing: 画面の左半分にいれば右上へ、右半分にいれば左上へ向かう。
- *   速さは出だしだけ滑らかに立ち上げ(いきなり最高速で飛ばない)、
- *   進行方向と直交するサイン波の揺れを重ねることで「ふら〜と」した
- *   蛇行になる。画面外(余白込み)に抜けたら done
+ *   巡航の速さはゲーム内のスペシャル蝶(Butterfly.tsのxDiretion=0.6,
+ *   yDiretion=0.5、fly()は diretion/16 px/ms)と同じにして、飛び立ちの
+ *   見た目を実際の飛行と揃える。ただしその速さのままだと画面外へ抜ける
+ *   まで15〜20秒かかってボーナスへの遷移が間延びするため、飛び始めて
+ *   しばらく経ったら(=十分遠ざかってから)滑らかに加速して抜けさせる。
+ *   出だしは滑らかに立ち上げ(いきなり巡航速度で飛ばない)、進行方向と
+ *   直交するサイン波の揺れを重ねることで「ふら〜と」した蛇行になる。
+ *   画面外(余白込み)に抜けたら done
  *
  * ResultStateはPIXI.Tickerからdelta駆動でstep()を呼び、返る座標を
  * 標本コンテナへ反映する。ロジックをここに切り出すことで、Tickerや
@@ -26,6 +31,11 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
 
 export type DreamDepartureMode = "trembling" | "departing";
 
+/** ゲーム内スペシャル蝶の斜め移動と同じ速さ(px/ms)。
+ * Butterfly.tsのspecial(xDiretion=0.6, yDiretion=0.5)と
+ * fly()の `+= (diretion * delta) / 16` から導出 */
+export const SPECIAL_BUTTERFLY_SPEED_PER_MS = Math.hypot(0.6, 0.5) / 16;
+
 export interface DreamDeparturePathOptions {
     /** ピン留めされていた位置(=旅立ちの起点) */
     startX: number;
@@ -36,10 +46,16 @@ export interface DreamDeparturePathOptions {
     trembleDurationMs?: number;
     /** 震えの振幅(px)。微小に留める */
     trembleAmplitude?: number;
-    /** 巡航の速さ(px/ms) */
+    /** 巡航の速さ(px/ms)。既定はゲーム内スペシャル蝶と同じ */
     speedPerMs?: number;
     /** 出だしの加速にかける時間(ms) */
     easeInMs?: number;
+    /** この時間だけ巡航したら、遠ざかりの加速を始める(ms) */
+    accelerateAfterMs?: number;
+    /** 加速が最高倍率に達するまでの時間(ms) */
+    accelRampMs?: number;
+    /** 加速後の最高速度倍率(巡航速度に対して) */
+    maxSpeedFactor?: number;
     /** 蛇行(サイン波)の振幅(px) */
     swayAmplitude?: number;
     /** 蛇行1往復の周期(ms) */
@@ -57,6 +73,9 @@ export class DreamDeparturePath {
     private readonly trembleAmplitude: number;
     private readonly speedPerMs: number;
     private readonly easeInMs: number;
+    private readonly accelerateAfterMs: number;
+    private readonly accelRampMs: number;
+    private readonly maxSpeedFactor: number;
     private readonly swayAmplitude: number;
     private readonly swayPeriodMs: number;
     private readonly exitScreenMargin: number;
@@ -79,8 +98,11 @@ export class DreamDeparturePath {
         this.screenHeight = options.screenHeight;
         this.trembleDurationMs = options.trembleDurationMs ?? 700;
         this.trembleAmplitude = options.trembleAmplitude ?? 1.5;
-        this.speedPerMs = options.speedPerMs ?? 0.175;
+        this.speedPerMs = options.speedPerMs ?? SPECIAL_BUTTERFLY_SPEED_PER_MS;
         this.easeInMs = options.easeInMs ?? 600;
+        this.accelerateAfterMs = options.accelerateAfterMs ?? 2500;
+        this.accelRampMs = options.accelRampMs ?? 3000;
+        this.maxSpeedFactor = options.maxSpeedFactor ?? 4;
         this.swayAmplitude = options.swayAmplitude ?? 26;
         this.swayPeriodMs = options.swayPeriodMs ?? 1300;
         this.exitScreenMargin = options.exitScreenMargin ?? 90;
@@ -129,24 +151,33 @@ export class DreamDeparturePath {
                 this._y = this.startY;
                 return;
             }
-            // 高周波(周期~70ms)の微小な揺れ。x/yで周波数と位相をずらして
+            // 細かめ(周期~130ms)の微小な揺れ。x/yで周波数と位相をずらして
             // 単調な振動に見えないようにする
             this._x =
                 this.startX +
-                Math.sin(this.elapsedMs * 0.09) * this.trembleAmplitude;
+                Math.sin(this.elapsedMs * 0.05) * this.trembleAmplitude;
             this._y =
                 this.startY +
-                Math.sin(this.elapsedMs * 0.07 + 1.3) *
+                Math.sin(this.elapsedMs * 0.04 + 1.3) *
                     this.trembleAmplitude *
                     0.6;
             return;
         }
 
         this.departElapsedMs += deltaMS;
-        // 出だしは滑らかに加速する(ピンから抜けた直後にいきなり最高速で
-        // 飛ばず、ふわっと浮き上がる)
+        // 出だしは滑らかに巡航速度へ立ち上げ(ピンから抜けた直後にいきなり
+        // 飛ばず、ふわっと浮き上がる)、しばらく飛んだら遠ざかりの加速を
+        // 滑らかに乗せて画面外へ抜けさせる
         const speedRamp = smoothstep(0, this.easeInMs, this.departElapsedMs);
-        this.distance += this.speedPerMs * speedRamp * deltaMS;
+        const accel =
+            1 +
+            (this.maxSpeedFactor - 1) *
+                smoothstep(
+                    this.accelerateAfterMs,
+                    this.accelerateAfterMs + this.accelRampMs,
+                    this.departElapsedMs,
+                );
+        this.distance += this.speedPerMs * speedRamp * accel * deltaMS;
 
         // 進行方向と直交する向きにサイン波を重ねて「ふら〜と」した蛇行に
         // する。蛇行も出だしは抑えて、飛び始めてから徐々に大きくする

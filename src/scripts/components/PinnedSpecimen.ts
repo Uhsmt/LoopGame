@@ -83,14 +83,14 @@ export class PinnedSpecimen extends PIXI.Container {
             this.butterfly.y = this.butterflyBaseY;
             return;
         }
-        // 高周波(周期~70ms)の微小な揺れ。x/yで周波数と位相をずらして
+        // 細かめ(周期~130ms)の微小な揺れ。x/yで周波数と位相をずらして
         // 単調な振動に見えないようにする
         const t = phase - IDLE_TREMBLE_QUIET_MS;
         this.butterfly.x =
-            this.butterflyBaseX + Math.sin(t * 0.09) * IDLE_TREMBLE_AMPLITUDE;
+            this.butterflyBaseX + Math.sin(t * 0.05) * IDLE_TREMBLE_AMPLITUDE;
         this.butterfly.y =
             this.butterflyBaseY +
-            Math.sin(t * 0.07 + 1.3) * IDLE_TREMBLE_AMPLITUDE * 0.6;
+            Math.sin(t * 0.04 + 1.3) * IDLE_TREMBLE_AMPLITUDE * 0.6;
     }
 
     /**
