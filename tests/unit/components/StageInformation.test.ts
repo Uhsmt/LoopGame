@@ -162,70 +162,79 @@ describe("StageInformation", () => {
             expect(si.obstacles).toEqual(["catapy"]);
         });
 
-        it("should keep the extra band's base setup identical to Lv20 across levels", () => {
-            // 設計書§5.3: Lv21以降はLv20の構成を引き継ぎ、needCountとobstaclesのみ変わる
+        it("should escalate needCount by exactly +3 per level in the challenge band (Lv21-25)", () => {
+            // 設計書§5.3: チャレンジ帯はLv20の24を起点にneedCount +3/レベル
             const si = new StageInformation();
-            while (si.level < 20) {
-                si.next();
-            }
-            const lv20 = {
-                butterflyColorNumCount: si.butterflyColors.length,
-                stageButterflyCount: si.stageButterflyCount,
-                butterflySize: si.butterflySize,
-                isButterflyColorChange: si.isButterflyColorChange,
-                multipleButterflyRate: si.multipleButterflyRate,
-                maxMultipleRate: si.maxMultipleRate,
-                helpObjectNum: si.helpObjectNum,
-            };
-
+            const actual: Record<number, number> = {};
             while (si.level < 25) {
                 si.next();
-                expect(si.butterflyColors.length).toBe(
-                    lv20.butterflyColorNumCount,
-                );
-                expect(si.stageButterflyCount).toBe(lv20.stageButterflyCount);
-                expect(si.butterflySize).toBe(lv20.butterflySize);
-                expect(si.isButterflyColorChange).toBe(
-                    lv20.isButterflyColorChange,
-                );
-                expect(si.multipleButterflyRate).toBe(
-                    lv20.multipleButterflyRate,
-                );
-                expect(si.maxMultipleRate).toBe(lv20.maxMultipleRate);
-                expect(si.helpObjectNum).toBe(lv20.helpObjectNum);
+                if (si.level >= 21) {
+                    actual[si.level] = si.needCount;
+                }
+            }
+            expect(actual).toEqual({
+                21: 27,
+                22: 30,
+                23: 33,
+                24: 36,
+                25: 39,
+            });
+        });
+
+        it("should make Lv22 the scarce-butterfly stage (only 6 on screen, heavy obstacles)", () => {
+            // 設計書§5.3「六つの宝石」: 蝶6匹・large・お邪魔3体・花6
+            const si = new StageInformation(22);
+            expect(si.needCount).toBe(30);
+            expect(si.stageButterflyCount).toBe(6);
+            expect(si.butterflySize).toBe("large");
+            expect(si.butterflyColors).toHaveLength(2);
+            expect(si.obstacles).toEqual(["catapy", "catapy", "bee"]);
+            expect(si.helpObjectNum).toBe(6);
+        });
+
+        it("should follow the per-level obstacle sets of the challenge band (Lv21-25)", () => {
+            // 設計書§5.3: 同種の重複出現(spider×2など)はチャレンジ帯で解禁
+            const expectedObstacles: Record<number, string[]> = {
+                21: ["spider", "spider"],
+                22: ["catapy", "catapy", "bee"],
+                23: ["bee", "bee"],
+                24: ["catapy", "catapy", "bee", "spider"],
+                25: ["catapy", "bee", "spider"],
+            };
+            for (const [level, obstacles] of Object.entries(
+                expectedObstacles,
+            )) {
+                const si = new StageInformation(Number(level));
+                expect(si.obstacles).toEqual(obstacles);
             }
         });
 
-        it("should switch to 3 simultaneous obstacle types from Lv21 (extra band)", () => {
-            const si = new StageInformation();
-            while (si.level < 21) {
-                si.next();
-            }
-            expect(si.level).toBe(21);
-            expect(si.obstacles).toEqual(["catapy", "bee", "spider"]);
-        });
-
-        it("should escalate needCount by 24 + 2*(level-20) in the extra band (Lv21, Lv22)", () => {
-            const si = new StageInformation();
-            while (si.level < 21) {
-                si.next();
-            }
-            expect(si.needCount).toBe(26); // 24 + 2*(21-20)
-
-            si.next();
-            expect(si.level).toBe(22);
-            expect(si.needCount).toBe(28); // 24 + 2*(22-20)
-        });
-
-        it("should still spawn the special butterfly at Lv25 (level % 5 === 0 boundary in the extra band)", () => {
+        it("should still spawn the special butterfly at Lv25 (level % 5 === 0 boundary of the challenge band)", () => {
             const si = new StageInformation();
             while (si.level < 25) {
                 si.next();
             }
             expect(si.level).toBe(25);
-            expect(si.needCount).toBe(34); // 24 + 2*(25-20)
+            expect(si.needCount).toBe(39);
             expect(si.obstacles).toEqual(["catapy", "bee", "spider"]);
             expect(si.hasBonusButterfly).toBe(true);
+        });
+
+        it("should generate the extra band from Lv26 based on the Lv25 config (needCount +2/level)", () => {
+            // 設計書§5.4: エクストラ帯はLv25構成を引き継ぎ、needCountのみ+2/レベル
+            const si = new StageInformation();
+            while (si.level < 26) {
+                si.next();
+            }
+            expect(si.level).toBe(26);
+            expect(si.needCount).toBe(41); // 39 + 2*(26-25)
+            expect(si.obstacles).toEqual(["catapy", "bee", "spider"]);
+            expect(si.stageButterflyCount).toBe(18); // Lv25の構成を引き継ぐ
+            expect(si.butterflySize).toBe("random");
+
+            si.next();
+            expect(si.level).toBe(27);
+            expect(si.needCount).toBe(43); // 39 + 2*(27-25)
         });
 
         it("should generate the same setup for the same level every run", () => {
@@ -297,13 +306,18 @@ describe("StageInformation", () => {
             expect(si.isFirstAppearanceStage("catapy")).toBe(false);
         });
 
-        it("should be false for every obstacle type in the extra band (Lv21+)", () => {
+        it("should be false for every obstacle type in the challenge band and beyond (Lv21+)", () => {
             const si = new StageInformation();
             while (si.level < 21) {
                 si.next();
             }
             expect(si.level).toBe(21);
-            expect(si.obstacles).toEqual(["catapy", "bee", "spider"]);
+            expect(si.isFirstAppearanceStage("spider")).toBe(false);
+
+            // エクストラ帯(configs配列に実体が無い生成ステージ)でもfalse
+            while (si.level < 26) {
+                si.next();
+            }
             expect(si.isFirstAppearanceStage("catapy")).toBe(false);
             expect(si.isFirstAppearanceStage("bee")).toBe(false);
             expect(si.isFirstAppearanceStage("spider")).toBe(false);
