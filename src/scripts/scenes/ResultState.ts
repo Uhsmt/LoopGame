@@ -553,14 +553,17 @@ export class ResultState extends StateBase {
         notebookGroup.addChild(notebookSprite);
         this.notebookSprite = notebookSprite;
 
+        // ノートが滑り込む動きに合わせて紙音を鳴らす。
+        // (アニメ完了を待ってから鳴らすと、本が完全に現れた後に音が来て
+        //  違和感があるため、スライド開始と同時に再生する)
+        AudioManager.shared.playSe("se_notebook");
         await Promise.all([
             this.fadeIn(notebookSprite, 0.05, 1),
             this.slideY(notebookSprite, notebookRestY, 0.15),
         ]);
 
-        // ノート着地の紙音→少し間を置いて、中身の一括表示と同時にジングル。
+        // 中身の一括表示と同時にジングル。
         // ボーナスステージの結果は少し豪華なスペシャル版を鳴らす
-        AudioManager.shared.playSe("se_notebook");
         await this.wait(1300);
         AudioManager.shared.playSe(
             this.stageInfo.bonusFlag

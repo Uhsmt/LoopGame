@@ -32,6 +32,27 @@ export function chooseAtRandom<T>(_arrayData: T[], _count: number): T[] {
     return result;
 }
 /**
+ * ステージで使う蝶の色を、視認性を優先して指定個数選ぶ。
+ * はっきり見分けやすい色(CLEAR_COLORS: ピンク/オレンジ/青)を先に埋め、
+ * それでも足りない分だけ視認しづらい色(SUBTLE_COLORS: teal/gold)を補う。
+ * これにより色数の少ない序盤ステージは常にはっきり色だけになる。
+ * @param {number} count 選ぶ色数
+ * @returns number[]
+ */
+export function chooseButterflyColors(count: number): number[] {
+    const clearCount = Math.min(count, Const.CLEAR_COLORS.length);
+    const colors = chooseAtRandom<number>([...Const.CLEAR_COLORS], clearCount);
+    if (count > Const.CLEAR_COLORS.length) {
+        const subtle = chooseAtRandom<number>(
+            [...Const.SUBTLE_COLORS],
+            count - Const.CLEAR_COLORS.length,
+        );
+        colors.push(...subtle);
+    }
+    return colors;
+}
+
+/**
  * 指定した確率でtrueを返す
  * @param {*} _percentage
  * @returns boolean
