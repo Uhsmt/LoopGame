@@ -37,6 +37,13 @@ const ROW_PITCH = CELL_SIZE + CELL_GAP;
 const HEADING_BLOCK_HEIGHT = 60;
 const SCORE_BLOCK_HEIGHT = 132;
 
+// 標本を「手でピン留めした」風に見せるため、グリッドの整列を少しだけ崩す。
+// ずらし幅・傾きは隣のセルと被らない範囲(セル間の余白 ≒ 13px 相当)に
+// 収め、通常種のみに適用する。スペシャル個体は幅が大きく飛び立つ演出も
+// あるため崩さない。
+const SPECIMEN_JITTER_POS = 3; // px, ±この範囲でランダムにずらす
+const SPECIMEN_JITTER_ROT = 0.09; // rad, ±この範囲でランダムに傾ける(約5度)
+
 export class ResultState extends StateBase {
     private stageInfo: StageInformation;
     private backToStartButton!: Button;
@@ -637,6 +644,15 @@ export class ResultState extends StateBase {
                 const pinned = new PinnedSpecimen(specimen, screenSize);
                 pinned.x = originX + CELL_SIZE / 2 + col * ROW_PITCH;
                 pinned.y = originY + CELL_SIZE / 2 + row * ROW_PITCH;
+                // 通常種は整列を少し崩して手貼り風にする(スペシャル個体は
+                // 幅が大きく、飛び立つ演出中に傾きが残ると不自然なので除外)
+                if (!specimen.isSpecial) {
+                    const jitter = (range: number): number =>
+                        (Math.random() * 2 - 1) * range;
+                    pinned.x += jitter(SPECIMEN_JITTER_POS);
+                    pinned.y += jitter(SPECIMEN_JITTER_POS);
+                    pinned.rotation = jitter(SPECIMEN_JITTER_ROT);
+                }
                 if (specimen.isSpecial && this.isEnteringDream) {
                     // ノートに貼ったこの標本を、あとで夢演出でそのまま
                     // 飛び立たせる。ノート一式が消えたあとも飛び続けるため
