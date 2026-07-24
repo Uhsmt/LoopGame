@@ -15,6 +15,21 @@ export const COLOR_LIST = [
     0xfbde51, // gold(yellow)
 ] as const;
 
+// 背景に対してはっきり見分けやすい色。色数が少ない序盤ステージは
+// この中から優先的に使い、視認しづらい色を後回しにする。
+export const CLEAR_COLORS = [
+    COLOR_LIST[2], // pink
+    COLOR_LIST[3], // orange
+    COLOR_LIST[0], // blue
+] as const;
+
+// 視認性がやや劣る色(teal/gold)。色数が CLEAR_COLORS を超える
+// (=4色以上になる)中盤以降のステージでのみ追加する。
+export const SUBTLE_COLORS = [
+    COLOR_LIST[1], // teal
+    COLOR_LIST[4], // gold(yellow)
+] as const;
+
 export const SIZE_LIST = ["small", "medium", "large"] as const;
 
 // Butterflyが実際に解決したサイズ区分("random"は解決後の値になる)。
