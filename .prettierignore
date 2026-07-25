@@ -2,6 +2,10 @@
 package.json
 package-lock.json
 
+# ビルド成果物(整形すると配布物そのものが書き換わる)
+dist
+dist-itch
+
 README.md
 
 # .github/workflows
