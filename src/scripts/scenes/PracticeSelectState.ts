@@ -12,6 +12,7 @@ import { t, getLang } from "../utils/Language";
 import { getMaxLevel, getReachedBonusLevels } from "../utils/ScoreStorage";
 import {
     selectDisplayStages,
+    bonusLevelsUpTo,
     PracticeStageEntry,
 } from "../utils/PracticeStages";
 
@@ -105,11 +106,19 @@ export class PracticeSelectState extends StateBase {
             this.handleLoopAreaCompleted.bind(this),
         );
 
-        const entries = selectDisplayStages(
-            getMaxLevel(),
-            getReachedBonusLevels(),
-            PracticeSelectState.MAX_STAGE_COUNT,
-        );
+        // デバッグモードでは進行状況に関係なく全ステージ(+最新ボーナス)を
+        // 表示し、任意のステージを練習モードから直接動作確認できるようにする
+        const entries = DEBUG_MODE
+            ? selectDisplayStages(
+                  StageInformation.maxDefinedLevel(),
+                  bonusLevelsUpTo(StageInformation.maxDefinedLevel()),
+                  Number.POSITIVE_INFINITY,
+              )
+            : selectDisplayStages(
+                  getMaxLevel(),
+                  getReachedBonusLevels(),
+                  PracticeSelectState.MAX_STAGE_COUNT,
+              );
 
         if (entries.length === 0) {
             this.buildEmptyMessage();
@@ -170,7 +179,15 @@ export class PracticeSelectState extends StateBase {
         const colSpacing =
             (width - Const.MARGIN * 2) / PracticeSelectState.GRID_COLUMNS;
         const gridTop = height * 0.32;
-        const rowGap = height * 0.17;
+        // 通常時の上限(3行)を超える場合(デバッグの全ステージ表示)は、
+        // 最終行が下部の戻るボタンに重ならないよう行間を詰める
+        const rows = Math.ceil(
+            entries.length / PracticeSelectState.GRID_COLUMNS,
+        );
+        const rowGap =
+            rows <= PracticeSelectState.GRID_ROWS
+                ? height * 0.17
+                : (height * 0.46) / (rows - 1);
 
         entries.forEach((entry, index) => {
             const row = Math.floor(index / PracticeSelectState.GRID_COLUMNS);

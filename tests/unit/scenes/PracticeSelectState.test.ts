@@ -235,6 +235,34 @@ describe("PracticeSelectState", () => {
             ).toBe("30");
         });
 
+        it("shows every stage plus the bonus in debug mode, regardless of saved progress", () => {
+            // devモード起動時は、進行状況(maxLevel 0)に関係なく全ステージを
+            // 練習モードから直接選んで動作確認できる
+            vi.stubGlobal("DEBUG_MODE", true);
+            try {
+                vi.mocked(getMaxLevel).mockReturnValue(0);
+                const state = createState();
+                state.onEnter();
+
+                const stageButtons = (state as any).stageButtons;
+                expect(stageButtons).toHaveLength(26); // Lv1-25 + ボーナス
+                expect(stageButtons[0].entry).toEqual({
+                    level: 1,
+                    isBonus: false,
+                });
+                expect(stageButtons[24].entry).toEqual({
+                    level: 25,
+                    isBonus: false,
+                });
+                expect(stageButtons[25].entry).toEqual({
+                    level: 25,
+                    isBonus: true,
+                });
+            } finally {
+                vi.stubGlobal("DEBUG_MODE", false);
+            }
+        });
+
         it("shows only the empty message (and back button) when the player has never played", () => {
             vi.mocked(getMaxLevel).mockReturnValue(0);
             const state = createState();

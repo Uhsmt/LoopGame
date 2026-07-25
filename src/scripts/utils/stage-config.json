@@ -241,5 +241,70 @@
         "maxMultipleRate": 3,
         "helpObjectNum": 5,
         "obstacles": ["catapy", "bee"]
+    },
+    {
+        "level": 21,
+        "stageTime": 60,
+        "butterflyColorNum": 5,
+        "needCount": 27,
+        "stageButterflyCount": 20,
+        "butterflySize": "small",
+        "isButterflyColorChange": false,
+        "multipleButterflyRate": 0.25,
+        "maxMultipleRate": 3,
+        "helpObjectNum": 5,
+        "obstacles": ["spider", "spider"]
+    },
+    {
+        "level": 22,
+        "stageTime": 60,
+        "butterflyColorNum": 5,
+        "needCount": 30,
+        "stageButterflyCount": 6,
+        "butterflySize": "large",
+        "isButterflyColorChange": false,
+        "multipleButterflyRate": 0.3,
+        "maxMultipleRate": 3,
+        "helpObjectNum": 6,
+        "obstacles": ["catapy", "catapy", "bee"]
+    },
+    {
+        "level": 23,
+        "stageTime": 60,
+        "butterflyColorNum": 3,
+        "needCount": 33,
+        "stageButterflyCount": 18,
+        "butterflySize": "small",
+        "isButterflyColorChange": false,
+        "multipleButterflyRate": 0.25,
+        "maxMultipleRate": 3,
+        "helpObjectNum": 5,
+        "obstacles": ["bee", "bee"]
+    },
+    {
+        "level": 24,
+        "stageTime": 60,
+        "butterflyColorNum": 4,
+        "needCount": 36,
+        "stageButterflyCount": 16,
+        "butterflySize": "random",
+        "isButterflyColorChange": true,
+        "multipleButterflyRate": 0.2,
+        "maxMultipleRate": 3,
+        "helpObjectNum": 5,
+        "obstacles": ["catapy", "catapy", "bee", "spider"]
+    },
+    {
+        "level": 25,
+        "stageTime": 60,
+        "butterflyColorNum": 5,
+        "needCount": 39,
+        "stageButterflyCount": 18,
+        "butterflySize": "random",
+        "isButterflyColorChange": true,
+        "multipleButterflyRate": 0.3,
+        "maxMultipleRate": 3,
+        "helpObjectNum": 6,
+        "obstacles": ["catapy", "bee", "spider"]
     }
 ]

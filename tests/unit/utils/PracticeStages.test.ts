@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { selectDisplayStages } from "../../../src/scripts/utils/PracticeStages";
+import {
+    selectDisplayStages,
+    bonusLevelsUpTo,
+} from "../../../src/scripts/utils/PracticeStages";
 
 describe("selectDisplayStages", () => {
     it("returns an empty array when maxLevel is 0", () => {
@@ -138,5 +141,29 @@ describe("selectDisplayStages", () => {
             { level: 6, isBonus: false },
             { level: 6, isBonus: true },
         ]);
+    });
+
+    it("returns every level plus the consolidated bonus when maxCount is Infinity (debug: show all)", () => {
+        const entries = selectDisplayStages(
+            25,
+            [5, 10, 15, 20, 25],
+            Number.POSITIVE_INFINITY,
+        );
+        expect(entries).toHaveLength(26);
+        expect(entries[0]).toEqual({ level: 1, isBonus: false });
+        expect(entries[24]).toEqual({ level: 25, isBonus: false });
+        expect(entries[25]).toEqual({ level: 25, isBonus: true });
+    });
+});
+
+describe("bonusLevelsUpTo", () => {
+    it("lists every 5th level up to maxLevel", () => {
+        expect(bonusLevelsUpTo(25)).toEqual([5, 10, 15, 20, 25]);
+        expect(bonusLevelsUpTo(12)).toEqual([5, 10]);
+    });
+
+    it("returns an empty array below the first bonus level", () => {
+        expect(bonusLevelsUpTo(4)).toEqual([]);
+        expect(bonusLevelsUpTo(0)).toEqual([]);
     });
 });

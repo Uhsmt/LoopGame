@@ -79,15 +79,15 @@ export class StageInformation {
     }
 
     /**
-     * 最終ステージ(本編Lv20)を超えた「エクストラ帯」の構成を生成する。
-     * 本編最終レベルの構成をそのまま引き継ぎ、needCountだけをレベル差分に
-     * 応じて加算する。お邪魔オブジェクトは3種同時(いもむし・ハチ・クモ)に
-     * 固定し、「本編を卒業した者だけが見る景色」という質的な一段を残す。
+     * 最終定義ステージ(チャレンジ帯Lv25)を超えた「エクストラ帯」の構成を
+     * 生成する。最終定義レベルの構成をそのまま引き継ぎ、needCountだけを
+     * レベル差分に応じて+2/レベルで加算する。お邪魔オブジェクトは3種同時
+     * (いもむし・ハチ・クモ)に固定する(Lv25と同じ構成)。
      * 全プレイヤーが同じレベルで同じ構成を走るため、ラン合計スコアの
      * 比較が公平になる。
      *
      * 注意: 呼び出し元(setConfig)は `configs[configs.length - 1]` を
-     * baseとして渡す。つまり「配列の最後のエントリ = 本編最終レベル」
+     * baseとして渡す。つまり「配列の最後のエントリ = 最終定義レベル」
      * という前提に暗黙依存しているため、stage-config.json /
      * stage-config-debug.json のエントリは必ずlevelの昇順で並べること。
      * 順序が崩れるとエクストラ帯のneedCount・構成の起点がずれる。
@@ -104,8 +104,36 @@ export class StageInformation {
         };
     }
 
+    /**
+     * 実行モードに応じた有効なステージ設定一覧(level昇順)を返す。
+     * デバッグモードでは stage-config-debug.json のエントリを同levelの
+     * 本番設定への「上書き」として扱い、debug側に無いレベルは本番設定に
+     * フォールバックする。これによりデバッグ起動でも全ステージが本番相当の
+     * 構成で遊べる(練習モードの全ステージ表示と組で機能する)。
+     */
+    private static effectiveConfigs(): StageConfig[] {
+        if (!DEBUG_MODE) {
+            return stageConfigs;
+        }
+        const byLevel = new Map<number, StageConfig>();
+        for (const config of [...stageConfigs, ...stageDebugConfigs]) {
+            byLevel.set(config.level, config);
+        }
+        return [...byLevel.values()].sort((a, b) => a.level - b.level);
+    }
+
+    /**
+     * 定義済みステージの最終レベル。これを超えるレベルはエクストラ帯として
+     * generateOverflowConfigで生成される。練習モードの全ステージ表示
+     * (デバッグ用)が上限として参照する。
+     */
+    static maxDefinedLevel(): number {
+        const configs = StageInformation.effectiveConfigs();
+        return configs[configs.length - 1].level;
+    }
+
     private setConfig(level: number): void {
-        const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
+        const configs = StageInformation.effectiveConfigs();
         const config =
             configs.find((c) => c.level === level) ??
             // 配列の最後のエントリを本編最終レベルとみなして渡す
@@ -182,11 +210,11 @@ export class StageInformation {
      * 現在のステージが、指定したお邪魔オブジェクトの種類の「初登場ステージ」かを判定する。
      * 「初登場」はレベル番号のハードコードではなく、stage-configから動的に算出する:
      * その種類をobstaclesに含む最小のlevelと現在のlevelが一致する場合にtrue。
-     * エクストラ帯(本編最終レベルを超える生成ステージ)はconfigs配列に実体が
+     * エクストラ帯(最終定義レベルを超える生成ステージ)はconfigs配列に実体が
      * 存在しないため、必ずfalseになる(本編で全種登場済みという設計と整合)。
      */
     isFirstAppearanceStage(type: string): boolean {
-        const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
+        const configs = StageInformation.effectiveConfigs();
         return (
             StageInformation.findFirstAppearanceLevel(configs, type) ===
             this.level
