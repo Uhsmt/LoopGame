@@ -154,6 +154,11 @@ function waitForTapToStart(): Promise<void> {
             return;
         }
         gate.classList.remove("hidden");
+        // PIXIのEventSystemはpointermoveをdocumentに張るため、ゲートを
+        // 被せてもマウス移動はstageまで届いてしまう。このゲームはマウスを
+        // 動かすだけで線が引けるので、ゲート中はstage側の入力を止める
+        // (止めないとクリックしないまま遊べてしまい、音が無音のままになる)
+        setStageInputEnabled(false);
         // 注意: タッチでは pointerdown 時点だと「ユーザー操作」として
         // 認定されず音声を解禁できない(Android Chrome等)。click は
         // touchend 後に発火し、マウス/タッチ両方で確実に操作認定される
@@ -162,6 +167,7 @@ function waitForTapToStart(): Promise<void> {
             () => {
                 AudioManager.shared.unlock();
                 gate.classList.add("hidden");
+                setStageInputEnabled(true);
                 resolve();
             },
             { once: true },
@@ -173,6 +179,16 @@ function waitForTapToStart(): Promise<void> {
         document.addEventListener("click", retryUnlock);
         document.addEventListener("touchend", retryUnlock);
     });
+}
+
+/**
+ * stageの入力受付を切り替える。
+ * GameStateManagerが設定する "static" が通常状態で、"none" にすると
+ * stageに登録されたpointerイベント(線引き・ポーズ)が届かなくなる。
+ */
+export function setStageInputEnabled(enabled: boolean): void {
+    app.stage.eventMode = enabled ? "static" : "none";
+    app.stage.interactiveChildren = enabled;
 }
 
 function setupMuteButton(): void {
