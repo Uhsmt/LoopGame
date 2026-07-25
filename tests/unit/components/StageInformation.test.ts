@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { StageInformation } from "../../../src/scripts/components/StageInformation";
 
 describe("StageInformation", () => {
@@ -187,7 +187,7 @@ describe("StageInformation", () => {
             expect(si.needCount).toBe(30);
             expect(si.stageButterflyCount).toBe(6);
             expect(si.butterflySize).toBe("large");
-            expect(si.butterflyColors).toHaveLength(2);
+            expect(si.butterflyColors).toHaveLength(5);
             expect(si.obstacles).toEqual(["catapy", "catapy", "bee"]);
             expect(si.helpObjectNum).toBe(6);
         });
@@ -271,6 +271,47 @@ describe("StageInformation", () => {
                 secondRun.next();
             }
             expect(secondRun.needCount).toBe(firstRunNeedCount);
+        });
+    });
+
+    describe("maxDefinedLevel", () => {
+        it("returns the last configured level (start of the extra band)", () => {
+            expect(StageInformation.maxDefinedLevel()).toBe(25);
+        });
+    });
+
+    describe("debug mode (DEBUG_MODE = true)", () => {
+        beforeEach(() => {
+            vi.stubGlobal("DEBUG_MODE", true);
+        });
+        afterEach(() => {
+            vi.stubGlobal("DEBUG_MODE", false);
+        });
+
+        it("uses the debug entry for levels defined in stage-config-debug.json", () => {
+            const si = new StageInformation(1);
+            // stage-config-debug.jsonのLv1エントリの値
+            expect(si.needCount).toBe(10);
+            expect(si.stageButterflyCount).toBe(15);
+            expect(si.obstacles).toEqual(["bee", "spider", "catapy"]);
+        });
+
+        it("falls back to the production entry for levels missing from the debug config", () => {
+            // デバッグ設定はLv0-3のみ。Lv22は本番のチャレンジ帯構成で遊べる
+            const si = new StageInformation(22);
+            expect(si.needCount).toBe(30);
+            expect(si.stageButterflyCount).toBe(6);
+            expect(si.butterflySize).toBe("large");
+        });
+
+        it("generates the extra band from the production Lv25 config beyond the last level", () => {
+            const si = new StageInformation(26);
+            expect(si.needCount).toBe(41); // 39 + 2*(26-25)
+            expect(si.obstacles).toEqual(["catapy", "bee", "spider"]);
+        });
+
+        it("keeps maxDefinedLevel at the production maximum", () => {
+            expect(StageInformation.maxDefinedLevel()).toBe(25);
         });
     });
 

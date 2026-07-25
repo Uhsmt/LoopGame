@@ -104,8 +104,36 @@ export class StageInformation {
         };
     }
 
+    /**
+     * 実行モードに応じた有効なステージ設定一覧(level昇順)を返す。
+     * デバッグモードでは stage-config-debug.json のエントリを同levelの
+     * 本番設定への「上書き」として扱い、debug側に無いレベルは本番設定に
+     * フォールバックする。これによりデバッグ起動でも全ステージが本番相当の
+     * 構成で遊べる(練習モードの全ステージ表示と組で機能する)。
+     */
+    private static effectiveConfigs(): StageConfig[] {
+        if (!DEBUG_MODE) {
+            return stageConfigs;
+        }
+        const byLevel = new Map<number, StageConfig>();
+        for (const config of [...stageConfigs, ...stageDebugConfigs]) {
+            byLevel.set(config.level, config);
+        }
+        return [...byLevel.values()].sort((a, b) => a.level - b.level);
+    }
+
+    /**
+     * 定義済みステージの最終レベル。これを超えるレベルはエクストラ帯として
+     * generateOverflowConfigで生成される。練習モードの全ステージ表示
+     * (デバッグ用)が上限として参照する。
+     */
+    static maxDefinedLevel(): number {
+        const configs = StageInformation.effectiveConfigs();
+        return configs[configs.length - 1].level;
+    }
+
     private setConfig(level: number): void {
-        const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
+        const configs = StageInformation.effectiveConfigs();
         const config =
             configs.find((c) => c.level === level) ??
             // 配列の最後のエントリを本編最終レベルとみなして渡す
@@ -187,7 +215,7 @@ export class StageInformation {
      * 存在しないため、必ずfalseになる(本編で全種登場済みという設計と整合)。
      */
     isFirstAppearanceStage(type: string): boolean {
-        const configs = DEBUG_MODE ? stageDebugConfigs : stageConfigs;
+        const configs = StageInformation.effectiveConfigs();
         return (
             StageInformation.findFirstAppearanceLevel(configs, type) ===
             this.level

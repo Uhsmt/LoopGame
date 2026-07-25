@@ -245,7 +245,7 @@
     {
         "level": 21,
         "stageTime": 60,
-        "butterflyColorNum": 2,
+        "butterflyColorNum": 5,
         "needCount": 27,
         "stageButterflyCount": 20,
         "butterflySize": "small",
@@ -258,7 +258,7 @@
     {
         "level": 22,
         "stageTime": 60,
-        "butterflyColorNum": 2,
+        "butterflyColorNum": 5,
         "needCount": 30,
         "stageButterflyCount": 6,
         "butterflySize": "large",
@@ -297,7 +297,7 @@
     {
         "level": 25,
         "stageTime": 60,
-        "butterflyColorNum": 3,
+        "butterflyColorNum": 5,
         "needCount": 39,
         "stageButterflyCount": 18,
         "butterflySize": "random",

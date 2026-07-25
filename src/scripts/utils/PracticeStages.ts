@@ -14,6 +14,17 @@ export interface PracticeStageEntry {
 }
 
 /**
+ * maxLevel以下のボーナス出現レベル(5の倍数)をすべて列挙する。
+ * 「5の倍数でスペシャル蝶=ボーナス」のルールはStageInformation.setConfigの
+ * `level % 5 === 0` と対応している。デバッグ時の全ステージ表示のように、
+ * 保存された到達履歴(ScoreStorage)を使わずに一覧を作る場合に使う。
+ */
+export function bonusLevelsUpTo(maxLevel: number): number[] {
+    const count = Math.max(0, Math.floor(maxLevel / 5));
+    return Array.from({ length: count }, (_, i) => (i + 1) * 5);
+}
+
+/**
  * 表示するステージ一覧を選ぶ。
  *
  * - 通常ステージは1..maxLevelをすべて候補にする。
