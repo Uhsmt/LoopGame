@@ -548,6 +548,46 @@ describe("ResultState", () => {
             expect(pinnedInChildren).toHaveLength(2);
         });
 
+        it("breaks the grid alignment for normal specimens but keeps special ones straight", async () => {
+            // Math.randomを固定して、崩し(ジッター)が確実に適用されることを検証。
+            // 0.75 → jitter = (0.75*2-1)*range = 0.5*range で必ず非ゼロになる
+            const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.75);
+            try {
+                const stageInfo = makeClearStageInfo({
+                    isPractice: true,
+                    capturedSpecimens: [
+                        makeSpecimen({ isSpecial: true }),
+                        makeSpecimen({}),
+                    ],
+                });
+                // プラクティスでは夢演出に入らないため、スペシャル個体も
+                // 通常の標本と同じく notebookChildren に留まる(rotationを検証できる)
+                const state = new ResultState(manager as any, stageInfo, true);
+                expect((state as any).isEnteringDream).toBe(false);
+                stubAnimations(state);
+
+                await (state as any).displayNotebookResult();
+
+                const pinned = (state as any).notebookChildren.filter(
+                    (child: any) => "butterfly" in child,
+                );
+                const tilted = pinned.filter(
+                    (p: any) => Math.abs(p.rotation) > 0,
+                );
+                const straight = pinned.filter((p: any) => p.rotation === 0);
+                // 通常種は傾き、スペシャル個体はまっすぐのまま
+                expect(tilted).toHaveLength(1);
+                expect(straight).toHaveLength(1);
+                // 傾きは指定範囲(±0.09rad)に収まり、mock値どおり非ゼロになる
+                tilted.forEach((p: any) => {
+                    expect(Math.abs(p.rotation)).toBeLessThanOrEqual(0.09);
+                    expect(p.rotation).toBeCloseTo(0.045, 5);
+                });
+            } finally {
+                randomSpy.mockRestore();
+            }
+        });
+
         it("starts the departure from the pinned specimen's position, with the pin still attached while trembling", async () => {
             const stageInfo = makeClearStageInfo({
                 isPractice: false,

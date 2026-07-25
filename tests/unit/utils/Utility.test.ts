@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
     random,
     chooseAtRandom,
+    chooseButterflyColors,
     isTrueRandom,
     formatNumberWithCommas,
     getDistance,
@@ -9,6 +10,7 @@ import {
     shuffleArray,
     calculateObstacleTiming,
 } from "../../../src/scripts/utils/Utility";
+import { CLEAR_COLORS, SUBTLE_COLORS } from "../../../src/scripts/utils/Const";
 
 // Create a simple Point-like object for testing
 class MockPoint {
@@ -93,6 +95,49 @@ describe("Utility Functions", () => {
             const result = chooseAtRandom(array, 0);
             expect(result).toHaveLength(1); // Function defaults 0 to 1
             expect(array).toContain(result[0]);
+        });
+    });
+
+    describe("chooseButterflyColors()", () => {
+        it("should return the requested number of colors", () => {
+            for (let count = 1; count <= 5; count++) {
+                expect(chooseButterflyColors(count)).toHaveLength(count);
+            }
+        });
+
+        it("should use only clear colors when count fits within CLEAR_COLORS", () => {
+            // 序盤ステージ(色数<=3)は視認しづらい色を混ぜない
+            for (let i = 0; i < 50; i++) {
+                for (let count = 1; count <= CLEAR_COLORS.length; count++) {
+                    const result = chooseButterflyColors(count);
+                    result.forEach((color) => {
+                        expect(CLEAR_COLORS).toContain(color);
+                        expect(SUBTLE_COLORS).not.toContain(color);
+                    });
+                }
+            }
+        });
+
+        it("should include all clear colors before adding subtle ones", () => {
+            // 色数がCLEAR_COLORSを超える場合、はっきり色を全て使い切ってから
+            // 視認しづらい色を必要数だけ補う
+            for (let i = 0; i < 50; i++) {
+                const result = chooseButterflyColors(4);
+                CLEAR_COLORS.forEach((color) => {
+                    expect(result).toContain(color);
+                });
+                const subtleUsed = result.filter((c) =>
+                    (SUBTLE_COLORS as readonly number[]).includes(c),
+                );
+                expect(subtleUsed).toHaveLength(1);
+            }
+        });
+
+        it("should return unique colors", () => {
+            for (let i = 0; i < 50; i++) {
+                const result = chooseButterflyColors(5);
+                expect(new Set(result).size).toBe(result.length);
+            }
         });
     });
 

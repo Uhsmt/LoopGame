@@ -159,8 +159,7 @@ export class StageInformation {
         this.obstacles = config.obstacles ?? this.obstacles;
 
         this.level = level;
-        this.butterflyColors = Utility.chooseAtRandom(
-            [...Const.COLOR_LIST],
+        this.butterflyColors = Utility.chooseButterflyColors(
             config.butterflyColorNum,
         );
         // levelが5の倍数ならtrue
@@ -244,10 +243,7 @@ export class StageInformation {
         this.stageTime = 60;
         const colorNum = Utility.random(3, 4);
 
-        this.butterflyColors = Utility.chooseAtRandom(
-            [...Const.COLOR_LIST],
-            colorNum,
-        );
+        this.butterflyColors = Utility.chooseButterflyColors(colorNum);
         this.needCount = -1;
         this.stageButterflyCount = Utility.random(12, 18);
         this.butterflySize = Utility.chooseAtRandom(
