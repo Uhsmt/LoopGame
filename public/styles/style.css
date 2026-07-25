@@ -13,6 +13,11 @@ body {
 
 #main {
     margin-top: 10px;
+    /* captionが長くなると#mainがゲーム幅を超えて広がり、その中で
+       左寄せされたcanvasが画面中央からずれてしまう。ゲーム幅で
+       頭打ちにして、body側のcenteringが常に効くようにする */
+    width: 100%;
+    max-width: 1150px; /* Const.GAME_WIDTH */
 }
 
 #caption {
