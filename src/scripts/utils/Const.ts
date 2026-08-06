@@ -68,7 +68,7 @@ export const AVOID_PENCIL_EFFECT_TIME_MS = 6000;
 // ライン短縮中の線の色(赤: 弱体化がひと目で分かるように)
 export const LINE_SHORTEN_COLOR = 0xff0000;
 // チュートリアルtipsを表示する追加時間(startMessageの基本1000msに上乗せする)
-export const TUTORIAL_TIP_DISPLAY_MS = 2500;
+export const TUTORIAL_TIP_DISPLAY_MS = 3500;
 // 鉛筆から逃げるときの速さ(px/16ms、小蝶と同じ。サイズによらず共通)
 export const AVOID_PENCIL_SPEED = 0.6;
 // その種類のお邪魔オブジェクトが初めて登場するステージでの出現タイミング(秒)
