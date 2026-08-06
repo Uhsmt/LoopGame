@@ -426,7 +426,11 @@ describe("Bonus (dream) stage flow", () => {
             const state = new GameplayState(manager, stageInfo);
 
             const entered = state.onEnter();
-            await vi.advanceTimersByTimeAsync(1000);
+            // level 5にはチュートリアルtipsが表示されるため(#91)、
+            // startMessageの基本待機に加えてtipsの表示時間もかかる
+            await vi.advanceTimersByTimeAsync(
+                1000 + Const.TUTORIAL_TIP_DISPLAY_MS,
+            );
             await entered;
 
             const internal = state as any;

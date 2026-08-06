@@ -1,16 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
- * ループ捕獲時の効果音まわりの結線(wiring)を検証する統合テスト。
- *
- * #69: 蝶とヘルプフラワーを同じループで同時に捕獲すると、捕獲音
- * se_capture が同一フレーム内で二重発火していた
- * (captureButterflies内とcaptureFlowers内でそれぞれ再生されるため)。
+ * 序盤ステージのチュートリアルtips表示(#91)の結線(wiring)を検証する
+ * 統合テスト。
  *
  * ロジックを再実装して検証するマッチポンプにならないよう、実際の
- * GameplayState.handleLoopAreaCompleted を呼び出し、AudioManagerへの
- * 呼び出し回数を観測点とする。描画が重いor無関係なコンポーネントだけを
- * 軽量なダブルに差し替える(BonusStageFlow.test.tsと同じ方針)。
+ * GameplayState.onEnter() を呼び出し、プレイヤーから見える状態
+ * (tipMessageの表示/非表示・蝶が飛び始めるタイミング)だけを観測点とする。
+ * 描画が重いor無関係なコンポーネントだけを軽量なダブルに差し替える
+ * (CaptureSound.test.tsと同じ方針)。
  */
 
 vi.mock("pixi.js", () => {
@@ -160,14 +158,10 @@ vi.mock("pixi.js", () => {
     };
 });
 
-// 呼び出し検証で unbound-method 警告にならないよう、vi.hoistedで参照を持っておく
-const { playSeMock } = vi.hoisted(() => ({
-    playSeMock: vi.fn(),
-}));
 vi.mock("../../src/scripts/utils/AudioManager", () => {
     const shared = {
         playBgm: vi.fn(),
-        playSe: playSeMock,
+        playSe: vi.fn(),
         stopBgm: vi.fn(),
         setMuted: vi.fn(),
         isMuted: () => false,
@@ -211,7 +205,7 @@ vi.mock("../../src/scripts/components/Butterfly", () => {
         setRandomInitialPoistion = vi.fn();
         appear = vi.fn();
         update = vi.fn();
-        isHit = vi.fn(() => true);
+        isHit = () => false;
         switchColor = vi.fn();
         setGatherPoint = vi.fn();
         deleteGatherPoint = vi.fn();
@@ -220,33 +214,12 @@ vi.mock("../../src/scripts/components/Butterfly", () => {
     return { Butterfly };
 });
 
-vi.mock("../../src/scripts/components/HelpFlower", () => {
-    class HelpFlower {
-        x = 0;
-        y = 0;
-        width = 20;
-        height = 20;
-        destroyed = false;
-        message = "help!";
-        constructor(private type: string) {}
-        isHit = vi.fn(() => true);
-        stop = vi.fn();
-        delete = vi.fn();
-        getType = vi.fn(() => this.type);
-    }
-    return { HelpFlower };
-});
-
 import { GameplayState } from "../../src/scripts/scenes/GameplayState";
 import { StageInformation } from "../../src/scripts/components/StageInformation";
-import { Butterfly } from "../../src/scripts/components/Butterfly";
-import { HelpFlower } from "../../src/scripts/components/HelpFlower";
 import * as Const from "../../src/scripts/utils/Const";
+import { t, setLang, resetLangCache } from "../../src/scripts/utils/Language";
+import { getTutorialTipKey } from "../../src/scripts/utils/TutorialTips";
 import type { GameStateManager } from "../../src/scripts/scenes/GameStateManager";
-
-// デフォルトのlevel(1)にはチュートリアルtipsが表示されるため(#91)、
-// onEnter()完了にはstartMessageの基本待機に加えてtipsの表示時間もかかる
-const ENTER_WAIT_MS = 1000 + Const.TUTORIAL_TIP_DISPLAY_MS;
 
 function createMockApp() {
     return {
@@ -269,77 +242,74 @@ function createMockManager() {
     } as unknown as GameStateManager;
 }
 
-describe("Capture sound wiring (loop containing both butterflies and a flower)", () => {
+describe("Tutorial tips on early stages (#91)", () => {
     beforeEach(() => {
         vi.useFakeTimers();
+        setLang("ja");
     });
 
     afterEach(() => {
         vi.clearAllTimers();
         vi.useRealTimers();
-        vi.restoreAllMocks();
+        resetLangCache();
     });
 
-    it("plays se_capture only once when a loop captures 2 same-color butterflies together with a flower", async () => {
-        const stageInfo = new StageInformation();
+    it("shows the level's tip after the start message, then removes both and starts play", async () => {
+        // level 1 は tip.level1 を持つ
+        expect(getTutorialTipKey(1)).toBe("tip.level1");
+
+        const stageInfo = new StageInformation(1);
         const manager = createMockManager();
         const state = new GameplayState(manager, stageInfo);
-        const enterPromise = state.onEnter();
-        await vi.advanceTimersByTimeAsync(ENTER_WAIT_MS);
-        await enterPromise;
+        const internal = state as any;
 
-        const butterflies = [
-            new Butterfly("small", 0xff69b4),
-            new Butterfly("small", 0xff69b4),
-        ];
-        const flower = new HelpFlower("freeze");
-        state.butterflies = butterflies;
-        state.flowers = [flower];
+        const entered = state.onEnter();
 
-        playSeMock.mockClear();
+        // 基本のstartMessage表示時間(1000ms)経過時点では、まだtipsは
+        // 表示されておらず、蝶もまだ飛んでいない
+        await vi.advanceTimersByTimeAsync(999);
+        expect(internal.tipMessage.alpha).toBe(0);
+        expect(internal.butterflies[0].isFlying).toBe(false);
 
-        const loopArea = {} as never;
-        (
-            state as unknown as {
-                handleLoopAreaCompleted: (loopArea: never) => void;
-            }
-        ).handleLoopAreaCompleted(loopArea);
+        // 1000ms経過した瞬間からtipsが表示される
+        await vi.advanceTimersByTimeAsync(1);
+        expect(internal.tipMessage.alpha).toBe(1);
+        expect(internal.tipMessage.text).toBe(t("tip.level1"));
+        expect(internal.container.children).toContain(internal.tipMessage);
+        // このタイミングではまだゲームは始まっていない
+        expect(internal.butterflies[0].isFlying).toBe(false);
 
-        const captureCalls = playSeMock.mock.calls.filter(
-            ([se]) => se === "se_capture",
+        // tips表示時間が終わるまではまだ始まらない
+        await vi.advanceTimersByTimeAsync(Const.TUTORIAL_TIP_DISPLAY_MS - 1);
+        expect(internal.butterflies[0].isFlying).toBe(false);
+
+        // tips表示時間を使い切ったら、両方のメッセージが消えてゲームが始まる
+        await vi.advanceTimersByTimeAsync(1);
+        await entered;
+        expect(internal.container.children).not.toContain(
+            internal.startMessage,
         );
-        expect(captureCalls.length).toBe(1);
-        // 花の捕獲処理自体は行われている(音だけが統合された)ことを確認
-        // (delete/stopはHelpFlower実装上メソッドのため、unbound-method対策でanyを介して参照する)
-        const flowerSpy = flower as any;
-        expect(flowerSpy.delete).toHaveBeenCalled();
-        expect(flowerSpy.stop).toHaveBeenCalled();
+        expect(internal.container.children).not.toContain(internal.tipMessage);
+        expect(internal.butterflies[0].isFlying).toBe(true);
     });
 
-    it("still plays se_capture for a flower-only loop (no butterflies involved)", async () => {
-        const stageInfo = new StageInformation();
+    it("skips the tip entirely on a level with none, starting play at the original 1000ms", async () => {
+        // level 6 はどのtipsにも対応しない
+        expect(getTutorialTipKey(6)).toBeNull();
+
+        const stageInfo = new StageInformation(6);
         const manager = createMockManager();
         const state = new GameplayState(manager, stageInfo);
-        const enterPromise = state.onEnter();
-        await vi.advanceTimersByTimeAsync(ENTER_WAIT_MS);
-        await enterPromise;
+        const internal = state as any;
 
-        const flower = new HelpFlower("freeze");
-        state.butterflies = [];
-        state.flowers = [flower];
+        expect(internal.tipMessage.text).toBe("");
 
-        playSeMock.mockClear();
+        const entered = state.onEnter();
+        await vi.advanceTimersByTimeAsync(1000);
+        await entered;
 
-        const loopArea = {} as never;
-        (
-            state as unknown as {
-                handleLoopAreaCompleted: (loopArea: never) => void;
-            }
-        ).handleLoopAreaCompleted(loopArea);
-
-        const captureCalls = playSeMock.mock.calls.filter(
-            ([se]) => se === "se_capture",
-        );
-        expect(captureCalls.length).toBe(1);
+        // tipsは一度もalpha=1にならず、既存どおり1000msちょうどで開始する
+        expect(internal.container.children).not.toContain(internal.tipMessage);
+        expect(internal.butterflies[0].isFlying).toBe(true);
     });
 });

@@ -194,6 +194,33 @@ const CATALOG = {
         ja: "いっしょに かこむとだめ",
         en: "Voids any loop that contains it",
     },
+
+    // --- チュートリアルtips(序盤ステージで初出の要素を説明する) ---
+    // レベル→キーの対応は utils/TutorialTips.ts を参照
+    "tip.level1": {
+        ja: "同じ色のちょうを 2ひきいじょう かこむと つかまえられるよ",
+        en: "Loop two or more butterflies of the same color to catch them",
+    },
+    "tip.level2": {
+        ja: "お花は あなたを たすけてくれるよ",
+        en: "Flowers help you out",
+    },
+    "tip.level3": {
+        ja: "ちがう色を 1ひきずつ 3びきいじょうでも つかまえられるよ",
+        en: "One of each color, 3 or more, also works",
+    },
+    "tip.level4": {
+        ja: "1ぴきだけ かこむと 色が かわるよ",
+        en: "Looping a single butterfly changes its color",
+    },
+    "tip.level5": {
+        ja: "とくべつな ちょうを つかまえると 何か おきるかも…?",
+        en: "Catching a special butterfly might do something...?",
+    },
+    "tip.level9": {
+        ja: "虫に 気をつけて",
+        en: "Watch out for the bugs",
+    },
 } satisfies Record<string, CatalogEntry>;
 
 export type MessageKey = keyof typeof CATALOG;
