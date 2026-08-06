@@ -25,10 +25,12 @@ import { Moon } from "../components/Moon";
 import { PlanetBase } from "../components/PlanetBase";
 import { BonusStageEffect } from "../components/BonusStageEffect";
 import { t, getLang } from "../utils/Language";
+import { getTutorialTipKey } from "../utils/TutorialTips";
 import { recordProgress } from "../utils/ScoreStorage";
 
 export class GameplayState extends StateBase {
     private startMessage: PIXI.BitmapText;
+    private tipMessage: PIXI.BitmapText;
     private scoreMessage: PIXI.BitmapText;
     private actionMessage: PIXI.BitmapText;
     private helpMessage: PIXI.BitmapText;
@@ -123,6 +125,25 @@ export class GameplayState extends StateBase {
             this.manager.app.renderer.height / 3 + Const.MARGIN;
         this.startMessage.alpha = 0;
         this.container.addChild(this.startMessage);
+
+        // チュートリアルtips(序盤ステージで、そのレベルに初めて登場する
+        // 要素だけを説明する。該当レベルが無ければ空文字のまま表示しない)
+        const tipKey = getTutorialTipKey(this.stageInfo.level);
+        this.tipMessage = new PIXI.BitmapText({
+            text: tipKey ? t(tipKey) : "",
+            style: new PIXI.TextStyle({
+                fontFamily: uiFontFamily,
+                fontSize: 18,
+                fill: this.fontColor,
+                fontWeight: uiFontWeight,
+            }),
+        });
+        this.tipMessage.x =
+            this.manager.app.renderer.width / 2 - this.tipMessage.width / 2;
+        this.tipMessage.y =
+            this.startMessage.y + this.startMessage.height * 1.4;
+        this.tipMessage.alpha = 0;
+        this.container.addChild(this.tipMessage);
 
         // スコアメッセージ
         this.scoreMessage = new PIXI.BitmapText({
@@ -492,9 +513,10 @@ export class GameplayState extends StateBase {
         // ままなのでタイマーは消費されず、演出完了(consumeIntroComplete)を
         // update側で検知してからゲームを開始する
         if (this.bonusEffect) {
-            // 通常ステージ用のstartMessageは使わないので、通常経路と対称に
-            // なるようここで取り除いておく(alpha=0のまま残さない)
+            // 通常ステージ用のstartMessage/tipMessageは使わないので、通常経路と
+            // 対称になるようここで取り除いておく(alpha=0のまま残さない)
             this.container.removeChild(this.startMessage);
+            this.container.removeChild(this.tipMessage);
             if (this.stageInfo.bonusIntroShown) {
                 // リザルト側で案内(bonus.invitation)を見せてから遷移して
                 // きたので、同じメッセージは再表示せずすぐゲームを開始する
@@ -507,7 +529,14 @@ export class GameplayState extends StateBase {
 
         this.startMessage.alpha = 1;
         await this.wait(1000);
+        // そのレベルに初出の要素があれば、tipsをもう少し長く見せてから始める
+        const tipKey = getTutorialTipKey(this.stageInfo.level);
+        if (tipKey) {
+            this.tipMessage.alpha = 1;
+            await this.wait(Const.TUTORIAL_TIP_DISPLAY_MS);
+        }
         this.container.removeChild(this.startMessage);
+        this.container.removeChild(this.tipMessage);
         this.startPlay();
     }
 
