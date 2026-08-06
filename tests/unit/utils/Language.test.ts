@@ -134,6 +134,17 @@ describe("Language", () => {
             // @ts-expect-error deliberately passing an unknown key
             expect(t("does.not.exist")).toBe("does.not.exist");
         });
+
+        // 「1回のループで{n}匹囲め」と誤読してステージ1で詰まった報告があったため、
+        // 目標数が累計であることを明示する文言を維持する
+        it("states that the stage goal is a cumulative total", () => {
+            setLang("en");
+            expect(t("game.captureN", { n: 6 })).toContain("6");
+            expect(t("game.captureN", { n: 6 })).toContain("in total");
+            setLang("ja");
+            expect(t("game.captureN", { n: 6 })).toContain("6");
+            expect(t("game.captureN", { n: 6 })).toContain("ぜんぶで");
+        });
     });
 
     describe("isJapaneseText", () => {
