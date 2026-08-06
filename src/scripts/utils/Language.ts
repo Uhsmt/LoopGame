@@ -49,9 +49,10 @@ const CATALOG = {
     "lang.japanese": { ja: "にほんご", en: "にほんご" },
 
     // --- ゲーム中(GameplayState) ---
+    // 「一度のループで{n}匹」と誤読されるため、合計であることを明示する
     "game.captureN": {
-        ja: "ちょうを {n}ひき つかまえて！",
-        en: "Capture {n} butterflies!",
+        ja: "ぜんぶで ちょうを {n}ひき つかまえて！",
+        en: "Capture {n} butterflies in total!",
     },
     "game.captureMany": {
         ja: "ちょうを たくさん つかまえて！",
@@ -116,8 +117,8 @@ const CATALOG = {
         en: "More butterflies, more points",
     },
     "rule.p1.beforeSunset": {
-        ja: "たいようがしずむまえに \rひつようなかずをつかまえて",
-        en: "Capture needed number of\rbutterflies before sunset",
+        ja: "たいようがしずむまえに \rぜんぶでひつようなかずをつかまえて",
+        en: "Capture the needed number in total\rbefore sunset",
     },
     "rule.title.combinations": { ja: "くみあわせ", en: "Combinations" },
     "rule.p2.sameColor": {
