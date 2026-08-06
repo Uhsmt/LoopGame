@@ -201,7 +201,7 @@ const CATALOG = {
     // (例: Lv3のtipは同色2匹以上でも捕獲できる事実を否定しない)
     "tip.level1": {
         ja: "tips: 同じ色のちょうを 2ひきいじょう かこむと つかまえられるよ",
-        en: "tips: Loop two or more butterflies of the same color to catch them",
+        en: "tips: Loop 2+ same-color butterflies to catch them",
     },
     "tip.level2": {
         ja: "tips: お花は あなたを たすけてくれるよ",
@@ -209,15 +209,15 @@ const CATALOG = {
     },
     "tip.level3": {
         ja: "tips: ちがう色を 1ひきずつ 3びきいじょうでも つかまえられるよ",
-        en: "tips: One of each color, 3 or more, also works",
+        en: "tips: 3+ different colors also works",
     },
     "tip.level4": {
         ja: "tips: 1ぴきだけ かこむと 色が かわるよ",
-        en: "tips: Looping a single butterfly changes its color",
+        en: "tips: Loop one alone to change its color",
     },
     "tip.level5": {
         ja: "tips: とくべつな ちょうを つかまえると 何か おきるかも…?",
-        en: "tips: Catching a special butterfly might do something...?",
+        en: "tips: A special butterfly... something might happen?",
     },
     "tip.level9": {
         ja: "tips: 虫に 気をつけて",
